@@ -258,10 +258,37 @@ const authService = {
   },
 
   clearAuthData: () => {
-    localStorage.removeItem('userToken');
-    localStorage.removeItem('clientId');
-    localStorage.removeItem('user');
-    console.log('Auth data cleared');
+    // Clear ALL localStorage items
+    try {
+      localStorage.clear();
+    } catch (e) {
+      console.warn('Failed to clear localStorage:', e);
+    }
+
+    // Clear ALL sessionStorage items
+    try {
+      sessionStorage.clear();
+    } catch (e) {
+      console.warn('Failed to clear sessionStorage:', e);
+    }
+
+    // Clear ALL cookies by setting them to expire
+    if (typeof document !== 'undefined') {
+      try {
+        const cookies = document.cookie.split(';');
+        cookies.forEach(cookie => {
+          const eqPos = cookie.indexOf('=');
+          const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+          // Clear cookie by setting it to expire in the past
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`;
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.${window.location.hostname}`;
+        });
+      } catch (e) {
+        console.warn('Failed to clear cookies:', e);
+      }
+    }
+    console.log('All auth data, storage, and cookies cleared');
   },
 
   isAuthenticated: () => {
@@ -275,8 +302,23 @@ const authService = {
     clientId: typeof window !== 'undefined' ? localStorage.getItem('clientId') : null,
   }),
 
-  logout: () => {
+  logout: async () => {
+    // Clear all client-side storage first
     authService.clearAuthData();
+    
+    // Call server logout endpoint to clear server-side cookies
+    try {
+      const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+      await fetch(`${backendApiUrl}/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      }).catch(() => {
+        // Ignore errors - client-side cleanup is done
+      });
+    } catch (e) {
+      // Ignore errors - client-side cleanup is done
+    }
+    
     if (typeof window !== 'undefined') window.location.href = '/login';
   },
 
@@ -858,6 +900,26 @@ const userService = {
     
     return singleFlight('user-login-activity', (signal) =>
       api.get(url, { signal: opts?.signal ?? signal }).then(r => normalizeOk(r.data)),
+      opts?.signal
+    );
+  },
+
+  /** Get active sessions (currently logged in devices) */
+  getActiveSessions: async (opts?: { signal?: AbortSignal }) => {
+    const url = `/api/user/active-sessions`;
+    
+    return singleFlight('user-active-sessions', (signal) =>
+      api.get(url, { signal: opts?.signal ?? signal }).then(r => normalizeOk(r.data)),
+      opts?.signal
+    );
+  },
+
+  /** Logout from all devices */
+  logoutAllDevices: async (opts?: { signal?: AbortSignal }) => {
+    const url = `/api/user/logout-all-devices`;
+    
+    return singleFlight('user-logout-all-devices', (signal) =>
+      api.post(url, {}, { signal: opts?.signal ?? signal }).then(r => normalizeOk(r.data)),
       opts?.signal
     );
   },

@@ -4,17 +4,19 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ResetMainPasswordDialog } from "./ResetPasswordDialog";
 import LoginActivity from "./LoginActivity";
-// function maskEmail(email: string) {
-//   if (!email) return "";
-//   const [user, domain] = email.split("@");
-//   if (!user || !domain) return email;
-//   const firstChar = user[0];
-//   const lastChar = user[user.length - 1];
-//   if (user.length <= 2) {
-//     return `${firstChar}****@${domain}`;
-//   }
-//   return `${firstChar}${"*".repeat(user.length - 2)}${lastChar}@${domain}`;
-// }
+import ActiveDevices from "./ActiveDevices";
+import { userService } from "@/services/api.service";
+import { authService } from "@/services/api.service";
+import { Loader2, LogOut } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 interface SecurityTabProps {
   email?: string;
@@ -24,6 +26,35 @@ export default function SecurityTab({ email }: SecurityTabProps) {
   const maskedEmail = email ?? "Not provided";
   // dialog toggle state
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [logoutAllDialogOpen, setLogoutAllDialogOpen] = useState(false);
+  const [isLoggingOutAll, setIsLoggingOutAll] = useState(false);
+
+  const handleLogoutAllDevices = async () => {
+    try {
+      setIsLoggingOutAll(true);
+      
+      // Call server to logout from all devices
+      await userService.logoutAllDevices();
+      
+      // Clear all client-side storage
+      authService.clearAuthData();
+      
+      toast.success("Logged out from all devices successfully");
+      
+      // Redirect to login after a short delay
+      setTimeout(() => {
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+      }, 1000);
+    } catch (error: any) {
+      console.error("Error logging out from all devices:", error);
+      toast.error(error?.response?.data?.message || "Failed to logout from all devices");
+    } finally {
+      setIsLoggingOutAll(false);
+      setLogoutAllDialogOpen(false);
+    }
+  };
 
   return (
     <div className="space-y-10 mt-4 text-white">
@@ -68,6 +99,19 @@ export default function SecurityTab({ email }: SecurityTabProps) {
         onOpen={setChangePasswordOpen}
       />
 
+      {/* Currently Logged in Devices Section */}
+      <section>
+        <h2 className="text-[34px] font-semibold mb-1 dark:text-white/75 text-black">Currently Logged in Devices</h2>
+        <p className="text-sm dark:text-white/75 text-black mb-4">
+          View all devices that are currently logged into your account.
+        </p>
+        <div className="border dark:border-white/10 border-black/10 rounded-xl overflow-hidden dark:bg-[#191a22]">
+          <div className="p-5">
+            <ActiveDevices />
+          </div>
+        </div>
+      </section>
+
       {/* Login Activity Section */}
       <section>
         <h2 className="text-[34px] font-semibold mb-1 dark:text-white/75 text-black">Login Activity</h2>
@@ -80,6 +124,86 @@ export default function SecurityTab({ email }: SecurityTabProps) {
           </div>
         </div>
       </section>
+
+      {/* Logout from All Devices Section */}
+      <section>
+        <h2 className="text-[34px] font-semibold mb-1 dark:text-white/75 text-black">Account Security</h2>
+        <p className="text-sm dark:text-white/75 text-black mb-4">
+          Log out from all devices to secure your account. This will clear all sessions and cache.
+        </p>
+        <div className="border dark:border-white/10 border-black/10 rounded-xl overflow-hidden dark:bg-[#191a22]">
+          <div className="flex items-center justify-between p-5">
+            <div>
+              <div className="font-medium dark:text-white/75 text-black mb-2">
+                Log out from all devices
+              </div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                This will log you out from all devices and clear all stored cache. You will need to log in again.
+              </div>
+            </div>
+            <Button
+              variant="destructive"
+              className="bg-red-600/20 text-red-400 border-red-600/30 min-w-[180px] hover:bg-red-600/30"
+              onClick={() => setLogoutAllDialogOpen(true)}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout from All Devices
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Logout All Devices Confirmation Dialog */}
+      <Dialog open={logoutAllDialogOpen} onOpenChange={setLogoutAllDialogOpen}>
+        <DialogContent className="border-2 border-transparent p-6 text-black dark:text-white rounded-[18px] w-full max-w-md [background:linear-gradient(#fff,#fff)_padding-box,conic-gradient(from_var(--border-angle),#ddd,#f6e6fc,theme(colors.purple.400/48%))_border-box] dark:[background:linear-gradient(#070206,#030103)_padding-box,conic-gradient(from_var(--border-angle),#030103,#030103,theme(colors.purple.400/48%))_border-box] animate-border gap-4">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold dark:text-white/75 text-black mb-2">
+              Logout from All Devices
+            </DialogTitle>
+            <DialogDescription className="text-sm dark:text-gray-400 text-gray-600 mb-4">
+              Are you sure you want to log out from all devices? This will:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <ul className="list-disc list-inside space-y-2 text-sm dark:text-gray-300 text-gray-700 ml-2">
+              <li>Log you out from all devices and browsers</li>
+              <li>Clear all stored cache and cookies</li>
+              <li>Require you to log in again on all devices</li>
+            </ul>
+            <p className="text-sm font-semibold text-red-400 dark:text-red-400 mt-4">
+              This action cannot be undone.
+            </p>
+          </div>
+          <DialogFooter className="mt-6 gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setLogoutAllDialogOpen(false)}
+              disabled={isLoggingOutAll}
+              className="min-w-[100px]"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleLogoutAllDevices}
+              disabled={isLoggingOutAll}
+              className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 min-w-[180px]"
+            >
+              {isLoggingOutAll ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Logging out...
+                </>
+              ) : (
+                <>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout from All Devices
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* 2-Step Verification Section */}
       {/* <section>

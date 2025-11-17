@@ -50,16 +50,50 @@ export function useSessionCheck() {
 
     // Centralized logout helper
     const handleLogout = (reason: 'deleted' | 'expired' = 'expired') => {
-      // Clear localStorage
-      localStorage.removeItem('userToken');
-      localStorage.removeItem('clientId');
-      localStorage.removeItem('token');
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('userId');
+      // Clear ALL localStorage items
+      try {
+        localStorage.clear();
+      } catch (e) {
+        console.warn('Failed to clear localStorage:', e);
+      }
+
+      // Clear ALL sessionStorage items
+      try {
+        sessionStorage.clear();
+      } catch (e) {
+        console.warn('Failed to clear sessionStorage:', e);
+      }
+
+      // Clear ALL cookies by setting them to expire
+      try {
+        const cookies = document.cookie.split(';');
+        cookies.forEach(cookie => {
+          const eqPos = cookie.indexOf('=');
+          const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+          // Clear cookie by setting it to expire in the past
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`;
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.${window.location.hostname}`;
+        });
+      } catch (e) {
+        console.warn('Failed to clear cookies:', e);
+      }
       
       // Dispatch logout action
       dispatch(logout());
+      
+      // Call server logout endpoint to clear server-side cookies
+      try {
+        const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+        fetch(`${backendApiUrl}/logout`, {
+          method: 'POST',
+          credentials: 'include',
+        }).catch(() => {
+          // Ignore errors - client-side cleanup is done
+        });
+      } catch (e) {
+        // Ignore errors - client-side cleanup is done
+      }
       
       // Show toast
       const message = reason === 'deleted' 
