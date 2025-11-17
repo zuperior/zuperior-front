@@ -136,6 +136,14 @@ export function Navbar() {
     return hideBalance ? '••••••' : s;
   }, [mt5Total, hideBalance]);
 
+  const formattedTotalBalance = useMemo(() => {
+    const wallet = walletBalance === null || walletBalance === undefined ? 0 : walletBalance;
+    const mt5 = Number(mt5Total || 0);
+    const total = wallet + mt5;
+    const s = `$${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return hideBalance ? '••••••' : s;
+  }, [walletBalance, mt5Total, hideBalance]);
+
   const onToggleHide = (val: boolean) => {
     setHideBalance(val);
     try { localStorage.setItem('hideBalance', val ? '1' : '0'); } catch {}
@@ -163,7 +171,7 @@ export function Navbar() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button className="hidden md:flex rounded-[10px] items-center gap-[6px] py-2 px-4 text-white dark:bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-xs leading-[14px] cursor-pointer [background:radial-gradient(ellipse_27%_80%_at_0%_0%,rgba(163,92,162,0.5),rgba(0,0,0,1))] hover:bg-transparent">
-              {formattedBalance}
+              {formattedTotalBalance}
               <Image className="h-5 w-5" src={Wallet} alt="Wallet" />
             </Button>
           </DropdownMenuTrigger>

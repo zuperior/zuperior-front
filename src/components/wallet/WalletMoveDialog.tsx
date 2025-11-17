@@ -30,8 +30,23 @@ export function WalletMoveDialog({ open, onOpenChange, direction }: { open: bool
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<"form"|"review"|"done">("form");
   const [balances, setBalances] = useState<Record<string, number>>({});
+  const [walletBalance, setWalletBalance] = useState<number>(0);
 
   useEffect(()=>{ if (open) { dispatch(fetchUserAccountsFromDb() as any); } }, [open, dispatch]);
+
+  // Fetch wallet balance when dialog opens (for WALLET_TO_MT5 direction)
+  useEffect(() => {
+    if (!open || direction !== 'WALLET_TO_MT5') return;
+    (async () => {
+      try {
+        const token = localStorage.getItem('userToken');
+        const r = await fetch('/api/wallet', { cache: 'no-store', headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+        const j = await r.json();
+        const bal = Number(j?.data?.balance ?? j?.balance ?? 0);
+        setWalletBalance(isNaN(bal) ? 0 : bal);
+      } catch { /* ignore */ }
+    })();
+  }, [open, direction]);
 
   // Fetch MT5 balances for each account when dialog opens
   useEffect(() => {
@@ -58,6 +73,29 @@ export function WalletMoveDialog({ open, onOpenChange, direction }: { open: bool
       setStep("form"); setMt5(""); setAmount("");
     }
     onOpenChange(v);
+  };
+
+  // Calculate available balance based on direction and selected account
+  const availableBalance = (() => {
+    if (direction === 'MT5_TO_WALLET') {
+      if (!mt5) return 0;
+      return balances[mt5] ?? 0;
+    } else {
+      // WALLET_TO_MT5
+      return walletBalance;
+    }
+  })();
+
+  // Format available balance for placeholder
+  const placeholderText = availableBalance > 0 
+    ? `0 - $${availableBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : "Enter amount";
+
+  // Fill amount with max available balance on click
+  const handleAmountClick = () => {
+    if (availableBalance > 0 && !amount) {
+      setAmount(availableBalance.toFixed(2));
+    }
   };
 
   async function submit() {
@@ -109,7 +147,13 @@ export function WalletMoveDialog({ open, onOpenChange, direction }: { open: bool
         {step === 'form' && (
           <div className="space-y-4">
             <Label className="block text-sm">MT5 Account</Label>
-            <Select value={mt5} onValueChange={setMt5}>
+            <Select value={mt5} onValueChange={(val) => {
+              setMt5(val);
+              // Clear amount when account changes so placeholder updates
+              if (direction === 'MT5_TO_WALLET') {
+                setAmount("");
+              }
+            }}>
               <SelectTrigger className="w-full"><SelectValue placeholder="Select account" /></SelectTrigger>
               <SelectContent>
                 {filtered.map((a:any)=> {
@@ -124,7 +168,25 @@ export function WalletMoveDialog({ open, onOpenChange, direction }: { open: bool
             </Select>
             <div>
               <Label className="block text-sm mb-1">Amount</Label>
-              <Input value={amount} onChange={(e)=>setAmount(e.target.value.replace(/[^0-9.]/g,''))} placeholder="Enter amount" />
+              <Input 
+                value={amount} 
+                onChange={(e)=>setAmount(e.target.value.replace(/[^0-9.]/g,''))} 
+                placeholder="Enter amount"
+                onClick={handleAmountClick}
+                className="cursor-pointer"
+              />
+              {availableBalance > 0 && (
+                <p 
+                  onClick={() => {
+                    if (availableBalance > 0) {
+                      setAmount(availableBalance.toFixed(2));
+                    }
+                  }}
+                  className="text-xs text-[#9F8BCF] mt-1.5 cursor-pointer hover:opacity-80 transition-opacity"
+                >
+                  Available: 0 - ${availableBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              )}
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="secondary" onClick={()=>handleClose(false)}>Cancel</Button>
