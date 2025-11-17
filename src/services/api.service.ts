@@ -38,6 +38,11 @@ const api = axios.create({
   timeout: 30000,
 });
 
+// Normalized backend base URL for direct backend calls (used by some services)
+const RAW_BACKEND_API_URL =
+  process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+const BACKEND_API_BASE = RAW_BACKEND_API_URL.replace(/\/+$/, '');
+
 // Track if token refresh is in progress to avoid multiple simultaneous refresh calls
 let isRefreshing = false;
 let failedQueue: Array<{
@@ -699,6 +704,120 @@ const mt5Service = {
   cancelAll,
 };
 
+// --- Notification Service Functions ---
+const notificationService = {
+  /** Get all notifications */
+  getNotifications: async (opts?: { signal?: AbortSignal; isRead?: boolean; limit?: number }) => {
+    const params = new URLSearchParams();
+    if (opts?.isRead !== undefined) params.append('isRead', String(opts.isRead));
+    if (opts?.limit) params.append('limit', String(opts.limit));
+
+    const queryString = params.toString();
+    const nextUrl = `/api/notifications${queryString ? `?${queryString}` : ''}`;
+
+    try {
+      const response = await api.get(nextUrl, {
+        signal: opts?.signal,
+      });
+      return response.data;
+    } catch (error: any) {
+      // If Next.js proxy route is missing or misconfigured, fall back to backend directly
+      if (error?.response?.status === 404) {
+        const backendUrl = `${BACKEND_API_BASE}/notifications${queryString ? `?${queryString}` : ''}`;
+        const fallbackResponse = await api.get(backendUrl, {
+          signal: opts?.signal,
+        });
+        return fallbackResponse.data;
+      }
+      throw error;
+    }
+  },
+
+  /** Get unread count */
+  getUnreadCount: async (opts?: { signal?: AbortSignal }) => {
+    const nextUrl = '/api/notifications/unread-count';
+
+    try {
+      const response = await api.get(nextUrl, {
+        signal: opts?.signal,
+      });
+      return response.data;
+    } catch (error: any) {
+      if (error?.response?.status === 404) {
+        const backendUrl = `${BACKEND_API_BASE}/notifications/unread-count`;
+        const fallbackResponse = await api.get(backendUrl, {
+          signal: opts?.signal,
+        });
+        return fallbackResponse.data;
+      }
+      throw error;
+    }
+  },
+
+  /** Mark notification as read */
+  markAsRead: async (notificationId: string, opts?: { signal?: AbortSignal }) => {
+    const nextUrl = `/api/notifications/${notificationId}/read`;
+
+    try {
+      const response = await api.put(nextUrl, {}, {
+        signal: opts?.signal,
+      });
+      return response.data;
+    } catch (error: any) {
+      if (error?.response?.status === 404) {
+        const backendUrl = `${BACKEND_API_BASE}/notifications/${notificationId}/read`;
+        const fallbackResponse = await api.put(backendUrl, {}, {
+          signal: opts?.signal,
+        });
+        return fallbackResponse.data;
+      }
+      throw error;
+    }
+  },
+
+  /** Mark all notifications as read */
+  markAllAsRead: async (opts?: { signal?: AbortSignal }) => {
+    const nextUrl = '/api/notifications/read-all';
+
+    try {
+      const response = await api.put(nextUrl, {}, {
+        signal: opts?.signal,
+      });
+      return response.data;
+    } catch (error: any) {
+      if (error?.response?.status === 404) {
+        const backendUrl = `${BACKEND_API_BASE}/notifications/read-all`;
+        const fallbackResponse = await api.put(backendUrl, {}, {
+          signal: opts?.signal,
+        });
+        return fallbackResponse.data;
+      }
+      throw error;
+    }
+  },
+
+  /** Delete notification */
+  deleteNotification: async (notificationId: string, opts?: { signal?: AbortSignal }) => {
+    const nextUrl = `/api/notifications/${notificationId}`;
+
+    try {
+      const response = await api.delete(nextUrl, {
+        signal: opts?.signal,
+      });
+      return response.data;
+    } catch (error: any) {
+      if (error?.response?.status === 404) {
+        const backendUrl = `${BACKEND_API_BASE}/notifications/${notificationId}`;
+        const fallbackResponse = await api.delete(backendUrl, {
+          signal: opts?.signal,
+        });
+        return fallbackResponse.data;
+      }
+      throw error;
+    }
+  },
+};
+
 // --- Deposit Service Functions ---
 const depositService = {
   /** Get transactions by MT5 account ID */
@@ -767,4 +886,4 @@ const adminService = {
   cancelAll,
 };
 
-export { authService, api, mt5Service, depositService, adminService, userService };
+export { authService, api, mt5Service, depositService, adminService, userService, notificationService };

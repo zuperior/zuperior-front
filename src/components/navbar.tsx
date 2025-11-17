@@ -41,6 +41,7 @@ import Profile from "@/assets/icons/profile.png";
 import ProfileDark from "@/assets/icons/userDark.png";
 import { CircleUser, Headset, LogOut, Settings } from "lucide-react";
 import { WalletMoveDialog } from "@/components/wallet/WalletMoveDialog";
+import { NotificationPanel } from "@/components/NotificationPanel";
 
 export function Navbar() {
   const { theme, setTheme } = useTheme();
@@ -262,13 +263,6 @@ export function Navbar() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Link href="/deposit">
-          <Button className="hidden md:flex rounded-[10px] items-center gap-[5px] py-2 px-6 text-white dark:bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-xs leading-[14px] cursor-pointer [background:radial-gradient(ellipse_27%_80%_at_0%_0%,rgba(163,92,162,0.5),rgba(0,0,0,1))] hover:bg-transparent">
-            Deposit
-            <Image className="h-5 w-5" src={Wallet} alt="Wallet" />
-          </Button>
-        </Link>
-
         <div className="w-px h-4 bg-black/25 dark:bg-white/25 hidden md:flex" />
 
         {/* Icons */}
@@ -279,21 +273,7 @@ export function Navbar() {
             alt="Toggle Theme"
             onClick={toggleTheme}
           />
-          {/* <Image
-            className="h-5 w-5 cursor-pointer hidden md:flex"
-            src={theme === "dark" ? Globe : GlobeDark}
-            alt="Globe"
-          /> */}
-          {/* <Image
-            className="h-5 w-5 cursor-pointer hidden md:flex"
-            src={theme === "dark" ? Qr : QrDark}
-            alt="QR"
-          /> */}
-          {/* <Image
-            className="h-5 w-5 cursor-pointer"
-            src={theme === "dark" ? Bell : BellDark}
-            alt="Bell"
-          /> */}
+          <NotificationPanel />
         </div>
 
         <div className="w-px h-4 bg-black/25 dark:bg-white/25 hidden md:flex" />
