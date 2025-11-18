@@ -45,15 +45,19 @@ export async function POST(req: NextRequest) {
     );
 
     const jsonResponse = NextResponse.json(response.data);
-    const token = response.data?.token;
-    const clientId = response.data?.clientId;
+    
+    // Only set cookies if login is complete (not 2FA required)
+    if (!response.data?.requiresTwoFactor) {
+      const token = response.data?.token;
+      const clientId = response.data?.clientId;
 
-    if (token) {
-      jsonResponse.cookies.set("token", token, buildCookieOptions());
-    }
+      if (token) {
+        jsonResponse.cookies.set("token", token, buildCookieOptions());
+      }
 
-    if (clientId) {
-      jsonResponse.cookies.set("clientId", clientId, buildPublicCookieOptions());
+      if (clientId) {
+        jsonResponse.cookies.set("clientId", clientId, buildPublicCookieOptions());
+      }
     }
 
     return jsonResponse;

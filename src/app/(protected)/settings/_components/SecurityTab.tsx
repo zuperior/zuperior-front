@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ResetMainPasswordDialog } from "./ResetPasswordDialog";
 import LoginActivity from "./LoginActivity";
 import ActiveDevices from "./ActiveDevices";
+import { TwoFactorSettings } from "@/components/settings/TwoFactorSettings";
 import { userService } from "@/services/api.service";
 import { authService } from "@/services/api.service";
 import { Loader2, LogOut } from "lucide-react";
@@ -99,6 +100,9 @@ export default function SecurityTab({ email }: SecurityTabProps) {
         onOpen={setChangePasswordOpen}
       />
 
+      {/* Two-Factor Authentication Section */}
+      <TwoFactorSettings email={email} />
+
       {/* Currently Logged in Devices Section */}
       <section>
         <h2 className="text-[34px] font-semibold mb-1 dark:text-white/75 text-black">Currently Logged in Devices</h2>
@@ -187,7 +191,18 @@ export default function SecurityTab({ email }: SecurityTabProps) {
               variant="destructive"
               onClick={handleLogoutAllDevices}
               disabled={isLoggingOutAll}
-              className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 min-w-[180px]"
+              className="min-w-[180px]"
+              style={{ 
+                backgroundColor: isLoggingOutAll ? '#4a0e0f' : '#82181a', 
+                color: 'white',
+                opacity: isLoggingOutAll ? 0.6 : 1
+              }}
+              onMouseEnter={(e) => {
+                if (!isLoggingOutAll) e.currentTarget.style.backgroundColor = '#6b1315';
+              }}
+              onMouseLeave={(e) => {
+                if (!isLoggingOutAll) e.currentTarget.style.backgroundColor = '#82181a';
+              }}
             >
               {isLoggingOutAll ? (
                 <>

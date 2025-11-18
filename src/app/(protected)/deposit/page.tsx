@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useCallback, useEffect, useState, useMemo } from "react";
-import axios from "axios";
 import Image from "next/image";
 import { TextAnimate } from "@/components/ui/text-animate";
 import { DepositDialog } from "@/components/deposit/DepositDialog";
@@ -11,14 +10,6 @@ import { useAppDispatch } from "@/store/hooks";
 import { fetchAccessToken } from "@/store/slices/accessCodeSlice";
 import { getLifetimeDeposit } from "@/services/depositLimitService";
 import { CardLoader } from "@/components/ui/loading";
-
-type CryptoData = {
-  symbol: string;
-  name: string;
-  blockchain: string;
-  logoUrl: string;
-  decimals: string;
-};
 
 type Cryptocurrency = {
   id: string;
@@ -46,46 +37,24 @@ export default function DepositPage() {
   const [isLoadingCrypto, setIsLoadingCrypto] = useState(true);
 
   useEffect(() => {
-    const fetchCrypto = async () => {
-      try {
-        setIsLoadingCrypto(true);
-        const res = await axios.get("/api/crypto-currency");
-        const tokens: CryptoData[] = res.data.data;
+    // Hardcoded USDT-TRC20 data since API is not needed
+    const cryptoList: Cryptocurrency[] = [
+      {
+        id: "USDT-TRC20",
+        name: "USDT-TRC20",
+        symbol: "USDT",
+        icon: "/trc20.png",
+        networks: [
+          {
+            blockchain: "TRC20",
+            logoUrl: "/trc20.png",
+          },
+        ],
+      },
+    ];
 
-        const groupedMap = new Map<string, Cryptocurrency>();
-
-        tokens.forEach((token) => {
-          const id = token.name;
-          // Only include TRC20 (regular version only, QR removed)
-          if (token.name === "USDT-TRC20") {
-            if (!groupedMap.has(id)) {
-              groupedMap.set(id, {
-                id,
-                name: token.name,
-                symbol: token.symbol,
-                icon: token.logoUrl,
-                networks: [
-                  {
-                    blockchain: token.blockchain,
-                    logoUrl: token.logoUrl,
-                  },
-                ],
-              });
-            }
-          }
-        });
-
-        const cryptoList = Array.from(groupedMap.values());
-
-        setCryptocurrencies(cryptoList);
-      } catch (err) {
-        console.error("Failed to fetch crypto data", err);
-      } finally {
-        setIsLoadingCrypto(false);
-      }
-    };
-
-    fetchCrypto();
+    setCryptocurrencies(cryptoList);
+    setIsLoadingCrypto(false);
   }, []);
 
   useEffect(() => {

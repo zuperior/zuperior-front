@@ -188,12 +188,12 @@ export function WithdrawPayoutDialog({
       }}
     >
       <DialogContent
-        className="border-2 border-transparent p-6 text-white rounded-[18px] flex flex-col items-center w-full  [background:linear-gradient(#fff,#fff)_padding-box,conic-gradient(from_var(--border-angle),#ddd,#f6e6fc,theme(colors.purple.400/48%))_border-box] dark:[background:linear-gradient(#070206,#030103)_padding-box,conic-gradient(from_var(--border-angle),#030103,#030103,theme(colors.purple.400/48%))_border-box] animate-border"
+        className="border-2 border-transparent p-6 text-white rounded-[18px] flex flex-col items-center w-full max-h-[90vh] [background:linear-gradient(#fff,#fff)_padding-box,conic-gradient(from_var(--border-angle),#ddd,#f6e6fc,theme(colors.purple.400/48%))_border-box] dark:[background:linear-gradient(#070206,#030103)_padding-box,conic-gradient(from_var(--border-angle),#030103,#030103,theme(colors.purple.400/48%))_border-box] animate-border"
         disableOutsideClick={true}
       >
-        <DialogTitle className="text-xl font-semibold">Withdraw Funds</DialogTitle>
+        <DialogTitle className="text-xl font-semibold flex-shrink-0">Withdraw Funds</DialogTitle>
 
-        <DialogHeader className="w-full py-7">
+        <DialogHeader className="w-full py-7 flex-shrink-0">
           <div className="flex items-center justify-between w-full pt-6">
             <div className="flex items-center space-x-2 w-full mx-10">
               <div
@@ -231,7 +231,9 @@ export function WithdrawPayoutDialog({
           </div>
         </DialogHeader>
 
-        {renderStepContent()}
+        <div className="w-full flex-1 overflow-y-auto min-h-0 px-2 py-2 custom-scrollbar">
+          {renderStepContent()}
+        </div>
       </DialogContent>
     </Dialog>
   );
