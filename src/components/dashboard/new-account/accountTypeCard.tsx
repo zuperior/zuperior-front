@@ -3,12 +3,46 @@ export function AccountTypeCard({
   selected,
   onClick,
   userRole,
+  leverage,
+  minDeposit,
+  spread,
+  commission,
+  description,
 }: {
   userRole: string;
   title: string;
   selected: boolean;
   onClick: () => void;
+  leverage?: number | string | null;
+  minDeposit?: number | null;
+  spread?: number | null;
+  commission?: number | null;
+  description?: string | null;
 }) {
+  // Format leverage display
+  const formatLeverage = (lev: number | string | null | undefined): string => {
+    if (lev === null || lev === undefined || lev === 0) return "1:Unlimited";
+    if (typeof lev === "string") return lev;
+    return `1:${lev}`;
+  };
+
+  // Format min deposit
+  const formatMinDeposit = (deposit: number | null | undefined): string => {
+    if (!deposit) return "$10";
+    return `$${deposit.toFixed(0)}`;
+  };
+
+  // Format spread
+  const formatSpread = (spr: number | null | undefined): string => {
+    if (!spr) return "0.3 pips";
+    return `${spr} pips`;
+  };
+
+  // Format commission
+  const formatCommission = (comm: number | null | undefined): string => {
+    if (!comm) return "15%";
+    return `${comm}%`;
+  };
   const roleMaskStyle = {
     WebkitMaskImage:
       "linear-gradient(100deg, rgba(255, 255, 255, 0.75) 10%, rgba(255, 255, 255, 0.25) 100%)",
@@ -63,27 +97,27 @@ export function AccountTypeCard({
         </h3>
 
         <p className="text-xs dark:text-white/75 text-black  ">
-          Perfect for newbies--Kick off your trading journey with micro lots.
+          {description || "Perfect for newbies--Kick off your trading journey with micro lots."}
         </p>
         <div className="mt-[15px] flex items-center flex-col gap-2.5">
           <p className={`text-xs font-semibold dark:text-white/75 text-black `}>
             Minimum Deposit{" "}
-            <span className="dark:text-white/75 text-black ml-1 text-sm">$10</span>
+            <span className="dark:text-white/75 text-black ml-1 text-sm">{formatMinDeposit(minDeposit)}</span>
           </p>
           <div className="w-full h-px bg-gradient-to-r from-black via-[#736496] to-black" />
           <p className={`text-xs font-semibold dark:text-white/75 text-black `}>
             Low Spreads{" "}
-            <span className="text-white/75 ml-1 text-sm">0.3 pips</span>
+            <span className="text-white/75 ml-1 text-sm">{formatSpread(spread)}</span>
           </p>
           <div className="w-full h-px bg-gradient-to-r from-black via-[#736496] to-black" />
           <p className={`text-xs font-semibold dark:text-white/75 text-black `}>
             Leverage{" "}
-            <span className="text-white/75 ml-1 text-sm">1:Unlimited</span>
+            <span className="text-white/75 ml-1 text-sm dark:text-white/75 text-black">{formatLeverage(leverage)}</span>
           </p>
           <div className="w-full h-px bg-gradient-to-r from-black via-[#736496] to-black" />
           <p className={`text-xs font-semibold dark:text-white/75 text-black `}>
             Commissions upto{" "}
-            <span className="dark:text-white/75 text-black  ml-1 text-sm">15%</span>
+            <span className="dark:text-white/75 text-black  ml-1 text-sm">{formatCommission(commission)}</span>
           </p>
         </div>
       </div>

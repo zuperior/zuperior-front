@@ -50,7 +50,7 @@ export function NewAccountDialog({
   const dispatch = useAppDispatch();
   const [step, setStep] = useState(1);
   const [accountType, setAccountType] = useState("Live");
-  const [accountPlan, setAccountPlan] = useState("");
+  const [accountPlan, setAccountPlan] = useState<{ id: number; group: string; dedicated_name: string | null; [key: string]: any } | null>(null);
   // const [server, setServer] = useState("");
   const [leverage, setLeverage] = useState("");
   const [currency, setCurrency] = useState("USD");
@@ -130,7 +130,7 @@ export function NewAccountDialog({
 
   const resetStates = () => {
     setStep(1);
-    setAccountPlan("");
+    setAccountPlan(null);
     setAccountType("Live");
     setLeverage("");
     setCurrency("USD");
@@ -190,10 +190,10 @@ export function NewAccountDialog({
   const handleSubmit = async () => {
     if (!validateStep2()) return;
 
-    // Validate account plan was selected
-    if (!accountPlan || (accountPlan !== "standard" && accountPlan !== "pro")) {
+    // Validate account plan (group) was selected
+    if (!accountPlan || !accountPlan.group) {
       console.error("❌ Invalid account plan selected:", accountPlan);
-      toast.error("Please go back and select an account plan (Startup or Pro)");
+      toast.error("Please go back and select an account type");
       setLoadingStep2(false);
       return;
     }
@@ -201,30 +201,11 @@ export function NewAccountDialog({
     try {
       setLoadingStep2(true);
 
-      // Map account plan to MT5 group based on account type (Live or Demo)
-      let group = "";
+      // Use group from selected account plan
+      const group = accountPlan.group;
       const isDemo = accountType.toLowerCase() === "demo";
-      
-      if (accountPlan === "standard") {
-        if (isDemo) {
-          group = "demo\\Standard\\dynamic-2000x-20PAbook";
-        } else {
-          group = "real\\Bbook\\Standard\\dynamic-2000x-20Pips";
-        }
-      } else if (accountPlan === "pro") {
-        if (isDemo) {
-          group = "demo\\Pro\\dynamic-2000x-10PAbook";
-        } else {
-          group = "real\\Bbook\\Pro\\dynamic-2000x-10P";
-        }
-      } else {
-        console.error("❌ Invalid account plan selected:", accountPlan);
-        toast.error("Please select a valid account plan");
-        setLoadingStep2(false);
-        return;
-      }
 
-      console.log("✅ Account type:", accountType, "| Plan:", accountPlan, "→ Group:", group);
+      console.log("✅ Account type:", accountType, "| Selected Group:", group);
 
       // Generate passwords for MT5 (master and investor)
       const masterPassword = password.trim();
@@ -241,8 +222,8 @@ export function NewAccountDialog({
         country: "",
         city: "",
         phone: "",
-        comment: `Created from CRM - ${accountType} ${accountPlan} account`,
-        accountPlan: accountPlan // Include accountPlan so backend can determine package
+        comment: `Created from CRM - ${accountType} ${accountPlan.dedicated_name || accountPlan.group} account`,
+        accountPlan: accountPlan.dedicated_name || accountPlan.group.split('\\').pop() || "Account" // Include accountPlan name for reference
       };
 
       console.log("🚀 Creating MT5 Account - Type:", accountType, "| Final payload:", JSON.stringify(payload, null, 2));
@@ -449,6 +430,8 @@ export function NewAccountDialog({
 
   const handleAccountChange = (value: string) => {
     setAccountType(value);
+    // Reset account plan when account type changes
+    setAccountPlan(null);
   };
 
   const nextStep = () => {
@@ -511,6 +494,7 @@ export function NewAccountDialog({
           <StepChooseAccountType
             accountPlan={accountPlan}
             setAccountPlan={setAccountPlan}
+            accountType={accountType}
             nextStep={nextStep}
             scrollRef={scrollRef as React.RefObject<HTMLDivElement>}
             handleMouseDown={handleMouseDown}

@@ -948,4 +948,42 @@ const adminService = {
   cancelAll,
 };
 
-export { authService, api, mt5Service, depositService, adminService, userService, notificationService };
+// --- Group Management Service Functions ---
+const groupManagementService = {
+  /** Get active groups from group_management table */
+  getActiveGroups: async (accountType?: string, opts?: { signal?: AbortSignal }) => {
+    const params = new URLSearchParams();
+    if (accountType) params.append('accountType', accountType);
+
+    const queryString = params.toString();
+    // Call backend directly (skip Next.js proxy for now)
+    const backendUrl = `${BACKEND_API_BASE}/group-management/active-groups${queryString ? `?${queryString}` : ''}`;
+
+    try {
+      // Get token for authentication
+      const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+      
+      const response = await fetch(backendUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json',
+        },
+        signal: opts?.signal,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error: any) {
+      console.error('❌ Error fetching active groups:', error);
+      throw error;
+    }
+  },
+};
+
+export { authService, api, mt5Service, depositService, adminService, userService, notificationService, groupManagementService };
