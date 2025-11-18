@@ -34,27 +34,44 @@ export default function SecurityTab({ email }: SecurityTabProps) {
     try {
       setIsLoggingOutAll(true);
       
-      // Call server to logout from all devices
-      await userService.logoutAllDevices();
-      
-      // Clear all client-side storage
+      // Clear all client-side storage FIRST (before API call)
       authService.clearAuthData();
       
+      // Call server to logout from all devices (don't await - fire and forget)
+      userService.logoutAllDevices().catch(err => {
+        console.warn("Logout API call failed (non-blocking):", err);
+      });
+      
+      // Show toast briefly, then redirect immediately
       toast.success("Logged out from all devices successfully");
       
-      // Redirect to login after a short delay
-      setTimeout(() => {
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
+      // Force immediate redirect - don't wait for API call
+      if (typeof window !== 'undefined') {
+        // Clear any remaining cookies manually (for non-httpOnly cookies)
+        try {
+          document.cookie.split(";").forEach((c) => {
+            const name = c.split("=")[0].trim();
+            // Try multiple paths and domains
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`;
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.${window.location.hostname}`;
+          });
+        } catch (e) {
+          console.warn("Error clearing cookies:", e);
         }
-      }, 1000);
+        
+        // Use replace instead of href to prevent back button issues
+        window.location.replace('/login');
+      }
     } catch (error: any) {
       console.error("Error logging out from all devices:", error);
-      toast.error(error?.response?.data?.message || "Failed to logout from all devices");
-    } finally {
-      setIsLoggingOutAll(false);
-      setLogoutAllDialogOpen(false);
+      // Even if there's an error, we've cleared local storage, so still redirect
+      authService.clearAuthData();
+      if (typeof window !== 'undefined') {
+        window.location.replace('/login');
+      }
     }
+    // Note: We don't set isLoggingOutAll to false or close dialog because we're redirecting
   };
 
   return (

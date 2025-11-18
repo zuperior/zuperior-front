@@ -69,7 +69,24 @@ export async function POST(request: NextRequest) {
     const data = await response.json();
     console.log('[Logout All Devices API] Success:', data);
 
-    return NextResponse.json(data);
+    // Clear cookies in the response
+    const jsonResponse = NextResponse.json(data);
+    
+    // Clear token and clientId cookies
+    jsonResponse.cookies.delete('token');
+    jsonResponse.cookies.delete('clientId');
+    
+    // Also set them to expire in the past
+    jsonResponse.cookies.set('token', '', {
+      expires: new Date(0),
+      path: '/',
+    });
+    jsonResponse.cookies.set('clientId', '', {
+      expires: new Date(0),
+      path: '/',
+    });
+
+    return jsonResponse;
 
   } catch (error: any) {
     console.error('[Logout All Devices API] Unexpected error:', error);
