@@ -15,6 +15,7 @@ import RegisterStep2OtpForm from "./RegisterStep2OtpForm";
 import LoginForm from "./LoginForm";
 import SubmitButton from "./SubmitButton";
 import ForgotPasswordNewPasswordForm from "./ForgotPasswordNewPasswordForm";
+import { TwoFactorVerification } from "@/components/auth/TwoFactorVerification";
 import { attachReferral, getActiveReferralCode, getStoredReferralCode, resolveReferral, registerReferral } from "@/utils/referrals";
 
 const AuthForm = () => {
@@ -51,6 +52,10 @@ const AuthForm = () => {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [referralCode, setReferralCode] = useState<string>("");
   const [referrerName, setReferrerName] = useState<string>("");
+  // 2FA state
+  const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
+  const [twoFactorOtpKey, setTwoFactorOtpKey] = useState<string>("");
+  const [twoFactorEmail, setTwoFactorEmail] = useState<string>("");
 
   // Load referral code and resolve IB name for banner
   useEffect(() => {
@@ -405,6 +410,16 @@ const AuthForm = () => {
 
       const response = await authService.login(loginData);
 
+      // Check if 2FA is required
+      if (response.requiresTwoFactor && response.otpKey) {
+        setRequiresTwoFactor(true);
+        setTwoFactorOtpKey(response.otpKey);
+        setTwoFactorEmail(loginData.email);
+        toast.success("Verification code sent to your email");
+        setIsLoading(false);
+        return;
+      }
+
       // Store auth data
       authService.setAuthData(response.token, response.clientId);
 
@@ -432,6 +447,92 @@ const AuthForm = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleVerifyTwoFactor = async (otp: string) => {
+    try {
+      setIsLoading(true);
+
+      const response = await fetch("/api/auth/verify-two-factor-login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: twoFactorEmail,
+          otpKey: twoFactorOtpKey,
+          otp: otp,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Invalid verification code");
+      }
+
+      // Store auth data
+      authService.setAuthData(data.token, data.clientId);
+
+      // Store user data for navbar display
+      if (data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
+
+      // Fallback: attempt simple attach on login if code exists
+      try {
+        const code = getStoredReferralCode();
+        if (code) {
+          await attachReferral(code, twoFactorEmail);
+        }
+      } catch {
+        // non-blocking
+      }
+
+      // Reset 2FA state
+      setRequiresTwoFactor(false);
+      setTwoFactorOtpKey("");
+      setTwoFactorEmail("");
+
+      toast.success("Welcome back! You've successfully logged in.");
+      router.push("/");
+    } catch (error: any) {
+      const errorMessage = error.message || "Verification failed. Please try again.";
+      toast.error(errorMessage);
+      throw error; // Re-throw to let TwoFactorVerification handle it
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendTwoFactorOtp = async () => {
+    try {
+      setIsLoading(true);
+      const loginData = {
+        email: twoFactorEmail.trim().toLowerCase(),
+        password: loginPassword,
+      };
+
+      const response = await authService.login(loginData);
+
+      if (response.requiresTwoFactor && response.otpKey) {
+        setTwoFactorOtpKey(response.otpKey);
+        toast.success("New verification code sent to your email");
+      } else {
+        throw new Error("Failed to resend code");
+      }
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to resend code");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancelTwoFactor = () => {
+    setRequiresTwoFactor(false);
+    setTwoFactorOtpKey("");
+    setTwoFactorEmail("");
+    setLoginPassword("");
   };
 
   // Reset form helper
@@ -515,7 +616,15 @@ const AuthForm = () => {
                   <span className="opacity-70"> ({referralCode})</span>
                 </div>
               )}
-              {step === 1 && !forgotMode && (
+              {requiresTwoFactor ? (
+                <TwoFactorVerification
+                  email={twoFactorEmail}
+                  otpKey={twoFactorOtpKey}
+                  onVerify={handleVerifyTwoFactor}
+                  onResend={handleResendTwoFactorOtp}
+                  onCancel={handleCancelTwoFactor}
+                />
+              ) : step === 1 && !forgotMode ? (
                 <LoginForm
                   loginEmail={loginEmail}
                   setLoginEmail={setLoginEmail}
@@ -536,7 +645,7 @@ const AuthForm = () => {
                     }
                   }}
                 />
-              )}
+              ) : null}
               {forgotMode && forgotPasswordStep === "email" && (
                 <div>
                   <input

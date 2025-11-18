@@ -6,15 +6,17 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get('authorization') || '';
     const body = await request.json();
 
-    const resp = await fetch(`${backendBase}/withdraw/create`, {
+    const resp = await fetch(`${backendBase}/withdraw/request`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(authHeader ? { Authorization: authHeader } : {}),
       },
       body: JSON.stringify({
-        otpKey: body.otpKey,
-        otp: body.otp,
+        amount: body.amount,
+        walletAddress: body.walletAddress,
+        method: body.method,
+        bankDetails: body.bankDetails,
       }),
     });
 
@@ -23,7 +25,8 @@ export async function POST(request: NextRequest) {
     try { data = JSON.parse(text); } catch { data = { success: false, message: text || 'Server Error' }; }
     return NextResponse.json(data, { status: resp.status });
   } catch (e: any) {
-    console.error('Withdraw proxy error:', e?.message || e);
+    console.error('Withdraw request proxy error:', e?.message || e);
     return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 });
   }
 }
+

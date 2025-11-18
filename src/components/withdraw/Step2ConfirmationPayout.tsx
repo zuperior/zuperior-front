@@ -3,9 +3,12 @@ import { Button } from "../ui/button";
 import Image from "next/image";
 import { Step2ConfirmationProps, WithdrawDest } from "./types";
 import fallbackImg from "@/assets/binance.png";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import { TpAccountSnapshot } from "@/types/user-details";
+import { Input } from "../ui/input";
+import { Mail } from "lucide-react";
+import { useAppSelector } from "@/store/hooks";
 
 export function Step2ConfirmationPayout({
   amount,
@@ -27,6 +30,15 @@ export function Step2ConfirmationPayout({
   setPayoutId: (id: string) => void;
 }) {
   const [isApiProcessing, setIsApiProcessing] = useState(false);
+  const [showOtpInput, setShowOtpInput] = useState(false);
+  const [otpKey, setOtpKey] = useState<string | null>(null);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
+  
+  // Get user email from Redux store
+  const userData = useAppSelector((state) => state.user.data);
+  const userEmail = userData?.email1 || userData?.email || 'your email';
 
   // Function to check payout status
   const checkPayoutStatus = useCallback(
@@ -50,8 +62,8 @@ export function Step2ConfirmationPayout({
 
   // Removed Supabase storage: we save directly in backend DB
 
-  // Function to handle payout API call
-  const handlePayout = async () => {
+  // Function to request withdrawal OTP
+  const handleRequestWithdrawal = async () => {
     const isBank = selectedDest?.type === 'bank';
     if (!amount || (!isBank && !selectedCrypto)) {
       toast.error("Missing required information");
@@ -61,8 +73,50 @@ export function Step2ConfirmationPayout({
     setIsApiProcessing(true);
 
     try {
-      // Create withdrawal request in our backend (pending)
       const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+      
+      // Request withdrawal (sends OTP)
+      const resp = await fetch('/api/withdraw/request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          amount: Number(amount),
+          walletAddress: isBank ? (selectedDest?.bank?.accountNumber || toWallet) : toWallet,
+          method: isBank ? 'bank' : 'crypto',
+          bankDetails: isBank ? selectedDest?.bank : undefined,
+        }),
+      });
+      
+      const json = await resp.json();
+      if (!resp.ok || !json?.success) throw new Error(json?.message || 'Failed to request withdrawal');
+      
+      setOtpKey(json.data?.otpKey);
+      setShowOtpInput(true);
+      toast.success('OTP sent to your email. Please verify to complete withdrawal.');
+      
+    } catch (err: unknown) {
+      toast.error((err as Error).message || 'An error occurred while requesting withdrawal');
+    } finally {
+      setIsApiProcessing(false);
+    }
+  };
+
+  // Function to verify OTP and create withdrawal
+  const handleVerifyOtpAndCreate = async () => {
+    if (!otpKey || otp.join('').length !== 6) {
+      toast.error("Please enter the 6-digit OTP code");
+      return;
+    }
+
+    setIsVerifyingOtp(true);
+
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+      
+      // Create withdrawal with OTP verification
       const resp = await fetch('/api/withdraw/create', {
         method: 'POST',
         headers: {
@@ -70,24 +124,42 @@ export function Step2ConfirmationPayout({
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          ...(selectedAccount?.acc ? { mt5AccountId: selectedAccount.acc } : {}),
-          amount: Number(amount),
-          walletAddress: isBank ? (selectedDest?.bank?.accountNumber || toWallet) : toWallet,
-          method: isBank ? 'bank' : 'crypto',
-          bankDetails: isBank ? selectedDest?.bank : undefined,
+          otpKey,
+          otp: otp.join(''),
         }),
       });
+      
       const json = await resp.json();
       if (!resp.ok || !json?.success) throw new Error(json?.message || 'Failed to create withdrawal');
 
       const cid = json.data?.id || '';
       setPayoutId(cid);
+      setShowOtpInput(false);
+      setOtp(["", "", "", "", "", ""]);
       handleContinueToPayment();
 
     } catch (err: unknown) {
       toast.error((err as Error).message || 'An error occurred while processing the payout');
     } finally {
-      setIsApiProcessing(false);
+      setIsVerifyingOtp(false);
+    }
+  };
+
+  // Handle OTP input change
+  const handleOtpChange = (value: string, idx: number) => {
+    if (!/^\d?$/.test(value)) return;
+    const newOtp = [...otp];
+    newOtp[idx] = value;
+    setOtp(newOtp);
+    if (value && idx < otp.length - 1) {
+      inputRefs.current[idx + 1]?.focus();
+    }
+  };
+
+  // Handle backspace in OTP input
+  const handleOtpKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, idx: number) => {
+    if (e.key === "Backspace" && !otp[idx] && idx > 0) {
+      inputRefs.current[idx - 1]?.focus();
     }
   };
 
@@ -96,12 +168,12 @@ export function Step2ConfirmationPayout({
   }, [selectedNetwork]);
 
   return (
-    <div className="mx-auto w-[400px]">
+    <div className="mx-auto w-[400px] max-h-full overflow-y-auto">
       <h2 className="text-2xl text-center font-bold text-black dark:text-white/75 mb-1">
         Pay {amount} {selectedCrypto?.name || "USD"}
       </h2>
 
-      {selectedCrypto && selectedAccount && !useWallet && (
+      {selectedCrypto && selectedAccount && (
         <div className="mt-3 rounded-lg ">
           {/* Account Information */}
           <div className="flex justify-between items-center mb-2">
@@ -112,6 +184,54 @@ export function Step2ConfirmationPayout({
             <span className="text-black dark:text-white/75">Account Type:</span>
             <span className="text-black dark:text-white/75">{selectedAccount?.account_type}</span>
           </div>
+        </div>
+      )}
+
+      {/* OTP Input Section */}
+      {showOtpInput && (
+        <div className="mt-4 p-4 rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/20">
+          <div className="flex items-center gap-2 text-sm font-medium mb-3">
+            <Mail className="w-4 h-4 text-[#6242a5]" />
+            <span className="text-black dark:text-white/75">
+              Enter the code sent to: <span className="font-semibold">{userEmail}</span>
+            </span>
+          </div>
+          <div className="flex gap-2 justify-center mb-4">
+            {otp.map((digit, idx) => (
+              <Input
+                key={idx}
+                ref={(el) => {
+                  inputRefs.current[idx] = el;
+                }}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={digit}
+                onChange={(e) => handleOtpChange(e.target.value, idx)}
+                onKeyDown={(e) => handleOtpKeyDown(e, idx)}
+                className="w-12 h-12 text-center text-lg font-semibold tracking-widest border-2 rounded-md focus:border-[#6242a5]"
+              />
+            ))}
+          </div>
+          <Button
+            className="w-full bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:bg-[#9d6ad9]"
+            disabled={isVerifyingOtp || otp.join('').length !== 6}
+            onClick={handleVerifyOtpAndCreate}
+          >
+            {isVerifyingOtp ? "Verifying..." : "Verify OTP & Complete Withdrawal"}
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full mt-2 bg-transparent text-black dark:text-white/75 border-gray-300 dark:border-gray-700"
+            onClick={() => {
+              setShowOtpInput(false);
+              setOtp(["", "", "", "", "", ""]);
+              setOtpKey(null);
+            }}
+            disabled={isVerifyingOtp}
+          >
+            Cancel
+          </Button>
         </div>
       )}
 
@@ -184,8 +304,8 @@ export function Step2ConfirmationPayout({
         <div className="flex flex-col">
           <Button
             className="flex-1 cursor-pointer bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:bg-[#9d6ad9]"
-            disabled={isProcessing || isApiProcessing}
-            onClick={handlePayout}
+            disabled={isProcessing || isApiProcessing || showOtpInput}
+            onClick={handleRequestWithdrawal}
           >
             {isProcessing || isApiProcessing ? (
               <div className="flex items-center justify-center">

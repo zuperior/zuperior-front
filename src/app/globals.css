@@ -352,6 +352,86 @@
   display: none;
 }
 
+/* Custom Scrollbar Styles - Purple Theme */
+/* Webkit browsers (Chrome, Safari, Edge) - Global styles */
+*:not(.no-scrollbar):not(.hide-scrollbar)::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*:not(.no-scrollbar):not(.hide-scrollbar)::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+
+*:not(.no-scrollbar):not(.hide-scrollbar)::-webkit-scrollbar-thumb {
+  background: rgba(98, 66, 165, 0.3);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background 0.2s ease;
+}
+
+*:not(.no-scrollbar):not(.hide-scrollbar)::-webkit-scrollbar-thumb:hover {
+  background: rgba(98, 66, 165, 0.5);
+  background-clip: padding-box;
+}
+
+/* Dark mode scrollbar */
+.dark *:not(.no-scrollbar):not(.hide-scrollbar)::-webkit-scrollbar-thumb {
+  background: rgba(159, 139, 207, 0.3);
+  background-clip: padding-box;
+}
+
+.dark *:not(.no-scrollbar):not(.hide-scrollbar)::-webkit-scrollbar-thumb:hover {
+  background: rgba(159, 139, 207, 0.5);
+  background-clip: padding-box;
+}
+
+/* Firefox - Global styles */
+*:not(.no-scrollbar):not(.hide-scrollbar) {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(98, 66, 165, 0.3) transparent;
+}
+
+.dark *:not(.no-scrollbar):not(.hide-scrollbar) {
+  scrollbar-color: rgba(159, 139, 207, 0.3) transparent;
+}
+
+/* Custom scrollbar for specific elements */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(98, 66, 165, 0.1);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #6242a5 0%, #9f8bcf 100%);
+  border-radius: 10px;
+  border: 1px solid rgba(98, 66, 165, 0.2);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #6B5993 0%, #9f8bcf 100%);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(159, 139, 207, 0.1);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #9f8bcf 0%, #6B5993 100%);
+  border: 1px solid rgba(159, 139, 207, 0.2);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #9f8bcf 0%, #7a5fa8 100%);
+}
+
 .flag-dropdown {
   @apply hidden;
 }
