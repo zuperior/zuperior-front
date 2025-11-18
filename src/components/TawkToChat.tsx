@@ -9,6 +9,16 @@ export default function TawkToChat() {
 
   useEffect(() => {
     // Initialize Tawk.to only on client side
+    // Skip in development to avoid CORS errors (localhost)
+    const isDevelopment = process.env.NODE_ENV === 'development' || 
+                          window.location.hostname === 'localhost' || 
+                          window.location.hostname === '127.0.0.1';
+    
+    if (isDevelopment) {
+      console.log('Tawk.to chat widget disabled in development to avoid CORS errors');
+      return;
+    }
+
     if (typeof window !== "undefined") {
       // Check if script is already loaded
       const existingScript = document.querySelector(
@@ -26,6 +36,11 @@ export default function TawkToChat() {
         script.async = true;
         script.charset = "UTF-8";
         script.setAttribute("crossorigin", "*");
+        
+        // Suppress CORS errors in console
+        script.onerror = (error) => {
+          console.warn('Tawk.to script load error (this is normal in development):', error);
+        };
 
         // Find the first script tag and insert before it
         const firstScript = document.getElementsByTagName("script")[0];

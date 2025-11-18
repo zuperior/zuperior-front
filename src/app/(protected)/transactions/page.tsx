@@ -230,52 +230,61 @@ export default function TransactionsPage() {
       account_id: selectedAccountId,
     }));
   } else {
-    // For MT5 accounts, show ONLY deposits and internal transfers (MT5 to Wallet)
-    // Withdrawals are NOT shown here - they can only be done via Wallet
-  if (activeTab === "all") {
-    tableData = [
-      ...transactionsData.deposits.map((tx) => ({
-        ...tx,
-        type: "Deposit",
-        status: tx.status || transactionsData.status || "Success",
-        account_id: transactionsData.MT5_account || tx.login,
-      })),
-        // Only include internal transfers from MT5 to Wallet
+    // For MT5 accounts, show deposits, withdrawals, and internal transfers
+    if (activeTab === "all") {
+      tableData = [
+        ...transactionsData.deposits.map((tx) => ({
+          ...tx,
+          type: "Deposit",
+          status: tx.status || transactionsData.status || "Success",
+          account_id: transactionsData.MT5_account || tx.login,
+        })),
+        ...transactionsData.withdrawals.map((tx) => ({
+          ...tx,
+          type: tx.type || "Withdrawal",
+          status: tx.status || transactionsData.status || "Success",
+          account_id: transactionsData.MT5_account || tx.login,
+        })),
+        // Include internal transfers from MT5 to Wallet
         ...transactionsData.mt5Transactions
           .filter((tx) => tx.type === 'MT5_TO_WALLET' || tx.comment?.includes('to Wallet') || tx.comment?.includes('to wallet'))
           .map((tx) => ({
-        ...tx,
+            ...tx,
             type: "Internal Transfer",
-        status: tx.status || transactionsData.status || "Success",
+            status: tx.status || transactionsData.status || "Success",
             account_id: transactionsData.MT5_account || tx.login || selectedAccountId,
             comment: tx.comment || `Transfer from MT5 ${selectedAccountId} to Wallet`,
             open_time: tx.createdAt || tx.open_time,
-      })),
-    ];
-  } else if (activeTab === "deposits") {
+          })),
+      ];
+    } else if (activeTab === "deposits") {
       tableData = [
         ...transactionsData.deposits.map((tx) => ({
-      ...tx,
-      type: "Deposit",
-      status: tx.status || transactionsData.status || "Success",
-      account_id: transactionsData.MT5_account || tx.login,
+          ...tx,
+          type: "Deposit",
+          status: tx.status || transactionsData.status || "Success",
+          account_id: transactionsData.MT5_account || tx.login,
         })),
         // Include internal transfers in deposits tab as they're incoming to wallet
         ...transactionsData.mt5Transactions
           .filter((tx) => tx.type === 'MT5_TO_WALLET' || tx.comment?.includes('to Wallet') || tx.comment?.includes('to wallet'))
           .map((tx) => ({
-      ...tx,
+            ...tx,
             type: "Internal Transfer",
-      status: tx.status || transactionsData.status || "Success",
+            status: tx.status || transactionsData.status || "Success",
             account_id: transactionsData.MT5_account || tx.login || selectedAccountId,
             comment: tx.comment || `Transfer from MT5 ${selectedAccountId} to Wallet`,
             open_time: tx.createdAt || tx.open_time,
           })),
       ];
     } else {
-      // Withdrawals tab - MT5 accounts should NOT show withdrawals
-      // Withdrawals can only be done via Wallet
-      tableData = [];
+      // Withdrawals tab - show withdrawals from transactionsData.withdrawals
+      tableData = transactionsData.withdrawals.map((tx) => ({
+        ...tx,
+        type: tx.type || "Withdrawal",
+        status: tx.status || transactionsData.status || "Success",
+        account_id: transactionsData.MT5_account || tx.login,
+      }));
     }
   }
 
