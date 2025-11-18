@@ -20,6 +20,7 @@ interface StepChooseAccountTypeProps {
   accountPlan: string | Group | null;
   setAccountPlan: (plan: Group | null) => void;
   accountType: string; // "Live" or "Demo"
+  setAccountType: (type: string) => void;
   nextStep: () => void;
   scrollRef: React.RefObject<HTMLDivElement>;
   handleMouseDown: (e: React.MouseEvent) => void;
@@ -38,6 +39,7 @@ export const StepChooseAccountType: React.FC<StepChooseAccountTypeProps> = ({
   accountPlan,
   setAccountPlan,
   accountType,
+  setAccountType,
   nextStep,
   scrollRef,
   handleMouseDown,
@@ -120,7 +122,13 @@ export const StepChooseAccountType: React.FC<StepChooseAccountTypeProps> = ({
                     userRole={userRole}
                     title={title}
                     selected={isGroupSelected(group)}
-                    onClick={() => setAccountPlan(group)}
+                    onClick={() => {
+                      setAccountPlan(group);
+                      // Update accountType to match the selected group's account_type
+                      if (group.account_type) {
+                        setAccountType(group.account_type);
+                      }
+                    }}
                     leverage={group.leverage !== null && group.leverage !== undefined ? Number(group.leverage) : null}
                     minDeposit={group.min_deposit ? Number(group.min_deposit) : null}
                     spread={group.spread ? Number(group.spread) : null}

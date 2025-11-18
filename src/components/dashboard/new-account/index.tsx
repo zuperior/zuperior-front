@@ -15,6 +15,7 @@ import { StepPrepareAccount } from "./StepPrepareAccount";
 import { StepAccountCreated } from "./StepAccountCreated";
 import { useFetchUserData } from "@/hooks/useFetchUserData";
 import { CardLoader } from "@/components/ui/loading";
+import { groupManagementService } from "@/services/api.service";
 
 interface NewAccountResponse {
   status: string;
@@ -117,8 +118,38 @@ export function NewAccountDialog({
   useEffect(() => {
     if (open) {
       setStep(1);
+      setAccountType("Live");
+      setAccountPlan(null);
     }
   }, [open]);
+
+  // Auto-select first group when entering step 2 or when accountType changes in step 2
+  useEffect(() => {
+    // Auto-select if:
+    // 1. We just entered step 2 and no group is selected, OR
+    // 2. We're in step 2 and accountType changed (which resets accountPlan to null)
+    if (step === 2 && accountType) {
+      // Check if accountPlan is null or invalid
+      const needsSelection = !accountPlan || (typeof accountPlan === 'object' && !accountPlan.group);
+      
+      if (needsSelection) {
+        const autoSelectGroup = async () => {
+          try {
+            const response = await groupManagementService.getActiveGroups(accountType);
+            if (response.success && response.data && response.data.length > 0) {
+              setAccountPlan(response.data[0]);
+              console.log('✅ Auto-selected first group for', accountType, ':', response.data[0].dedicated_name || response.data[0].group);
+            } else {
+              console.warn('⚠️ No groups available for account type:', accountType);
+            }
+          } catch (error) {
+            console.error('❌ Error auto-selecting group:', error);
+          }
+        };
+        autoSelectGroup();
+      }
+    }
+  }, [step, accountType]);
 
   const handleScrollLeft = () => {
     scrollRef.current?.scrollBy({ left: -250, behavior: "smooth" });
@@ -191,11 +222,27 @@ export function NewAccountDialog({
     if (!validateStep2()) return;
 
     // Validate account plan (group) was selected
+    // If not selected, try to auto-select the first available group
     if (!accountPlan || !accountPlan.group) {
-      console.error("❌ Invalid account plan selected:", accountPlan);
-      toast.error("Please go back and select an account type");
-      setLoadingStep2(false);
-      return;
+      console.warn("⚠️ No group selected, attempting to auto-select...");
+      try {
+        const response = await groupManagementService.getActiveGroups(accountType);
+        if (response.success && response.data && response.data.length > 0) {
+          setAccountPlan(response.data[0]);
+          console.log('✅ Auto-selected first group for', accountType, ':', response.data[0].dedicated_name || response.data[0].group);
+          // Continue with the selected group
+        } else {
+          console.error("❌ Invalid account plan selected:", accountPlan);
+          toast.error("Please go back and select an account type");
+          setLoadingStep2(false);
+          return;
+        }
+      } catch (error) {
+        console.error("❌ Error auto-selecting group:", error);
+        toast.error("Please go back and select an account type");
+        setLoadingStep2(false);
+        return;
+      }
     }
 
     try {
@@ -431,10 +478,18 @@ export function NewAccountDialog({
   const handleAccountChange = (value: string) => {
     setAccountType(value);
     // Reset account plan when account type changes
+    // The useEffect will auto-select the first group for the new account type
     setAccountPlan(null);
   };
 
   const nextStep = () => {
+    // Validate that a group is selected before proceeding from step 1
+    if (step === 1) {
+      if (!accountPlan || (typeof accountPlan === 'object' && !accountPlan.group)) {
+        toast.error("Please select an account type");
+        return;
+      }
+    }
     setStep(step + 1);
   };
 
@@ -495,6 +550,7 @@ export function NewAccountDialog({
             accountPlan={accountPlan}
             setAccountPlan={setAccountPlan}
             accountType={accountType}
+            setAccountType={setAccountType}
             nextStep={nextStep}
             scrollRef={scrollRef as React.RefObject<HTMLDivElement>}
             handleMouseDown={handleMouseDown}
