@@ -10,8 +10,6 @@ import EyeIcon from "@/components/EyeIcon";
 import Link from "next/link";
 import axios from "axios";
 
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5000/api";
-
 export default function ResetPasswordPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -64,7 +62,7 @@ export default function ResetPasswordPage() {
       setIsLoading(true);
 
       const response = await axios.post(
-        `${BACKEND_API_URL}/auth/reset-password`,
+        "/api/auth/reset-password",
         {
           token: token,
           newPassword: newPassword,
@@ -76,28 +74,24 @@ export default function ResetPasswordPage() {
         }
       );
 
-      if (response.data?.message) {
-        toast.success(response.data.message);
+      if (response.data?.success) {
+        toast.success(response.data.message || "Password reset successfully! You can now login.");
         // Redirect to login page after successful reset
         setTimeout(() => {
           router.push("/login");
         }, 2000);
       } else {
-        toast.success("Password reset successfully! You can now login.");
-        setTimeout(() => {
-          router.push("/login");
-        }, 2000);
+        toast.error(response.data?.message || "Failed to reset password");
       }
     } catch (error: any) {
       console.error("Password reset error:", error);
       const errorMessage =
-        error.response?.data?.detail ||
         error.response?.data?.message ||
         "Failed to reset password. The link may have expired.";
       toast.error(errorMessage);
 
       // If token is invalid/expired, redirect to login
-      if (error.response?.status === 400) {
+      if (error.response?.status === 400 || error.response?.status === 404) {
         setTimeout(() => {
           router.push("/login");
         }, 3000);
