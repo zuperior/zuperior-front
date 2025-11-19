@@ -5,14 +5,23 @@ import axios from "axios";
 // Use server-side env var (without NEXT_PUBLIC) for security, fallback to client-side or default
 // In production, set ZUPERIOR_API_URL in your hosting environment
 function getZuperiorApiUrl(): string {
+  // Helper to ensure URL ends with /api
+  const ensureApiSuffix = (url: string): string => {
+    const cleanUrl = url.replace(/\/+$/, ''); // Remove trailing slashes
+    if (cleanUrl.endsWith('/api')) {
+      return cleanUrl;
+    }
+    return cleanUrl + '/api';
+  };
+  
   // Priority 1: Server-side env var (preferred for production)
   if (process.env.ZUPERIOR_API_URL) {
-    return process.env.ZUPERIOR_API_URL;
+    return ensureApiSuffix(process.env.ZUPERIOR_API_URL);
   }
   
   // Priority 2: Client-side env var
   if (process.env.NEXT_PUBLIC_ZUPERIOR_API_URL) {
-    return process.env.NEXT_PUBLIC_ZUPERIOR_API_URL;
+    return ensureApiSuffix(process.env.NEXT_PUBLIC_ZUPERIOR_API_URL);
   }
   
   // Priority 3: Try to use existing backend URL (if it points to same server)
