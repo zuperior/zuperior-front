@@ -35,31 +35,21 @@ const ZUPERIOR_API_URL = getZuperiorApiUrl();
 export async function POST(req: NextRequest) {
   try {
     // Log the API URL being used (for debugging - remove in production if sensitive)
-    console.log('[Reset Password API] Using backend URL:', ZUPERIOR_API_URL);
+    console.log('[Forgot Password API] Using backend URL:', ZUPERIOR_API_URL);
     
-    const { token, newPassword } = await req.json();
+    const { email } = await req.json();
 
-    if (!token || !newPassword) {
+    if (!email) {
       return NextResponse.json(
-        { success: false, message: "Token and new password are required" },
+        { success: false, message: "Email is required" },
         { status: 400 }
       );
     }
 
-    if (newPassword.length < 6) {
-      return NextResponse.json(
-        { success: false, message: "Password must be at least 6 characters long" },
-        { status: 400 }
-      );
-    }
-
-    // Call the zuperior-api reset password endpoint
+    // Call the zuperior-api forgot password endpoint
     const response = await axios.post(
-      `${ZUPERIOR_API_URL}/auth/reset-password`,
-      {
-        token: token,
-        newPassword: newPassword,
-      },
+      `${ZUPERIOR_API_URL}/auth/forgot-password`,
+      { email },
       {
         headers: {
           "Content-Type": "application/json",
@@ -69,17 +59,17 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: response.data?.message || "Password reset successfully",
+      message: response.data?.message || "If an account with that email exists, a password reset link has been sent.",
     });
   } catch (error: any) {
-    console.error("Password reset error:", error);
+    console.error("Forgot password error:", error);
     
     if (axios.isAxiosError(error)) {
       const status = error.response?.status || 500;
       
       // Handle connection errors specifically
       if (error.code === 'ECONNREFUSED' || error.message?.includes('ECONNREFUSED')) {
-        console.error('[Reset Password API] Connection refused. Backend URL:', ZUPERIOR_API_URL);
+        console.error('[Forgot Password API] Connection refused. Backend URL:', ZUPERIOR_API_URL);
         return NextResponse.json(
           {
             success: false,
@@ -92,7 +82,7 @@ export async function POST(req: NextRequest) {
       
       const message = error.response?.data?.detail || 
                      error.response?.data?.message || 
-                     "Failed to reset password";
+                     "Failed to send password reset email";
       
       return NextResponse.json(
         {
@@ -116,7 +106,7 @@ export async function POST(req: NextRequest) {
     }
     
     return NextResponse.json(
-      { success: false, message: "Failed to reset password" },
+      { success: false, message: "Failed to send password reset email" },
       { status: 500 }
     );
   }
