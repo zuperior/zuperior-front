@@ -220,7 +220,7 @@ export async function POST(req: NextRequest) {
         if (token) {
           console.log('📞 [EPAY] Calling backend to create deposit record...');
           
-          const backendResponse = await fetch(`${BACKEND_API_URL}/deposit/cregis-card`, {
+          const backendResponse = await fetch(`${BACKEND_API_URL}/deposit/cregis-crypto`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
