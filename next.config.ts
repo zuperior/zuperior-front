@@ -17,9 +17,11 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
 
-  // For App Router, body size limits are handled in route handlers
-  // The default limit is 1MB, but we handle larger payloads in the route handler
-
+  // 👇👇 REQUIRED FOR AZURE (Next.js 15 standalone bundling)
+  output: "standalone",
+  experimental: {
+    serverMinification: true,
+  },
 };
 
 export default nextConfig;
