@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "standalone",   // 🔥 REQUIRED for Azure Web App
+  output: "standalone",
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "static.cregis.io" },
