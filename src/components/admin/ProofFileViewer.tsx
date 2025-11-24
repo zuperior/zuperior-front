@@ -38,7 +38,7 @@ export const ProofFileViewer: React.FC<ProofFileViewerProps> = ({
     link.download = fileName || 'proof-file';
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+    link.remove();
   };
 
   return (
@@ -109,4 +109,3 @@ export const ProofFileViewer: React.FC<ProofFileViewerProps> = ({
 };
 
 export default ProofFileViewer;
-

@@ -29,16 +29,18 @@ const TradeNowDialouge = ({
 
   // Handle MT5 download
   const handleMt5Download = useCallback(() => {
+    const link = document.createElement('a');
+    link.href = MT5_DOWNLOAD_URL;
+    link.download = '';
+    link.rel = 'noreferrer';
+
     try {
-      const link = document.createElement('a');
-      link.href = MT5_DOWNLOAD_URL;
-      link.download = '';
-      link.rel = 'noreferrer';
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
     } catch (_e) {
       window.open(MT5_DOWNLOAD_URL, '_blank');
+    } finally {
+      link.remove();
     }
   }, []);
 
