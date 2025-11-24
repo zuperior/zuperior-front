@@ -28,9 +28,9 @@ jobs:
       - name: Prepare build folder for Azure
         run: |
           mkdir -p build
-          cp -r .next/standalone/* build/
-          cp -r .next/static build/.next
-          cp -r public build/public
+          cp -R .next/standalone/* build/
+          cp -R .next/static build/.next
+          cp -R public build/public
           cp package.json build/
           cp package-lock.json build/
 
