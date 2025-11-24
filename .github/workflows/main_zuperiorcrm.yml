@@ -25,12 +25,15 @@ jobs:
       - name: Zip project
         run: zip -r next-app.zip . -x ".git/*"
 
-      - name: Login to Azure using OIDC
+      - name: Login to Azure using SERVICE PRINCIPAL
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPS_SERVICE_CLIENTID }}
-          tenant-id: ${{ secrets.AZUREAPPS_SERVICE_TENANTID }}
-          subscription-id: ${{ secrets.AZUREAPPS_SERVICE_SUBSCRIPTIONID }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_2B0CDB0690DE4F39A32956E08716A15E }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_5D93B3F2AF8C4369A71ADF410EA2D568 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_A87E1C22517543279B2A0085A2ACE2BD }}
+          client-secret: ${{ secrets.AZUREAPPSERVICE_CLIENTSECRET }}
+
+
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
