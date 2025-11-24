@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_API_KEY || "";
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 // Check if Supabase credentials are configured
 if (!supabaseUrl || supabaseUrl === "https://your-project.supabase.co") {
@@ -9,7 +9,7 @@ if (!supabaseUrl || supabaseUrl === "https://your-project.supabase.co") {
 }
 
 if (!supabaseAnonKey || supabaseAnonKey === "your-supabase-anon-key") {
-  console.warn("⚠️ Supabase API key not configured. Please update NEXT_PUBLIC_API_KEY in .env.local");
+  console.warn("⚠️ Supabase API key not configured. Please update NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local");
 }
 
 // Create Supabase client with fallback for development

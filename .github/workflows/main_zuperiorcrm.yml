@@ -29,7 +29,6 @@ jobs:
         run: |
           mkdir -p build
           cp -r .next/standalone/* build/
-          cp .next/standalone/server.js build/server.js
           cp -r .next/static build/.next
           cp -r public build/public || true
           cp package.json build/
@@ -68,4 +67,4 @@ jobs:
         with:
           app-name: 'zuperiorcrm'
           slot-name: 'Production'
-          package: ./build
+          package: build
