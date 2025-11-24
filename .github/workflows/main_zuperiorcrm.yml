@@ -1,4 +1,3 @@
-
 name: Build and deploy Next.js app to Azure Web App - zuperiorcrm
 
 on:
@@ -25,7 +24,7 @@ jobs:
       - name: Build Next.js (standalone)
         run: npm run build
 
-      - name: Prepare build folder
+      - name: Prepare build folder for Azure
         run: |
           mkdir -p build
           cp -r .next/standalone/* build/
@@ -66,3 +65,4 @@ jobs:
         with:
           app-name: 'zuperiorcrm'
           package: .
+          startup-command: "node server.js"
