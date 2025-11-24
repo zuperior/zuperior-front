@@ -1,7 +1,5 @@
-/** @type {import("next").NextConfig} */
-const nextConfig = {
-  output: "standalone", // ⬅ this creates the .next/standalone folder
-
+export default {
+  output: "standalone",
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "static.cregis.io" },
@@ -9,14 +7,6 @@ const nextConfig = {
       { protocol: "https", hostname: "cryptologos.cc" },
     ],
   },
-
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  eslint: { ignoreDuringBuilds: true },
+  typescript: { ignoreBuildErrors: true },
 };
-
-export default nextConfig;
