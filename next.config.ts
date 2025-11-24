@@ -1,5 +1,5 @@
-export default {
-  output: "standalone",
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "static.cregis.io" },
@@ -7,6 +7,12 @@ export default {
       { protocol: "https", hostname: "cryptologos.cc" },
     ],
   },
-  eslint: { ignoreDuringBuilds: true },
-  typescript: { ignoreBuildErrors: true },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
 };
+
+module.exports = nextConfig;
