@@ -1,70 +1,39 @@
-name: Build and deploy Next.js app to Azure Web App - zuperiorcrm
+name: Deploy Next.js to Azure Web App
 
 on:
   push:
-    branches:
-      - main
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: 20
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Build Next.js (standalone)
+      - name: Build Next.js
         run: npm run build
 
-      - name: Prepare build folder for Azure
-        run: |
-          mkdir -p build
-          cp -r .next/standalone/* build/
-          cp -r .next/static build/.next
-          cp -r public build/public || true
-          cp package.json build/
-          cp package-lock.json build/
-
-      - name: Upload artifact for deployment
-        uses: actions/upload-artifact@v4
-        with:
-          name: nextjs-app
-          path: build
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-
-    permissions:
-      id-token: write
-      contents: read
-
-    steps:
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: nextjs-app
-          path: build
+      - name: Zip project
+        run: zip -r next-app.zip . -x ".git/*"
 
       - name: Login to Azure using OIDC
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_2B0CDB0690DE4F39A32956E08716A15E }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_5D93B3F2AF8C4369A71ADF410EA2D568 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_A87E1C22517543279B2A0085A2ACE2BD }}
+          client-id: ${{ secrets.AZUREAPPS_SERVICE_CLIENTID }}
+          tenant-id: ${{ secrets.AZUREAPPS_SERVICE_TENANTID }}
+          subscription-id: ${{ secrets.AZUREAPPS_SERVICE_SUBSCRIPTIONID }}
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'zuperiorcrm'
-          slot-name: 'Production'
-          package: build
+          app-name: "zuperiorcrm"
+          package: "next-app.zip"
