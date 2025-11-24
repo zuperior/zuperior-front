@@ -28,6 +28,7 @@ jobs:
         run: |
           mkdir -p build
           cp -R .next/standalone/* build/
+          cp .next/standalone/server.js build/server.js
           mkdir -p build/.next
           cp -R .next/static build/.next/static
           cp -R .next/server build/.next/server
