@@ -57,7 +57,8 @@ jobs:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_2CE8D3A2043C48AE89DA10EB067FB447 }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_B071EE4A28AC42B7B3265BAA0AC0F3EE }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_B7C7197BED57445FB4311E7F9B67CB3B }}
-
+      - name: Zip artifact for Azure
+        run: zip -r nextjs-build.zip .
       - uses: azure/webapps-deploy@v3
         with:
           app-name: zuperiorcrm
