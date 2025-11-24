@@ -1,27 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
+
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "static.cregis.io" },
       { protocol: "https", hostname: "flagcdn.com" },
-      { protocol: "https", hostname: "cryptologos.cc" },
-    ],
+      { protocol: "https", hostname: "cryptologos.cc" }
+    ]
   },
 
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-
-  // 👇👇 REQUIRED FOR AZURE (Next.js 15 standalone bundling)
-  output: "standalone",
-  experimental: {
-    serverMinification: true,
-  },
+  eslint: { ignoreDuringBuilds: true },
+  typescript: { ignoreBuildErrors: true }
 };
 
 export default nextConfig;
