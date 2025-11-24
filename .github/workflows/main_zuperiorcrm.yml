@@ -61,5 +61,5 @@ jobs:
       - uses: azure/webapps-deploy@v3
         with:
           app-name: zuperiorcrm
-          package: .
+          package: nextjs-build.zip
           startup-command: "node server.js"
