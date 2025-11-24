@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "npm install --omit=dev"  
+    "postinstall": "if [ \"$IN_APP_SERVICE\" = \"true\" ]; then npm install --omit=dev; fi"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
