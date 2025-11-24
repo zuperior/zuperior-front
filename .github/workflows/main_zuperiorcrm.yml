@@ -1,27 +1,68 @@
-deploy:
-  runs-on: ubuntu-latest
-  needs: build
-  permissions:
-    id-token: write
-    contents: read
+name: Build and deploy Next.js app to Azure Web App - zuperiorcrm
 
-  steps:
-    - name: Download artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: nextjs-build
-        path: ./build
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
-    - name: Login to Azure
-      uses: azure/login@v2
-      with:
-        client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_2CE8D3A2043C48AE89DA10EB067FB447 }}
-        tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_B071EE4A28AC42B7B3265BAA0AC0F3EE }}
-        subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_B7C7197BED57445FB4311E7F9B67CB3B }}
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-    - name: Deploy to Azure Web App
-      uses: azure/webapps-deploy@v3
-      with:
-        app-name: 'zuperiorcrm'
-        package: ./build
-        startup-command: "node server.js"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js (standalone)
+        run: npm run build
+
+      - name: Prepare build folder for Azure
+        run: |
+          mkdir -p build
+          cp -r .next/standalone/* build/
+          cp -r .next/static build/.next
+          cp -r public build/public
+          cp package.json build/
+          cp package-lock.json build/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nextjs-build
+          path: build
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nextjs-build
+          path: ./build
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_2CE8D3A2043C48AE89DA10EB067FB447 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_B071EE4A28AC42B7B3265BAA0AC0F3EE }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_B7C7197BED57445FB4311E7F9B67CB3B }}
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'zuperiorcrm'
+          package: ./build
