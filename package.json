@@ -5,9 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "postinstall": "if [ \"$IN_APP_SERVICE\" = \"true\" ]; then npm install --omit=dev; fi"
+    "start": "node .next/standalone/server.js",
+    "lint": "next lint"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
