@@ -24,13 +24,14 @@ jobs:
       - name: Build Next.js standalone
         run: npm run build
 
-      - name: Prepare build output
+      - name: Prepare build folder for Azure
         run: |
-          mkdir build
+          mkdir -p build
           cp -R .next/standalone/* build/
           mkdir -p build/.next
-          cp -R .next/static build/.next/
-          cp -R public build/public/
+          cp -R .next/static build/.next/static
+          cp -R .next/server build/.next/server
+          cp -R public build/public
           cp package.json build/
           cp package-lock.json build/
 
