@@ -17,7 +17,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'   # Best version for Next.js 15
+          node-version: '20'
 
       - name: Install dependencies
         run: npm install
@@ -28,11 +28,12 @@ jobs:
       - name: Prepare build folder for Azure
         run: |
           mkdir -p build
-          cp -r .next/standalone/* ./build
-          cp -r .next/static ./build/.next
-          cp -r public ./build/public || true
-          cp package.json ./build/
-          cp package-lock.json ./build/
+          cp -r .next/standalone/* build/
+          cp .next/standalone/server.js build/server.js
+          cp -r .next/static build/.next
+          cp -r public build/public || true
+          cp package.json build/
+          cp package-lock.json build/
 
       - name: Upload artifact for deployment
         uses: actions/upload-artifact@v4
@@ -45,7 +46,7 @@ jobs:
     needs: build
 
     permissions:
-      id-token: write        # REQUIRED for Azure OIDC login
+      id-token: write
       contents: read
 
     steps:
@@ -67,4 +68,4 @@ jobs:
         with:
           app-name: 'zuperiorcrm'
           slot-name: 'Production'
-          package: .
+          package: ./build

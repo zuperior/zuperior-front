@@ -1,1 +1,0 @@
-const server = require("./.next/standalone/server.js");
