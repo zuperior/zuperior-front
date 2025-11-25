@@ -29,12 +29,13 @@ jobs:
       - name: Prepare standalone build for deployment
         run: |
           npm run build
-          mkdir deploy
-          cp -r .next/standalone ./deploy
-          cp -r .next/static ./deploy/.next/static || true
-          cp -r public ./deploy/public || true
-          cp package.json ./deploy
-          cp package-lock.json ./deploy
+          mkdir -p deploy/.next
+          cp -r .next/standalone deploy/.next/standalone
+          cp -r .next/static deploy/.next/static || true
+          cp -r public deploy/public || true
+          cp package.json deploy/package.json
+          cp package-lock.json deploy/package-lock.json
+
 
 
 
