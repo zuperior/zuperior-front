@@ -26,21 +26,20 @@ jobs:
       - name: Build Next.js app
         run: npm run build
 
-      - name: Archive build for deployment
+      - name: Archive standalone build for deployment
         run: |
           mkdir deploy
-          cp -r .next deploy/.next
-          cp -r public deploy/public
+          cp -r .next/standalone deploy/
+          cp -r .next/static deploy/.next/static
+          cp -r public deploy/public || true
           cp package.json deploy/package.json
           cp package-lock.json deploy/package-lock.json
-          cp next.config.* deploy/ 2>/dev/null || true
-          cp -r node_modules deploy/node_modules
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-artifact
-          path: deploy
+          - name: Upload artifact
+          uses: actions/upload-artifact@v4
+          with:
+            name: build-artifact
+            path: deploy
 
   deploy:
     runs-on: ubuntu-latest
