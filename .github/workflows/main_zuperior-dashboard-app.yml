@@ -23,27 +23,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Next.js
+      - name: Build Next.js (standalone)
         run: npm run build
 
-      - name: Build Next.js and prepare deployment bundle
+      - name: Prepare deployment bundle
         run: |
-          npm ci
-          npm run build
           mkdir -p deploy
-          cp -r .next deploy/.next
+          cp -r .next/standalone deploy/
+          cp -r .next/static deploy/.next/static
           cp -r public deploy/public || true
-          cp package.json deploy/package.json
-          cp package-lock.json deploy/package-lock.json
-
-
-
+          cp package.json deploy/
+          cp package-lock.json deploy/
 
       - uses: actions/upload-artifact@v4
         with:
           name: build-artifact
           path: deploy
-
 
   deploy:
     runs-on: ubuntu-latest
@@ -69,5 +64,4 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'zuperior-dashboard-app'
-          slot-name: 'Production'
           package: .
