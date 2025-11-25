@@ -29,7 +29,6 @@ jobs:
       - name: Prepare standalone build for deployment
         run: |
           mkdir deploy
-          cp -r .next/standalone deploy/standalone
           cp -r .next deploy/.next
           cp -r public deploy/public || true
           cp package.json deploy/package.json
