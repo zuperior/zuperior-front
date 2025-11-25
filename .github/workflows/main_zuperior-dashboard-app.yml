@@ -28,18 +28,24 @@ jobs:
 
       - name: Prepare deployment bundle
         run: |
-          echo "🧪 Checking .next build..."
-          ls -R .next || echo ".next folder missing ❌"
-
           mkdir -p deploy
+
+          # Copy standalone folder (server.js + node_modules)
+          cp -r .next/standalone deploy/
+
+          # Copy full .next folder (required for static + server)
           cp -r .next deploy/.next
-          cp -r .next/standalone deploy/standalone
+
+          # Copy public assets
           cp -r public deploy/public || true
+
+          # Copy package files
           cp package.json deploy/
           cp package-lock.json deploy/
 
           echo "📦 Final deploy folder:"
           ls -R deploy
+
 
       - uses: actions/upload-artifact@v4
         with:
