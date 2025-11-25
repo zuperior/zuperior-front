@@ -26,15 +26,15 @@ jobs:
       - name: Build Next.js
         run: npm run build
 
-      - name: Prepare standalone deployment bundle
+      - name: Prepare standalone build for deployment
         run: |
           mkdir deploy
           cp -r .next/standalone deploy/
-          cp -r public deploy/public || true
-          mkdir -p deploy/.next
           cp -r .next/static deploy/.next/static || true
+          cp -r public deploy/public || true
           cp package.json deploy/package.json
           cp package-lock.json deploy/package-lock.json
+
 
       - uses: actions/upload-artifact@v4
         with:
