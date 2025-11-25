@@ -1,81 +1,54 @@
-name: Build and deploy Next.js app to Azure Web App - zuperior-dashboard-app
+name: Deploy Next.js to Azure App Service
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - name: ⬇️ Checkout repository
+        uses: actions/checkout@v3
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: 🟢 Setup Node
+        uses: actions/setup-node@v3
         with:
-          node-version: '20.x'
+          node-version: 20
 
-      - name: Install dependencies
+      - name: 📦 Install dependencies
         run: npm ci
 
-      - name: Build Next.js (standalone)
+      - name: 🛠 Build Next.js (standalone)
         run: npm run build
 
-      - name: Prepare deployment bundle
+      - name: 📂 Prepare deployment bundle
         run: |
-          mkdir -p deploy
-          mkdir -p deploy/.next        # <-- critical
+          rm -rf deploy
+          mkdir deploy
 
+          # standalone server + node_modules
           cp -r .next/standalone deploy/
+
+          # static assets this is why Azure crashed earlier
+          mkdir -p deploy/.next
           cp -r .next/static deploy/.next/static
-          cp -r .next deploy/.next     # full .next build copy
 
+          # public assets
           cp -r public deploy/public || true
+
+          # package.json to allow Azure to install env/runtime support
           cp package.json deploy/
           cp package-lock.json deploy/
 
-          
+          echo "📦 Final build structure:"
+          ls -R deploy
 
-          # copy public assets
-          cp -r public deploy/public
-
-          # copy manifest files
-          cp package.json deploy/
-          cp package-lock.json deploy/
-
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: build-artifact
-          path: deploy
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    permissions:
-      id-token: write
-      contents: read
-
-    steps:
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifact
-
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_E8BEC1FE58D04DD3B72C4C8C53741BBB }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_ADDB0E8630A7406D89986D8D064AE85C }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_88DE3DA4B81C4546BB3AAA0B104106FF }}
-
-      - name: Deploy to Azure Web App
+      - name: 🚀 Deploy to Azure
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'zuperior-dashboard-app'
-          package: .
+          app-name: YOUR_AZURE_APP_NAME
+          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
+          package: deploy
