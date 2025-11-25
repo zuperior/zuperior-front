@@ -26,12 +26,12 @@ jobs:
       - name: Build Next.js
         run: npm run build
 
-      - name: Prepare standalone build for deployment
+      - name: Build Next.js and prepare deployment bundle
         run: |
+          npm ci
           npm run build
-          mkdir -p deploy/.next
-          cp -r .next/standalone deploy/.next/standalone
-          cp -r .next/static deploy/.next/static || true
+          mkdir -p deploy
+          cp -r .next deploy/.next
           cp -r public deploy/public || true
           cp package.json deploy/package.json
           cp package-lock.json deploy/package-lock.json
