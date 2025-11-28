@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
+      cache: 'no-store',
     });
 
     if (!response.ok) {
@@ -34,7 +35,13 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json();
-    return NextResponse.json(data);
+    return NextResponse.json(data, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
+    });
 
   } catch (error) {
     console.error('Error fetching KYC status:', error);

@@ -43,7 +43,8 @@ export function KYCStatusDisplay() {
       const response = await fetch('/api/kyc/status', {
         headers: {
           'Authorization': `Bearer ${token}`
-        }
+        },
+        cache: 'no-store'
       });
 
       const data: KYCStatusResponse = await response.json();
@@ -133,12 +134,12 @@ export function KYCStatusDisplay() {
   // Check if user can upload address (document must be pending or verified)
   const canUploadAddress = () => {
     if (!kycData) return false;
-    
+
     // Can upload address if:
     // 1. Document is verified, OR
     // 2. Document verification is pending (submitted)
-    return (kycData.isDocumentVerified || kycData.documentSubmittedAt !== null) && 
-           !kycData.isAddressVerified;
+    return (kycData.isDocumentVerified || kycData.documentSubmittedAt !== null) &&
+      !kycData.isAddressVerified;
   };
 
   if (loading) {
@@ -204,10 +205,10 @@ export function KYCStatusDisplay() {
             <div>
               <div className="font-medium">Identity Document</div>
               <div className="text-sm text-gray-500">
-                {kycData.isDocumentVerified 
-                  ? 'Verified' 
-                  : kycData.documentSubmittedAt 
-                    ? 'Pending verification' 
+                {kycData.isDocumentVerified
+                  ? 'Verified'
+                  : kycData.documentSubmittedAt
+                    ? 'Pending verification'
                     : 'Not submitted'}
               </div>
             </div>
@@ -233,19 +234,18 @@ export function KYCStatusDisplay() {
         </div>
 
         {/* Address Verification Status */}
-        <div className={`flex items-center justify-between p-3 rounded-lg ${
-          canUploadAddress() ? 'bg-gray-50' : 'bg-gray-100 opacity-60'
-        }`}>
+        <div className={`flex items-center justify-between p-3 rounded-lg ${canUploadAddress() ? 'bg-gray-50' : 'bg-gray-100 opacity-60'
+          }`}>
           <div className="flex items-center gap-3">
             <Home className="h-5 w-5 text-gray-600" />
             <div>
               <div className="font-medium">Address Proof</div>
               <div className="text-sm text-gray-500">
-                {kycData.isAddressVerified 
-                  ? 'Verified' 
-                  : kycData.addressSubmittedAt 
-                    ? 'Pending verification' 
-                    : !canUploadAddress() 
+                {kycData.isAddressVerified
+                  ? 'Verified'
+                  : kycData.addressSubmittedAt
+                    ? 'Pending verification'
+                    : !canUploadAddress()
                       ? 'Complete document verification first'
                       : 'Not submitted'}
               </div>
@@ -293,20 +293,20 @@ export function KYCStatusDisplay() {
 
         {/* Success Message (only when fully verified) */}
         {kycData.verificationStatus === 'Verified' &&
-         kycData.isDocumentVerified &&
-         kycData.isAddressVerified && (
-          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
-              <div>
-                <div className="font-semibold text-green-700">Verification Complete!</div>
-                <div className="text-sm text-green-600 mt-1">
-                  Your account is fully verified and ready to use all features.
+          kycData.isDocumentVerified &&
+          kycData.isAddressVerified && (
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
+                <div>
+                  <div className="font-semibold text-green-700">Verification Complete!</div>
+                  <div className="text-sm text-green-600 mt-1">
+                    Your account is fully verified and ready to use all features.
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* Upload Instructions */}
         {!kycData.isDocumentVerified || !kycData.isAddressVerified ? (

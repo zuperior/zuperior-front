@@ -96,7 +96,7 @@ export async function updateAddressStatus(data: {
 export async function getKycStatus(): Promise<KycStatusResponse> {
   try {
     console.log('🔍 Fetching KYC status...');
-    const response = await kycApi.get<KycStatusResponse>('/api/kyc/status');
+    const response = await kycApi.get<KycStatusResponse>(`/api/kyc/status?t=${Date.now()}`);
     console.log('✅ KYC status fetched:', {
       isDocumentVerified: response.data.data?.isDocumentVerified,
       isAddressVerified: response.data.data?.isAddressVerified,
@@ -106,7 +106,7 @@ export async function getKycStatus(): Promise<KycStatusResponse> {
   } catch (error: any) {
     // If no KYC record exists (404) or any other error, return default KYC state
     console.log("ℹ️ No KYC record found or error fetching KYC status, returning defaults");
-    
+
     // Return a valid response structure with default values
     return {
       success: true,
@@ -139,13 +139,13 @@ export async function checkShuftiStatus(reference: string) {
     return response.data;
   } catch (error: any) {
     const errorData = error?.response?.data;
-    
+
     // Check if it's an invalid reference error
-    const isInvalidReference = 
+    const isInvalidReference =
       errorData?.error?.key === 'reference' ||
       errorData?.error?.message?.includes('invalid') ||
       errorData?.event === 'request.invalid';
-    
+
     if (isInvalidReference) {
       console.error("❌ Invalid Shufti reference:", {
         reference,
@@ -155,7 +155,7 @@ export async function checkShuftiStatus(reference: string) {
     } else {
       console.error("❌ Error checking Shufti status:", errorData || error.message);
     }
-    
+
     throw error;
   }
 }

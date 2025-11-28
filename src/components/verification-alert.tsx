@@ -73,7 +73,7 @@ export default function VerificationAlert({
         </div>
 
         {/* Buttons */}
-        <div className="flex justify-center sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 z-10">
+        <div className="flex justify-center sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 z-20 relative">
           <button
             className="text-black/50 dark:text-white/50 cursor-pointer text-xs leading-[14px] font-semibold py-2 px-[15px] border border-[#9F8BCF]/25 rounded-[10px] bg-transparent w-[120px] sm:w-auto"
             onClick={() => setLearnMoreOpen(true)}
