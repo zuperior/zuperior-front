@@ -28,10 +28,10 @@ export function DashboardContent() {
   const userData = getUserData();
   const name = userData?.name || "User";
   const [newAccountDialogOpen, setNewAccountDialogOpen] = useState(false);
-  
+
   // Get verification status from Redux state
   const verificationStatus = useAppSelector((state) => state.kyc.verificationStatus);
-  
+
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const { fetchAllData, balance: totalBalance, isLoading, hasData, isAuthenticated } = useFetchUserData();
 
@@ -41,17 +41,27 @@ export function DashboardContent() {
 
     fetchAllData();
 
-    intervalRef.current = setInterval(() => {
-      // Use the optimized backend endpoint that fetches all balances in parallel
-      if (isAuthenticated) {
-        console.log('🔄 Refreshing all account balances...');
-        // This will be handled by the backend's getUserAccountsWithBalance endpoint
-        fetchAllData();
+    let timeoutId: NodeJS.Timeout;
+    let isMounted = true;
+
+    const poll = async () => {
+      if (!isMounted) return;
+
+      // Fetch data and wait for it to complete
+      await fetchAllData();
+
+      // Schedule next poll only after previous one completes
+      if (isMounted) {
+        timeoutId = setTimeout(poll, 500);
       }
-    }, 10000); // 10 seconds
+    };
+
+    // Start polling
+    poll();
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      isMounted = false;
+      clearTimeout(timeoutId);
     };
   }, [fetchAllData, isAuthenticated]);
 
@@ -70,7 +80,7 @@ export function DashboardContent() {
   // Handle new account dialog close with data refresh
   const handleNewAccountDialogClose = useCallback((open: boolean) => {
     setNewAccountDialogOpen(open);
-    
+
     // When dialog closes (open = false), force refresh MT5 accounts to show newly created account
     if (!open) {
       console.log("🔄 Dialog closed after account creation - forcing data refresh...");

@@ -10,32 +10,59 @@ export function useFetchUserData() {
     (state: RootState) => state.mt5
   );
   const hasData = accounts.length > 0;
+
+  // Use refs to access latest values in useCallback without adding them to dependencies
+  const accountsRef = useRef(accounts);
+  const ownerClientIdRef = useRef(ownerClientId);
+
+  // Update refs on render
+  useEffect(() => {
+    accountsRef.current = accounts;
+    ownerClientIdRef.current = ownerClientId;
+  }, [accounts, ownerClientId]);
+
   const isAuthenticated = authService.isAuthenticated();
+  const isAuthenticatedRef = useRef(isAuthenticated);
+  useEffect(() => {
+    isAuthenticatedRef.current = isAuthenticated;
+  }, [isAuthenticated]);
 
   // Guard to prevent double fetch on first mount (React 18 StrictMode in dev)
   const hasFetchedRef = useRef(false);
+  // Guard to prevent overlapping polling requests
+  const isPollingRef = useRef(false);
 
   const fetchAllData = useCallback(async (forceRefresh = false) => {
-    if (!isAuthenticated) {
+    const isAuth = isAuthenticatedRef.current;
+    if (!isAuth) {
       console.log("User not authenticated, skipping MT5 data fetch");
       return;
     }
 
     // If persisted state belongs to another user, clear it first
     const currentClientId = authService.getAuthData().clientId || null;
-    if (currentClientId !== ownerClientId) {
+    if (currentClientId !== ownerClientIdRef.current) {
       console.log("🔄 Detected client change. Resetting MT5 state cache.");
       dispatch(resetForNewClient(currentClientId));
     }
 
     // Allow force refresh after account creation
     if (hasFetchedRef.current && !forceRefresh) {
+      // Prevent overlapping polling requests
+      if (isPollingRef.current) {
+        // console.log('⏳ Skipping balance refresh - previous request still in progress');
+        return Promise.resolve();
+      }
+
       // For 10-second polling, only fetch balances, not full account data
-      console.log('🔄 Quick balance refresh...');
+      // console.log('🔄 Quick balance refresh...');
+      isPollingRef.current = true;
       try {
         await dispatch(fetchAllAccountsWithBalance() as any);
       } catch (e: any) {
         console.warn('⚠️ Quick balance refresh failed:', e?.message);
+      } finally {
+        isPollingRef.current = false;
       }
       return;
     }
@@ -57,7 +84,8 @@ export function useFetchUserData() {
 
       // Refresh balances from MT5 getClientProfile every 10 seconds
       try {
-        const ids = (accounts || []).map(a => a.accountId).filter(Boolean);
+        const currentAccounts = accountsRef.current || [];
+        const ids = currentAccounts.map(a => a.accountId).filter(Boolean);
         const ensureIdsRaw = ids.length ? ids : (
           (await mt5Service.getUserMt5AccountsFromDb())?.data?.accounts?.map((a: any) => a.accountId) ?? []
         );
@@ -69,11 +97,17 @@ export function useFetchUserData() {
         ));
         // Fetch fresh balances using optimized endpoint with cache busting
         console.log('🔄 Fetching FRESH balances for all accounts with cache bust...');
-        await dispatch(fetchAllAccountsWithBalance() as any).catch((e: any) => {
-          console.warn('⚠️ Failed to refresh balances:', e?.message || 'Unknown error');
-        });
+
+        if (!isPollingRef.current) {
+          isPollingRef.current = true;
+          await dispatch(fetchAllAccountsWithBalance() as any).catch((e: any) => {
+            console.warn('⚠️ Failed to refresh balances:', e?.message || 'Unknown error');
+          });
+          isPollingRef.current = false;
+        }
       } catch (balErr) {
         console.warn("⚠️ Failed to refresh balances:", balErr);
+        isPollingRef.current = false;
       }
       hasFetchedRef.current = true;
     } catch (err: any) {
@@ -82,16 +116,7 @@ export function useFetchUserData() {
       console.error("❌ fetchAllData error:", err);
       throw err;
     }
-  }, [dispatch, isAuthenticated]);
-
-  // Auto-fetch on mount only if authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchAllData();
-    } else {
-      console.log("User not authenticated, waiting for login");
-    }
-  }, [fetchAllData, isAuthenticated]);
+  }, [dispatch]); // Removed isAuthenticated from deps to ensure stability
 
   return {
     fetchAllData,

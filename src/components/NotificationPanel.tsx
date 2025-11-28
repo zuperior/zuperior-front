@@ -1,5 +1,7 @@
 "use client";
 
+import { useRef, useEffect } from "react";
+
 import { Bell, X } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import {
@@ -23,6 +25,24 @@ export function NotificationPanel() {
     deleteNotification,
   } = useNotifications();
 
+  const prevUnreadCountRef = useRef(unreadCount);
+
+  // Sound effect for new notifications
+  useEffect(() => {
+    if (unreadCount > prevUnreadCountRef.current) {
+      // Play sound
+      const audio = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"); // Short beep placeholder
+      // Better sound: "data:audio/mp3;base64,..." - I will use a simple beep for now or try to find a better one if user provided assets.
+      // Since I don't have assets, I'll use a standard notification sound URL or a generated one.
+      // Let's use a simple beep for now.
+      // Actually, a better beep:
+      const beep = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+      beep.volume = 0.5;
+      beep.play().catch(e => console.log("Audio play failed (user interaction needed first):", e));
+    }
+    prevUnreadCountRef.current = unreadCount;
+  }, [unreadCount]);
+
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case "deposit":
@@ -37,6 +57,12 @@ export function NotificationPanel() {
         return "⚙️";
       case "support_ticket_reply":
         return "💬";
+      case "kyc_verified":
+        return "🎉";
+      case "kyc_rejected":
+        return "⚠️";
+      case "kyc_update":
+        return "ℹ️";
       default:
         return "🔔";
     }
@@ -74,19 +100,23 @@ export function NotificationPanel() {
           <h3 className="text-sm font-semibold text-black dark:text-white">
             Notifications
           </h3>
-          {unreadCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs h-7 px-2 text-purple-500 hover:text-purple-600 dark:hover:bg-white/5"
-              onClick={async (e) => {
-                e.preventDefault();
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={unreadCount === 0}
+            className={`text-xs h-7 px-2 ${unreadCount === 0
+              ? "text-gray-400 cursor-not-allowed"
+              : "text-purple-500 hover:text-purple-600 dark:hover:bg-white/5"
+              }`}
+            onClick={async (e) => {
+              e.preventDefault();
+              if (unreadCount > 0) {
                 await markAllAsRead();
-              }}
-            >
-              Mark all as read
-            </Button>
-          )}
+              }
+            }}
+          >
+            Mark all as read
+          </Button>
         </div>
 
         {loading && notifications.length === 0 ? (
@@ -102,11 +132,10 @@ export function NotificationPanel() {
             {notifications.map((notification) => (
               <div
                 key={notification.id}
-                className={`px-4 py-3 hover:bg-black/5 dark:hover:bg-white/5 transition-colors ${
-                  !notification.isRead
-                    ? "bg-purple-500/5 dark:bg-purple-500/10"
-                    : ""
-                }`}
+                className={`px-4 py-3 hover:bg-black/5 dark:hover:bg-white/5 transition-colors ${!notification.isRead
+                  ? "bg-purple-500/5 dark:bg-purple-500/10"
+                  : ""
+                  }`}
               >
                 <div className="flex items-start gap-3">
                   <div className="text-2xl flex-shrink-0 mt-0.5">
@@ -116,9 +145,8 @@ export function NotificationPanel() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <p
-                          className={`text-sm font-semibold text-black dark:text-white ${
-                            !notification.isRead ? "font-bold" : ""
-                          }`}
+                          className={`text-sm font-semibold text-black dark:text-white ${!notification.isRead ? "font-bold" : ""
+                            }`}
                         >
                           {notification.title}
                         </p>

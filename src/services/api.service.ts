@@ -74,7 +74,7 @@ const refreshToken = async (): Promise<string | null> => {
 
   try {
     const currentToken = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
-    
+
     if (!currentToken) {
       throw new Error('No token available');
     }
@@ -104,7 +104,7 @@ const refreshToken = async (): Promise<string | null> => {
         }
         throw new Error('Session expired');
       }
-      
+
       // If endpoint doesn't exist (404) or network error, continue with current token
       // This allows the system to work even if the session check endpoint isn't available
       if (sessionError.response?.status === 404) {
@@ -112,7 +112,7 @@ const refreshToken = async (): Promise<string | null> => {
         processQueue(null, currentToken);
         return currentToken;
       }
-      
+
       // For other errors (network, timeout, etc.), continue with current token
       // This prevents unnecessary redirects on temporary network issues
       if (!sessionError.response || sessionError.code === 'ECONNABORTED') {
@@ -121,7 +121,7 @@ const refreshToken = async (): Promise<string | null> => {
         return currentToken;
       }
     }
-    
+
     // If we get here, session might still be valid, return current token
     processQueue(null, currentToken);
     return currentToken;
@@ -161,7 +161,10 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     // If error is 401 and we haven't tried to refresh yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // CRITICAL: Skip refresh/redirect for login endpoints to allow form to handle "Invalid credentials"
+    const isLoginRequest = originalRequest.url?.includes('/login') || originalRequest.url?.includes('/auth/login');
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isLoginRequest) {
       originalRequest._retry = true;
 
       try {
@@ -181,12 +184,12 @@ api.interceptors.response.use(
     if (error.response?.status === 503 && originalRequest) {
       const currentCount = (originalRequest._retry503Count || 0);
       const maxRetries = 2;
-      
+
       if (currentCount < maxRetries) {
         originalRequest._retry503Count = currentCount + 1;
         // Exponential backoff: 500ms, 1000ms
         const delay = originalRequest._retry503Count * 500;
-        
+
         return new Promise((resolve) => {
           setTimeout(() => {
             // Update token in request (might have changed)
@@ -201,14 +204,14 @@ api.interceptors.response.use(
     }
 
     // Handle timeout errors - retry with exponential backoff
-    if ((error.code === 'ECONNABORTED' || error.message?.includes('timeout')) && 
-        originalRequest && 
-        !originalRequest._retry && 
-        !originalRequest._retryCount) {
-      
+    if ((error.code === 'ECONNABORTED' || error.message?.includes('timeout')) &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !originalRequest._retryCount) {
+
       originalRequest._retryCount = (originalRequest._retryCount || 0) + 1;
       const maxRetries = 2;
-      
+
       if (originalRequest._retryCount <= maxRetries) {
         // Exponential backoff: 1s, 2s
         const delay = originalRequest._retryCount * 1000;
@@ -305,7 +308,7 @@ const authService = {
   logout: async () => {
     // Clear all client-side storage first
     authService.clearAuthData();
-    
+
     // Call server logout endpoint to clear server-side cookies
     try {
       const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
@@ -318,7 +321,7 @@ const authService = {
     } catch (e) {
       // Ignore errors - client-side cleanup is done
     }
-    
+
     if (typeof window !== 'undefined') window.location.href = '/login';
   },
 
@@ -407,7 +410,7 @@ const mt5Service = {
     opts?: { signal?: AbortSignal }
   ) => {
     console.log("🚀 API Service - Creating MT5 account with data:", accountData);
-    
+
     const payload = {
       name: accountData.name,
       group: accountData.group,
@@ -428,7 +431,7 @@ const mt5Service = {
       signal: opts?.signal,
       timeout: 90000, // 90 seconds timeout - MT5 account creation can take time
     });
-    
+
     return response; // Returns full response from Next.js API route
   },
 
@@ -459,7 +462,7 @@ const mt5Service = {
       opts?.signal
     );
   },
-  
+
   /** Legacy alias for backward compatibility */
   getUserMt5AccountsFromDb: async (opts?: { signal?: AbortSignal }) => {
     return mt5Service.getUserAccountsFromDb(opts);
@@ -471,26 +474,26 @@ const mt5Service = {
    */
   getMt5AccountProfile: async (login: string | number, opts?: { signal?: AbortSignal; forceRefresh?: boolean }) => {
     const key = `mt5-profile:${login}`;
-    
+
     // If forceRefresh is true, clear the cache first and don't use singleFlight
     if (opts?.forceRefresh && inFlight[key]) {
       inFlight[key].controller.abort();
       delete inFlight[key];
     }
-    
+
     // If forceRefresh, bypass singleFlight entirely for fresh data
     if (opts?.forceRefresh) {
-      const r = await api.get(`/api/mt5/user-profile/${login}`, { 
+      const r = await api.get(`/api/mt5/user-profile/${login}`, {
         signal: opts?.signal,
         // Add cache busting query param
         params: { _t: Date.now() }
       });
       return normalizeOk(r.data);
     }
-    
+
     // Otherwise use singleFlight to prevent duplicate requests
     return singleFlight(key, async (signal) => {
-      const r = await api.get(`/api/mt5/user-profile/${login}`, { 
+      const r = await api.get(`/api/mt5/user-profile/${login}`, {
         signal: opts?.signal ?? signal,
         // Add cache busting to prevent browser/backend caching
         params: { _t: Date.now() }
@@ -506,16 +509,16 @@ const mt5Service = {
     // Each request gets a unique timestamp to prevent any caching
     const cacheBuster = Date.now() + Math.random(); // Add random to ensure uniqueness
     console.log(`[API] 🚀 Fetching fresh account balances (no cache, no singleFlight, cache-bust: ${cacheBuster})`);
-    
+
     // Use AbortController with short timeout to prevent hanging requests
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second max timeout
-    
+
     try {
-      const r = await api.get('/api/mt5/accounts-with-balance', { 
+      const r = await api.get('/api/mt5/accounts-with-balance', {
         signal: opts?.signal ?? controller.signal,
         // Aggressive cache busting - unique timestamp for each request
-        params: { 
+        params: {
           _t: cacheBuster,
           _nocache: cacheBuster,
           _fresh: cacheBuster,
@@ -529,9 +532,9 @@ const mt5Service = {
         },
         timeout: 10000 // 10 second timeout per request
       });
-      
+
       clearTimeout(timeoutId);
-      
+
       const result = normalizeOk(r.data);
       console.log(`[API] 📥 Received balances (${Date.now()}):`, {
         accountCount: result.data?.accounts?.length || 0,
@@ -540,7 +543,7 @@ const mt5Service = {
           balance: acc.balance
         })) || []
       });
-      
+
       return result;
     } catch (error: any) {
       clearTimeout(timeoutId);
@@ -570,11 +573,11 @@ const mt5Service = {
           signal: opts?.signal,
           timeout: 60000, // 60 seconds timeout
         });
-        
+
         return normalizeOk(response.data);
       } catch (error: any) {
         lastError = error;
-        
+
         // If it's a timeout and we haven't exceeded max retries
         if ((error.code === 'ECONNABORTED' || error.message?.includes('timeout')) && attempt < maxRetries) {
           console.log(`⏱️ Timeout error for account ${accountId}, retrying (attempt ${attempt + 1}/${maxRetries})`);
@@ -620,9 +623,9 @@ const mt5Service = {
           signal: opts?.signal,
           timeout: 60000
         });
-        
+
         const normalized = normalizeOk(response.data);
-        
+
         if (normalized.success && normalized.data) {
           const d: any = normalized.data;
           return {
@@ -633,11 +636,11 @@ const mt5Service = {
             }
           };
         }
-        
+
         return { success: false, data: { Balance: 0, Profit: 0 } };
       } catch (error: any) {
         lastError = error;
-        
+
         // Handle 503 Service Unavailable errors with retry
         if (error.response?.status === 503 && attempt < maxRetries) {
           // Exponential backoff: 500ms, 1000ms
@@ -894,10 +897,10 @@ const userService = {
     const params = new URLSearchParams();
     if (page) params.append('page', page.toString());
     if (limit) params.append('limit', limit.toString());
-    
+
     const queryString = params.toString();
     const url = `/api/user/login-activity${queryString ? `?${queryString}` : ''}`;
-    
+
     return singleFlight('user-login-activity', (signal) =>
       api.get(url, { signal: opts?.signal ?? signal }).then(r => normalizeOk(r.data)),
       opts?.signal
@@ -907,7 +910,7 @@ const userService = {
   /** Get active sessions (currently logged in devices) */
   getActiveSessions: async (opts?: { signal?: AbortSignal }) => {
     const url = `/api/user/active-sessions`;
-    
+
     return singleFlight('user-active-sessions', (signal) =>
       api.get(url, { signal: opts?.signal ?? signal }).then(r => normalizeOk(r.data)),
       opts?.signal
@@ -917,7 +920,7 @@ const userService = {
   /** Logout from all devices */
   logoutAllDevices: async (opts?: { signal?: AbortSignal }) => {
     const url = `/api/user/logout-all-devices`;
-    
+
     return singleFlight('user-logout-all-devices', (signal) =>
       api.post(url, {}, { signal: opts?.signal ?? signal }).then(r => normalizeOk(r.data)),
       opts?.signal
@@ -934,7 +937,7 @@ const adminService = {
     const params = new URLSearchParams();
     if (opts?.search) params.append('search', opts.search);
     if (opts?.limit) params.append('limit', opts.limit.toString());
-    
+
     const response = await api.get(`/api/admin/users?${params.toString()}`, { signal: opts?.signal });
     return response.data;
   },
@@ -962,7 +965,7 @@ const groupManagementService = {
     try {
       // Get token for authentication
       const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
-      
+
       const response = await fetch(backendUrl, {
         method: 'GET',
         headers: {
