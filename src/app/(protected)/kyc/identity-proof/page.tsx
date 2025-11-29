@@ -14,7 +14,7 @@ import { AMLResponse, DocumentKYCResponse } from "@/types/kyc";
 import { amlVerification } from "@/services/amlVerification";
 import { useAppDispatch } from "@/store/hooks";
 import { setDocumentVerified } from "@/store/slices/kycSlice";
-import { createKycRecord, updateDocumentStatus, checkShuftiStatus, clearKycCache } from "@/services/kycService";
+import { createKycRecord, updateDocumentStatus, checkShuftiStatus, clearKycCache, getKycStatus } from "@/services/kycService";
 import { useEffect } from "react";
 
 /* interface VerificationResult {
@@ -48,7 +48,7 @@ export default function VerifyPage() {
   const [pendingReference, setPendingReference] = useState<string>("");
   const dispatch = useAppDispatch();
 
-  // Create KYC record on component mount
+  // Create KYC record and check actual status on component mount
   useEffect(() => {
     const initKyc = async () => {
       try {
@@ -60,9 +60,42 @@ export default function VerifyPage() {
         console.log("⚠️ KYC initialization issue:", error);
         // Don't show error to user - this is not critical
       }
+
+      // Check actual KYC status from database
+      try {
+        const kycStatus = await getKycStatus(true); // Force refresh
+        if (kycStatus.success && kycStatus.data) {
+          const data = kycStatus.data;
+          
+          // Update verification status based on actual database state
+          if (data.isDocumentVerified && data.verificationStatus === 'Verified') {
+            setVerificationStatus("verified");
+            dispatch(setDocumentVerified(true));
+          } else if (data.verificationStatus === 'Declined') {
+            setVerificationStatus("declined");
+            if (data.rejectionReason) {
+              setDeclinedReason(data.rejectionReason);
+            }
+          } else if (data.documentSubmittedAt && !data.isDocumentVerified) {
+            // Document is submitted but not yet verified - set to pending
+            setVerificationStatus("pending");
+            if (data.documentReference) {
+              setPendingReference(data.documentReference);
+            }
+          }
+          
+          console.log("📊 Loaded KYC status from database:", {
+            isDocumentVerified: data.isDocumentVerified,
+            verificationStatus: data.verificationStatus,
+            documentSubmittedAt: data.documentSubmittedAt
+          });
+        }
+      } catch (error) {
+        console.error("⚠️ Failed to load KYC status:", error);
+      }
     };
     initKyc();
-  }, []);
+  }, [dispatch]);
 
   const nextStep = () => {
     setStep(step + 1);
@@ -71,6 +104,46 @@ export default function VerifyPage() {
   const prevStep = () => {
     setStep(step - 1);
   };
+
+  // Check actual KYC status when on step 3, regardless of local state
+  useEffect(() => {
+    if (step === 3) {
+      const checkStatus = async () => {
+        try {
+          const kycStatus = await getKycStatus(true); // Force refresh
+          if (kycStatus.success && kycStatus.data) {
+            const data = kycStatus.data;
+            
+            // Update verification status based on actual database state
+            if (data.isDocumentVerified && data.verificationStatus === 'Verified') {
+              setVerificationStatus("verified");
+              dispatch(setDocumentVerified(true));
+            } else if (data.verificationStatus === 'Declined') {
+              setVerificationStatus("declined");
+              if (data.rejectionReason) {
+                setDeclinedReason(data.rejectionReason);
+              }
+            } else if (data.documentSubmittedAt && !data.isDocumentVerified && !verificationStatus) {
+              // Document is submitted but not yet verified - set to pending only if not already set
+              setVerificationStatus("pending");
+              if (data.documentReference) {
+                setPendingReference(data.documentReference);
+              }
+            }
+          }
+        } catch (error) {
+          console.error("⚠️ Failed to check KYC status:", error);
+        }
+      };
+      
+      // Check immediately
+      checkStatus();
+      
+      // Then check every 10 seconds while on step 3
+      const interval = setInterval(checkStatus, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [step, dispatch, verificationStatus]);
 
   // Poll Shufti status when AML is pending, to auto-update UI without reload
   useEffect(() => {

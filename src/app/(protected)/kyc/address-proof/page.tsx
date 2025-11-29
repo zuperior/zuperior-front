@@ -12,7 +12,7 @@ import { addressVerification } from "@/services/addressVerification";
 import { AddressKYCResponse } from "@/types/kyc";
 import { setAddressVerified } from "@/store/slices/kycSlice";
 import { useAppDispatch } from "@/store/hooks";
-import { createKycRecord, updateAddressStatus, checkShuftiStatus, clearKycCache } from "@/services/kycService";
+import { createKycRecord, updateAddressStatus, checkShuftiStatus, clearKycCache, getKycStatus } from "@/services/kycService";
 import { useEffect } from "react";
 
 export default function AddressVerificationPage() {
@@ -36,7 +36,7 @@ export default function AddressVerificationPage() {
   const [verificationReference, setVerificationReference] = useState("");
   const dispatch = useAppDispatch();
 
-  // Create KYC record on component mount
+  // Create KYC record and check actual status on component mount
   useEffect(() => {
     const initKyc = async () => {
       try {
@@ -48,9 +48,82 @@ export default function AddressVerificationPage() {
         console.log("⚠️ KYC initialization issue:", error);
         // Don't show error to user - this is not critical
       }
+
+      // Check actual KYC status from database
+      try {
+        const kycStatus = await getKycStatus(true); // Force refresh
+        if (kycStatus.success && kycStatus.data) {
+          const data = kycStatus.data;
+          
+          // Update verification status based on actual database state
+          if (data.isAddressVerified && data.verificationStatus === 'Verified') {
+            setVerificationStatus("verified");
+            dispatch(setAddressVerified(true));
+          } else if (data.verificationStatus === 'Declined') {
+            setVerificationStatus("declined");
+            if (data.rejectionReason) {
+              setDeclinedReason(data.rejectionReason);
+            }
+          } else if (data.addressSubmittedAt && !data.isAddressVerified) {
+            // Address is submitted but not yet verified - set to pending
+            setVerificationStatus("pending");
+            if (data.addressReference) {
+              setVerificationReference(data.addressReference);
+            }
+          }
+          
+          console.log("📊 Loaded KYC status from database:", {
+            isAddressVerified: data.isAddressVerified,
+            verificationStatus: data.verificationStatus,
+            addressSubmittedAt: data.addressSubmittedAt
+          });
+        }
+      } catch (error) {
+        console.error("⚠️ Failed to load KYC status:", error);
+      }
     };
     initKyc();
-  }, []);
+  }, [dispatch]);
+
+  // Check actual KYC status when on step 3, regardless of local state
+  useEffect(() => {
+    if (step === 3) {
+      const checkStatus = async () => {
+        try {
+          const kycStatus = await getKycStatus(true); // Force refresh
+          if (kycStatus.success && kycStatus.data) {
+            const data = kycStatus.data;
+            
+            // Update verification status based on actual database state
+            if (data.isAddressVerified && data.verificationStatus === 'Verified') {
+              setVerificationStatus("verified");
+              dispatch(setAddressVerified(true));
+            } else if (data.verificationStatus === 'Declined') {
+              setVerificationStatus("declined");
+              if (data.rejectionReason) {
+                setDeclinedReason(data.rejectionReason);
+              }
+            } else if (data.addressSubmittedAt && !data.isAddressVerified && !verificationStatus) {
+              // Address is submitted but not yet verified - set to pending only if not already set
+              setVerificationStatus("pending");
+              if (data.addressReference) {
+                setVerificationReference(data.addressReference);
+              }
+            }
+          }
+        } catch (error) {
+          console.error("⚠️ Failed to check KYC status:", error);
+        }
+      };
+      
+      // Check immediately
+      checkStatus();
+      
+      // Then check every 10 seconds while on step 3
+      const interval = setInterval(checkStatus, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [step, dispatch, verificationStatus]);
 
   // Poll for verification status when in pending state - Call Shufti API directly
   useEffect(() => {
