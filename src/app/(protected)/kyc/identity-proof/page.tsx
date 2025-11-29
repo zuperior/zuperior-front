@@ -68,9 +68,11 @@ export default function VerifyPage() {
           const data = kycStatus.data;
           
           // Update verification status based on actual database state
-          if (data.isDocumentVerified && data.verificationStatus === 'Verified') {
+          // For identity proof: if document is verified, show success (regardless of address status)
+          if (data.isDocumentVerified) {
             setVerificationStatus("verified");
             dispatch(setDocumentVerified(true));
+            console.log("✅ Document is verified - showing success");
           } else if (data.verificationStatus === 'Declined') {
             setVerificationStatus("declined");
             if (data.rejectionReason) {
@@ -82,6 +84,9 @@ export default function VerifyPage() {
             if (data.documentReference) {
               setPendingReference(data.documentReference);
             }
+          } else if (!data.documentSubmittedAt && !data.isDocumentVerified) {
+            // No document submitted yet - clear status
+            setVerificationStatus("");
           }
           
           console.log("📊 Loaded KYC status from database:", {
@@ -115,20 +120,27 @@ export default function VerifyPage() {
             const data = kycStatus.data;
             
             // Update verification status based on actual database state
-            if (data.isDocumentVerified && data.verificationStatus === 'Verified') {
+            // For identity proof: if document is verified, show success (regardless of address status)
+            if (data.isDocumentVerified) {
               setVerificationStatus("verified");
               dispatch(setDocumentVerified(true));
+              console.log("✅ Document is verified - showing success");
+              return; // Stop checking if already verified
             } else if (data.verificationStatus === 'Declined') {
               setVerificationStatus("declined");
               if (data.rejectionReason) {
                 setDeclinedReason(data.rejectionReason);
               }
-            } else if (data.documentSubmittedAt && !data.isDocumentVerified && !verificationStatus) {
-              // Document is submitted but not yet verified - set to pending only if not already set
+              return; // Stop checking if declined
+            } else if (data.documentSubmittedAt && !data.isDocumentVerified) {
+              // Document is submitted but not yet verified - set to pending
               setVerificationStatus("pending");
               if (data.documentReference) {
                 setPendingReference(data.documentReference);
               }
+            } else if (!data.documentSubmittedAt && !data.isDocumentVerified) {
+              // No document submitted yet - clear status
+              setVerificationStatus("");
             }
           }
         } catch (error) {
@@ -140,10 +152,13 @@ export default function VerifyPage() {
       checkStatus();
       
       // Then check every 10 seconds while on step 3
-      const interval = setInterval(checkStatus, 10000);
+      // The checkStatus function will stop updating if already verified/declined
+      const interval = setInterval(() => {
+        checkStatus();
+      }, 10000);
       return () => clearInterval(interval);
     }
-  }, [step, dispatch, verificationStatus]);
+  }, [step, dispatch]);
 
   // Poll Shufti status when AML is pending, to auto-update UI without reload
   useEffect(() => {

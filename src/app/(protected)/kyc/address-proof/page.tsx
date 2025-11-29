@@ -56,9 +56,11 @@ export default function AddressVerificationPage() {
           const data = kycStatus.data;
           
           // Update verification status based on actual database state
-          if (data.isAddressVerified && data.verificationStatus === 'Verified') {
+          // For address proof: if address is verified, show success
+          if (data.isAddressVerified) {
             setVerificationStatus("verified");
             dispatch(setAddressVerified(true));
+            console.log("✅ Address is verified - showing success");
           } else if (data.verificationStatus === 'Declined') {
             setVerificationStatus("declined");
             if (data.rejectionReason) {
@@ -70,6 +72,9 @@ export default function AddressVerificationPage() {
             if (data.addressReference) {
               setVerificationReference(data.addressReference);
             }
+          } else if (!data.addressSubmittedAt && !data.isAddressVerified) {
+            // No address submitted yet - clear status
+            setVerificationStatus("");
           }
           
           console.log("📊 Loaded KYC status from database:", {
@@ -95,20 +100,27 @@ export default function AddressVerificationPage() {
             const data = kycStatus.data;
             
             // Update verification status based on actual database state
-            if (data.isAddressVerified && data.verificationStatus === 'Verified') {
+            // For address proof: if address is verified, show success
+            if (data.isAddressVerified) {
               setVerificationStatus("verified");
               dispatch(setAddressVerified(true));
+              console.log("✅ Address is verified - showing success");
+              return; // Stop checking if already verified
             } else if (data.verificationStatus === 'Declined') {
               setVerificationStatus("declined");
               if (data.rejectionReason) {
                 setDeclinedReason(data.rejectionReason);
               }
-            } else if (data.addressSubmittedAt && !data.isAddressVerified && !verificationStatus) {
-              // Address is submitted but not yet verified - set to pending only if not already set
+              return; // Stop checking if declined
+            } else if (data.addressSubmittedAt && !data.isAddressVerified) {
+              // Address is submitted but not yet verified - set to pending
               setVerificationStatus("pending");
               if (data.addressReference) {
                 setVerificationReference(data.addressReference);
               }
+            } else if (!data.addressSubmittedAt && !data.isAddressVerified) {
+              // No address submitted yet - clear status
+              setVerificationStatus("");
             }
           }
         } catch (error) {
@@ -120,10 +132,13 @@ export default function AddressVerificationPage() {
       checkStatus();
       
       // Then check every 10 seconds while on step 3
-      const interval = setInterval(checkStatus, 10000);
+      // The checkStatus function will stop updating if already verified/declined
+      const interval = setInterval(() => {
+        checkStatus();
+      }, 10000);
       return () => clearInterval(interval);
     }
-  }, [step, dispatch, verificationStatus]);
+  }, [step, dispatch]);
 
   // Poll for verification status when in pending state - Call Shufti API directly
   useEffect(() => {
