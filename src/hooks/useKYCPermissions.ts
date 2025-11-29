@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getKycStatus, getLocalKycStatus } from '@/services/kycService';
 
 interface KYCData {
   isDocumentVerified: boolean;
@@ -25,28 +26,20 @@ interface KYCPermissions {
  * - Can upload address: When document is pending OR verified (but address not verified)
  */
 export function useKYCPermissions(): KYCPermissions {
-  const [kycData, setKycData] = useState<KYCData | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Initialize with cached data if available
+  const [kycData, setKycData] = useState<KYCData | null>(() => {
+    const cached = getLocalKycStatus();
+    return cached?.data || null;
+  });
+  const [loading, setLoading] = useState(!kycData);
 
   useEffect(() => {
     const fetchKYCStatus = async () => {
       try {
-        const token = localStorage.getItem('userToken');
-        if (!token) {
-          setLoading(false);
-          return;
-        }
+        const response = await getKycStatus();
 
-        const response = await fetch('/api/kyc/status', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        const data = await response.json();
-
-        if (data.success && data.data) {
-          setKycData(data.data);
+        if (response.success && response.data) {
+          setKycData(response.data);
         }
       } catch (error) {
         console.error('Error fetching KYC status:', error);
@@ -66,7 +59,7 @@ export function useKYCPermissions(): KYCPermissions {
   // Determine document status
   const getDocumentStatus = (): KYCPermissions['documentStatus'] => {
     if (!kycData) return 'not-submitted';
-    
+
     if (kycData.isDocumentVerified) return 'verified';
     if (kycData.verificationStatus === 'Declined') return 'declined';
     if (kycData.documentSubmittedAt) return 'pending';
@@ -76,53 +69,53 @@ export function useKYCPermissions(): KYCPermissions {
   // Determine address status
   const getAddressStatus = (): KYCPermissions['addressStatus'] => {
     if (!kycData) return 'not-submitted';
-    
+
     if (kycData.isAddressVerified) return 'verified';
     if (kycData.verificationStatus === 'Declined') return 'declined';
     if (kycData.addressSubmittedAt) return 'pending';
-    
+
     // Check if locked (document not submitted or not pending/verified)
     if (!kycData.isDocumentVerified && !kycData.documentSubmittedAt) {
       return 'locked';
     }
-    
+
     return 'not-submitted';
   };
 
   // Check if user can upload document
   const canUploadDocument = (): boolean => {
     if (!kycData) return true; // Allow upload if no data yet
-    
+
     // Can upload if:
     // 1. Not verified yet
     // 2. Not currently pending
     // 3. Not declined (allow reupload if declined)
-    return !kycData.isDocumentVerified && 
-           kycData.verificationStatus !== 'Pending' &&
-           !kycData.documentSubmittedAt;
+    return !kycData.isDocumentVerified &&
+      kycData.verificationStatus !== 'Pending' &&
+      !kycData.documentSubmittedAt;
   };
 
   // Check if user can upload address
   const canUploadAddress = (): boolean => {
     if (!kycData) return false;
-    
+
     // Can upload address if:
     // 1. Document is verified OR document is pending (submitted)
     // 2. Address is not verified yet
     // 3. Address is not currently pending
     const documentOk = kycData.isDocumentVerified || kycData.documentSubmittedAt !== null;
     const addressNotDone = !kycData.isAddressVerified && !kycData.addressSubmittedAt;
-    
+
     return documentOk && addressNotDone;
   };
 
   // Check if fully verified
   const isFullyVerified = (): boolean => {
     if (!kycData) return false;
-    
+
     return kycData.verificationStatus === 'Verified' &&
-           kycData.isDocumentVerified &&
-           kycData.isAddressVerified;
+      kycData.isDocumentVerified &&
+      kycData.isAddressVerified;
   };
 
   return {

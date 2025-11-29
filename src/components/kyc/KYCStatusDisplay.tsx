@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getKycStatus, getLocalKycStatus } from "@/services/kycService";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Clock, XCircle, AlertCircle, FileText, Home } from "lucide-react";
@@ -27,33 +28,23 @@ interface KYCStatusResponse {
 }
 
 export function KYCStatusDisplay() {
-  const [kycData, setKycData] = useState<KYCData | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Initialize with cached data if available
+  const [kycData, setKycData] = useState<KYCData | null>(() => {
+    const cached = getLocalKycStatus();
+    return cached?.data || null;
+  });
+  const [loading, setLoading] = useState(!kycData);
   const [error, setError] = useState<string | null>(null);
 
   const fetchKYCStatus = async () => {
     try {
-      const token = localStorage.getItem('userToken');
-      if (!token) {
-        setError('Authentication required');
-        setLoading(false);
-        return;
-      }
+      const response = await getKycStatus();
 
-      const response = await fetch('/api/kyc/status', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        cache: 'no-store'
-      });
-
-      const data: KYCStatusResponse = await response.json();
-
-      if (data.success && data.data) {
-        setKycData(data.data);
+      if (response.success && response.data) {
+        setKycData(response.data);
         setError(null);
       } else {
-        setError(data.message || 'Failed to fetch KYC status');
+        setError(response.message || 'Failed to fetch KYC status');
       }
     } catch (err) {
       console.error('Error fetching KYC status:', err);

@@ -10,6 +10,8 @@ const kycApi = axios.create({
   timeout: 30000,
 });
 
+const KYC_CACHE_KEY = 'kyc_status_cache';
+
 // Add token interceptor
 kycApi.interceptors.request.use((config) => {
   const token = localStorage.getItem('userToken');
@@ -97,11 +99,22 @@ export async function getKycStatus(): Promise<KycStatusResponse> {
   try {
     console.log('🔍 Fetching KYC status...');
     const response = await kycApi.get<KycStatusResponse>(`/api/kyc/status?t=${Date.now()}`);
-    console.log('✅ KYC status fetched:', {
-      isDocumentVerified: response.data.data?.isDocumentVerified,
-      isAddressVerified: response.data.data?.isAddressVerified,
-      verificationStatus: response.data.data?.verificationStatus
-    });
+
+    if (response.data.success && response.data.data) {
+      console.log('✅ KYC status fetched and cached:', {
+        isDocumentVerified: response.data.data?.isDocumentVerified,
+        isAddressVerified: response.data.data?.isAddressVerified,
+        verificationStatus: response.data.data?.verificationStatus
+      });
+
+      // Cache the successful response
+      try {
+        localStorage.setItem(KYC_CACHE_KEY, JSON.stringify(response.data));
+      } catch (e) {
+        console.warn('Failed to cache KYC status', e);
+      }
+    }
+
     return response.data;
   } catch (error: any) {
     // If no KYC record exists (404) or any other error, return default KYC state
@@ -119,6 +132,19 @@ export async function getKycStatus(): Promise<KycStatusResponse> {
       }
     };
   }
+}
+
+// Get local cached KYC status (synchronous)
+export function getLocalKycStatus(): KycStatusResponse | null {
+  try {
+    const cached = localStorage.getItem(KYC_CACHE_KEY);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+  } catch (e) {
+    console.warn('Failed to parse cached KYC status', e);
+  }
+  return null;
 }
 
 // Refresh KYC status and return updated data
