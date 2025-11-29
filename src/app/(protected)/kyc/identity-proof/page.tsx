@@ -14,7 +14,7 @@ import { AMLResponse, DocumentKYCResponse } from "@/types/kyc";
 import { amlVerification } from "@/services/amlVerification";
 import { useAppDispatch } from "@/store/hooks";
 import { setDocumentVerified } from "@/store/slices/kycSlice";
-import { createKycRecord, updateDocumentStatus, checkShuftiStatus } from "@/services/kycService";
+import { createKycRecord, updateDocumentStatus, checkShuftiStatus, clearKycCache } from "@/services/kycService";
 import { useEffect } from "react";
 
 /* interface VerificationResult {
@@ -90,6 +90,9 @@ export default function VerifyPage() {
             dispatch(setDocumentVerified(true));
             setVerificationStatus("verified");
 
+            // Clear cache immediately when status changes
+            clearKycCache();
+
             // Best-effort to persist status (webhook should also do this)
             try {
               await updateDocumentStatus({
@@ -105,6 +108,8 @@ export default function VerifyPage() {
           } else if (event === "verification.declined") {
             setVerificationStatus("declined");
             setDeclinedReason(resp?.data?.declined_reason || "Verification was declined");
+            // Clear cache when status changes
+            clearKycCache();
             clearInterval(interval);
           } else if (event === "request.invalid") {
             invalidRefCount++;
@@ -175,6 +180,8 @@ const handleSubmit = async () => {
         // ✅ AML screening passed
         dispatch(setDocumentVerified(true));
         setVerificationStatus("verified");
+        // Clear cache immediately when status changes
+        clearKycCache();
         toast.success("Background screening completed successfully!");
         
         // Update KYC status in new backend
@@ -193,6 +200,8 @@ const handleSubmit = async () => {
       } else if (amlVerificationResult.event === "verification.declined") {
         // ❌ AML screening explicitly declined
         setVerificationStatus("declined");
+        // Clear cache when status changes
+        clearKycCache();
         toast.error("Background screening was declined");
         
         // Update declined status in database

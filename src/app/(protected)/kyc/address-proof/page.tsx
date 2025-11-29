@@ -12,7 +12,7 @@ import { addressVerification } from "@/services/addressVerification";
 import { AddressKYCResponse } from "@/types/kyc";
 import { setAddressVerified } from "@/store/slices/kycSlice";
 import { useAppDispatch } from "@/store/hooks";
-import { createKycRecord, updateAddressStatus, checkShuftiStatus } from "@/services/kycService";
+import { createKycRecord, updateAddressStatus, checkShuftiStatus, clearKycCache } from "@/services/kycService";
 import { useEffect } from "react";
 
 export default function AddressVerificationPage() {
@@ -82,6 +82,8 @@ export default function AddressVerificationPage() {
               // ✅ Shufti accepted - show verified
               setVerificationStatus("verified");
               dispatch(setAddressVerified(true));
+              // Clear cache immediately when status changes
+              clearKycCache();
               toast.success("Address verification completed successfully!");
               clearInterval(pollInterval);
               console.log("✅ Verification accepted! Stopped polling.");
@@ -91,6 +93,8 @@ export default function AddressVerificationPage() {
               setVerificationStatus("declined");
               const reason = shuftiResponse.data.declined_reason || "Verification was declined";
               setDeclinedReason(reason);
+              // Clear cache when status changes
+              clearKycCache();
               toast.error("Address verification was declined. Please try again.");
               clearInterval(pollInterval);
               console.log("❌ Verification declined! Stopped polling.");
@@ -204,12 +208,16 @@ export default function AddressVerificationPage() {
         // ✅ Shufti accepted - verification successful
         setVerificationStatus("verified");
         dispatch(setAddressVerified(true));
+        // Clear cache immediately when status changes
+        clearKycCache();
         toast.success("Address verification completed successfully!");
       } else if (addressVerificationResult.event === "verification.declined") {
         // ❌ Shufti explicitly declined - show as declined
         setVerificationStatus("declined");
         const reason = addressVerificationResult?.declined_reason || "Please check your document and try again.";
         setDeclinedReason(reason);
+        // Clear cache when status changes
+        clearKycCache();
         toast.error(`Address verification was declined: ${reason}`);
       } else if (addressVerificationResult.event === "request.pending" || addressVerificationResult.event === "request.received") {
         // ⏳ Verification in progress - keep polling, DO NOT show as declined!

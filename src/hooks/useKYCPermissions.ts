@@ -34,9 +34,9 @@ export function useKYCPermissions(): KYCPermissions {
   const [loading, setLoading] = useState(!kycData);
 
   useEffect(() => {
-    const fetchKYCStatus = async () => {
+    const fetchKYCStatus = async (forceRefresh: boolean = false) => {
       try {
-        const response = await getKycStatus();
+        const response = await getKycStatus(forceRefresh);
 
         if (response.success && response.data) {
           setKycData(response.data);
@@ -50,8 +50,10 @@ export function useKYCPermissions(): KYCPermissions {
 
     fetchKYCStatus();
 
-    // Poll every 30 seconds
-    const interval = setInterval(fetchKYCStatus, 30000);
+    // Poll every 30 seconds, always force refresh on polling to get latest status
+    const interval = setInterval(() => {
+      fetchKYCStatus(true);
+    }, 30000);
 
     return () => clearInterval(interval);
   }, []);

@@ -11,9 +11,9 @@ const initialState: KYCState = {
 // Async thunk to fetch KYC status from database
 export const fetchKycStatus = createAsyncThunk(
   "kyc/fetchStatus",
-  async (_, { rejectWithValue }) => {
+  async (forceRefresh: boolean = false, { rejectWithValue }) => {
     try {
-      const response = await getKycStatus();
+      const response = await getKycStatus(forceRefresh);
       if (response.success && response.data) {
         return {
           isDocumentVerified: response.data.isDocumentVerified,

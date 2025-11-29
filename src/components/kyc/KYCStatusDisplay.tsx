@@ -36,30 +36,34 @@ export function KYCStatusDisplay() {
   const [loading, setLoading] = useState(!kycData);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchKYCStatus = async () => {
-    try {
-      const response = await getKycStatus();
-
-      if (response.success && response.data) {
-        setKycData(response.data);
-        setError(null);
-      } else {
-        setError(response.message || 'Failed to fetch KYC status');
-      }
-    } catch (err) {
-      console.error('Error fetching KYC status:', err);
-      setError('Failed to load KYC status');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
-    // Fetch immediately
-    fetchKYCStatus();
+    const fetchWithRefresh = async () => {
+      // Always force refresh on polling to get latest status
+      try {
+        const response = await getKycStatus(true);
 
-    // Poll every 30 seconds for updates
-    const interval = setInterval(fetchKYCStatus, 30000);
+        if (response.success && response.data) {
+          setKycData(response.data);
+          setError(null);
+        } else {
+          setError(response.message || 'Failed to fetch KYC status');
+        }
+      } catch (err) {
+        console.error('Error fetching KYC status:', err);
+        setError('Failed to load KYC status');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Fetch immediately
+    fetchWithRefresh();
+
+    // Poll every 30 seconds for updates, always force refresh on polling
+    const interval = setInterval(() => {
+      fetchWithRefresh();
+    }, 30000);
 
     return () => clearInterval(interval);
   }, []);

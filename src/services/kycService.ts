@@ -11,6 +11,8 @@ const kycApi = axios.create({
 });
 
 const KYC_CACHE_KEY = 'kyc_status_cache';
+const KYC_CACHE_TIMESTAMP_KEY = 'kyc_status_cache_timestamp';
+const KYC_CACHE_TTL = 60000; // 1 minute cache TTL for pending statuses
 
 // Add token interceptor
 kycApi.interceptors.request.use((config) => {
@@ -20,6 +22,30 @@ kycApi.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Clear KYC cache
+export function clearKycCache(): void {
+  try {
+    localStorage.removeItem(KYC_CACHE_KEY);
+    localStorage.removeItem(KYC_CACHE_TIMESTAMP_KEY);
+    console.log('🗑️ KYC cache cleared');
+  } catch (e) {
+    console.warn('Failed to clear KYC cache', e);
+  }
+}
+
+// Check if cache is still valid
+function isCacheValid(): boolean {
+  try {
+    const timestamp = localStorage.getItem(KYC_CACHE_TIMESTAMP_KEY);
+    if (!timestamp) return false;
+    
+    const cacheAge = Date.now() - parseInt(timestamp, 10);
+    return cacheAge < KYC_CACHE_TTL;
+  } catch (e) {
+    return false;
+  }
+}
 
 interface UpdateKycResponse {
   status: string;
@@ -69,8 +95,12 @@ export async function updateDocumentStatus(data: {
 }) {
   try {
     console.log('📝 Updating document status:', data);
+    // Clear cache before updating to ensure fresh data is fetched
+    clearKycCache();
     const response = await kycApi.put('/api/kyc/update-document', data);
     console.log('✅ Document status updated:', response.data);
+    // Clear cache again after successful update to force refresh
+    clearKycCache();
     return response.data;
   } catch (error: any) {
     console.error("❌ Error updating document status:", error?.response?.data || error.message);
@@ -85,8 +115,12 @@ export async function updateAddressStatus(data: {
 }) {
   try {
     console.log('📝 Updating address status:', data);
+    // Clear cache before updating to ensure fresh data is fetched
+    clearKycCache();
     const response = await kycApi.put('/api/kyc/update-address', data);
     console.log('✅ Address status updated:', response.data);
+    // Clear cache again after successful update to force refresh
+    clearKycCache();
     return response.data;
   } catch (error: any) {
     console.error("❌ Error updating address status:", error?.response?.data || error.message);
@@ -95,8 +129,21 @@ export async function updateAddressStatus(data: {
 }
 
 // Get KYC status
-export async function getKycStatus(): Promise<KycStatusResponse> {
+export async function getKycStatus(forceRefresh: boolean = false): Promise<KycStatusResponse> {
   try {
+    // Check cache first if not forcing refresh
+    if (!forceRefresh) {
+      const cached = getLocalKycStatus();
+      if (cached && isCacheValid()) {
+        // Only use cache if status is not pending (pending statuses should always refresh)
+        const verificationStatus = cached.data?.verificationStatus?.toLowerCase();
+        if (verificationStatus !== 'pending' && verificationStatus !== 'partially verified') {
+          console.log('📦 Using cached KYC status (not pending)');
+          return cached;
+        }
+      }
+    }
+
     console.log('🔍 Fetching KYC status...');
     const response = await kycApi.get<KycStatusResponse>(`/api/kyc/status?t=${Date.now()}`);
 
@@ -107,9 +154,10 @@ export async function getKycStatus(): Promise<KycStatusResponse> {
         verificationStatus: response.data.data?.verificationStatus
       });
 
-      // Cache the successful response
+      // Cache the successful response with timestamp
       try {
         localStorage.setItem(KYC_CACHE_KEY, JSON.stringify(response.data));
+        localStorage.setItem(KYC_CACHE_TIMESTAMP_KEY, Date.now().toString());
       } catch (e) {
         console.warn('Failed to cache KYC status', e);
       }
@@ -150,7 +198,9 @@ export function getLocalKycStatus(): KycStatusResponse | null {
 // Refresh KYC status and return updated data
 export async function refreshKycStatus(): Promise<KycStatusResponse> {
   console.log('🔄 Refreshing KYC status...');
-  return getKycStatus();
+  // Force refresh by clearing cache first
+  clearKycCache();
+  return getKycStatus(true);
 }
 
 // Check verification status directly from Shufti Pro API
