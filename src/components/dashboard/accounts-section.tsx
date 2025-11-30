@@ -22,6 +22,14 @@ interface AccountsSectionProps {
   onOpenNewAccount: () => void;
 }
 
+// Custom event to notify tab switching after unarchive
+const UNARCHIVE_EVENT = 'account-unarchived';
+
+// Type for unarchive event detail
+interface UnarchiveEventDetail {
+  accountType: string;
+}
+
 // Helper function to map MT5Account to TpAccountSnapshot (for AccountDetails component)
 const mapMT5AccountToTpAccount = (mt5Account: MT5Account): TpAccountSnapshot => {
   // IMPORTANT: Always use the latest balance from Redux state (from fetchAllAccountsWithBalance)
@@ -83,10 +91,28 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
   const profilesFetchedRef = useRef<Set<string>>(new Set());
   const detailsFetchedRef = useRef<Set<string>>(new Set());
 
-  // Fetch accounts from DB once on mount
+  // Fetch accounts from DB once on mount (fetch all, including archived for Archive tab)
   useEffect(() => {
-    dispatch(fetchUserAccountsFromDb() as any);
+    dispatch(fetchUserAccountsFromDb({ includeArchived: true }) as any);
   }, [dispatch]);
+
+  // Listen for unarchive events to switch tabs
+  useEffect(() => {
+    const handleUnarchive = (event: CustomEvent<UnarchiveEventDetail>) => {
+      const { accountType } = event.detail;
+      // Switch to the appropriate tab based on account type
+      if (accountType?.toLowerCase() === 'demo') {
+        setActiveTab('demo');
+      } else {
+        setActiveTab('live');
+      }
+    };
+
+    window.addEventListener(UNARCHIVE_EVENT as any, handleUnarchive as EventListener);
+    return () => {
+      window.removeEventListener(UNARCHIVE_EVENT as any, handleUnarchive as EventListener);
+    };
+  }, []);
 
   // ✅ AUTO-REFRESH: Fetch all account balances every 10 seconds to keep balances up-to-date
   // Uses optimized endpoint that fetches all balances in parallel (fast & accurate)
@@ -381,9 +407,9 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
             <ToggleGroupItem value="demo" className="z-10 cursor-pointer">
               Demo
             </ToggleGroupItem>
-            {/* <ToggleGroupItem value="archived" className="z-10 cursor-pointer">
+            <ToggleGroupItem value="archived" className="z-10 cursor-pointer">
               Archived
-            </ToggleGroupItem> */}
+            </ToggleGroupItem>
           </ToggleGroup>
         </div>
 
@@ -399,7 +425,7 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
             </div>
           ) : hasBasicAccountInfo ? (
             accounts
-              .filter((account) => account.accountType === "Live")
+              .filter((account) => account.accountType === "Live" && !(account.archived === true))
               .map((account, index) => {
                 const mappedAccount = mapMT5AccountToTpAccount(account);
                 return (
@@ -410,6 +436,8 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
                     accountType={account.accountType}
                     accountDetails={mappedAccount}
                     isReady={true}
+                    archived={account.archived === true}
+                    accountInternalId={account.id}
                   />
                 );
               })
@@ -423,7 +451,7 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
         {/* Demo Accounts */}
         <TabsContent value="demo">
           {(() => {
-            const demoAccounts = accounts.filter((account) => account.accountType === "Demo");
+            const demoAccounts = accounts.filter((account) => account.accountType === "Demo" && !(account.archived === true));
             if (demoAccounts.length > 0) {
               return demoAccounts.map((account, index) => {
                 const mappedAccount = mapMT5AccountToTpAccount(account);
@@ -435,6 +463,8 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
                     accountType={account.accountType}
                     accountDetails={mappedAccount}
                     isReady={true}
+                    archived={account.archived === true}
+                    accountInternalId={account.id}
                   />
                 );
               });
@@ -447,12 +477,34 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
           })()}
         </TabsContent>
 
-        {/* Archived Accounts 
+        {/* Archived Accounts */}
         <TabsContent value="archived">
-          <div className="text-center py-4 text-gray-500">
-            No archived accounts available
-          </div>
-        </TabsContent>*/}
+          {(() => {
+            const archivedAccounts = accounts.filter((account) => account.archived === true);
+            if (archivedAccounts.length > 0) {
+              return archivedAccounts.map((account, index) => {
+                const mappedAccount = mapMT5AccountToTpAccount(account);
+                return (
+                  <AccountDetails
+                    key={`${account.accountId}-${index}`}
+                    accountId={mappedAccount.acc}
+                    platformName={mappedAccount.platformname}
+                    accountType={account.accountType}
+                    accountDetails={mappedAccount}
+                    isReady={true}
+                    archived={true}
+                    accountInternalId={account.id}
+                  />
+                );
+              });
+            }
+            return (
+              <div className="text-center py-4 text-gray-500">
+                No archived accounts available
+              </div>
+            );
+          })()}
+        </TabsContent>
       </Tabs>
     </div>
   );

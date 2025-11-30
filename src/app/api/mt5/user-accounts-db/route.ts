@@ -14,7 +14,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const response = await fetch(`${API_URL}/mt5/user-accounts`, {
+    // Check if we should fetch all accounts (including archived)
+    const searchParams = request.nextUrl.searchParams;
+    const includeArchived = searchParams.get('includeArchived') === 'true';
+    
+    // Fetch accounts - if includeArchived=true, get all accounts; otherwise get only non-archived
+    const includeArchivedParam = includeArchived ? 'true' : 'false';
+    const response = await fetch(`${API_URL}/mt5/user-accounts?includeArchived=${includeArchivedParam}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -27,15 +33,26 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          message: errorData.message || 'Failed to fetch user MT5 accounts from database'
+          message: errorData.message || errorData.Message || 'Failed to fetch user MT5 accounts from database'
         },
         { status: response.status }
       );
     }
 
     const data = await response.json();
+    const allAccounts = data?.Data?.accounts || data?.data?.accounts || data?.accounts || [];
+    
+    // When includeArchived=true, server returns all accounts (both archived and non-archived)
+    // When includeArchived=false, server returns only non-archived accounts
 
-    return NextResponse.json(data);
+    // Return in the expected format
+    return NextResponse.json({
+      success: true,
+      data: {
+        accounts: allAccounts,
+        total: allAccounts.length
+      }
+    });
 
   } catch (error) {
     console.error('Error fetching user MT5 accounts from database:', error);

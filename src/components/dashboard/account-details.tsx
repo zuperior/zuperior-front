@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, RotateCcw } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Candle from "@/assets/icons/candle.png";
@@ -32,8 +32,10 @@ import TransferFundsDialog from "../withdraw/TransferFundsDialog";
 import { TpAccountSnapshot } from "@/types/user-details";
 import { AccountInfoDialog } from "../AccountInfoDialog";
 import { useDispatch } from "react-redux";
-import { refreshMt5AccountProfile, fetchAccountDetailsFromMT5 } from "@/store/slices/mt5AccountSlice";
+import { refreshMt5AccountProfile, fetchAccountDetailsFromMT5, fetchUserAccountsFromDb, fetchAllAccountsWithBalance } from "@/store/slices/mt5AccountSlice";
 import { TopUpDialog } from "./topUp-dialogBox";
+import { mt5Service } from "@/services/api.service";
+import { toast } from "sonner";
 
 const AccountDetails = ({
   accountId,
@@ -41,12 +43,16 @@ const AccountDetails = ({
   platformName,
   accountDetails,
   isReady,
+  archived,
+  accountInternalId,
 }: {
   accountId: number;
   accountType?: string;
   platformName: string;
   accountDetails: TpAccountSnapshot;
   isReady?: boolean;
+  archived?: boolean;
+  accountInternalId?: string;
 }) => {
   const [expanded, setExpanded] = useState(false);
   const { theme } = useTheme();
@@ -62,6 +68,7 @@ const AccountDetails = ({
   const [accountInfoDialogOpen, setAccountInfoDialogOpen] = useState(false);
   const [renameAccountDialog, setRenameAccountDialogOpen] = useState(false);
   const [topUpDialogOpen, setTopUpDialogOpen] = useState(false);
+  const [isActivating, setIsActivating] = useState(false);
 
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
@@ -228,49 +235,99 @@ const AccountDetails = ({
 
         {/* Column 3: Actions (right aligned, fixed width) */}
         <div className="flex items-center justify-end gap-1.5 shrink-0">
-          {/* Always visible (both mobile + desktop) */}
-          <Button
-            imageSrc={Candle}
-            text="Trade Now"
-            onClick={() => setTradeNowDialog(true)}
-          />
+          {/* Show Activate Account button for archived accounts, Trade Now for active accounts */}
+          {archived ? (
+            <Button
+              icon={<RotateCcw className="w-4 h-4" />}
+              text={isActivating ? "Activating..." : "Activate Account"}
+              disabled={isActivating}
+              onClick={async () => {
+                if (isActivating) return;
+                setIsActivating(true);
+                try {
+                  // Use internal ID (UUID) if available, otherwise use accountId (MT5 login)
+                  const accountIdToUse = accountInternalId || String(accountId);
+                  const result = await mt5Service.unarchiveAccount(accountIdToUse);
+                  if (result?.success) {
+                    // Refresh accounts list after unarchiving (including archived accounts)
+                    await dispatch(fetchUserAccountsFromDb({ includeArchived: true }) as any);
+                    
+                    // Also refresh account balances to ensure all data is up to date
+                    dispatch(fetchAllAccountsWithBalance() as any);
+                    
+                    // Wait a moment for Redux state to update, then switch to appropriate tab
+                    setTimeout(() => {
+                      // Dispatch custom event to notify AccountsSection to switch tabs
+                      const event = new CustomEvent('account-unarchived', {
+                        detail: { accountType: accountType || 'Live' }
+                      });
+                      window.dispatchEvent(event);
+                    }, 500); // Small delay to ensure state is updated
+                    
+                    toast.success("Account Activated", {
+                      description: "Your account has been successfully activated and is now available for trading.",
+                      duration: 5000,
+                    });
+                  } else {
+                    throw new Error(result?.message || 'Failed to activate account');
+                  }
+                } catch (error: any) {
+                  console.error('❌ Error activating account:', error);
+                  const errorMessage = error?.response?.data?.message || error?.message || 'Failed to activate account. Please try again.';
+                  toast.error("Activation Failed", {
+                    description: errorMessage,
+                    duration: 5000,
+                  });
+                } finally {
+                  setIsActivating(false);
+                }
+              }}
+            />
+          ) : (
+            <Button
+              imageSrc={Candle}
+              text="Trade Now"
+              onClick={() => setTradeNowDialog(true)}
+            />
+          )}
 
-          {/* Show these on xl */}
-          <div className="hidden xl:flex items-center gap-2.5">
-            <AnimatePresence>
-              {expanded && !isDemoAccount && (
-                <motion.div
-                  key="deposit"
-                  variants={buttonAnimation}
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                >
-                  <Button
-                    ghost
-                    imageSrc={theme === "dark" ? arrowDown : arrowDepositBlack}
-                    text="Deposit"
-                    onClick={() => router.push("/deposit")}
-                  />
-                </motion.div>
-              )}
-              {expanded && !isDemoAccount && (
-                <motion.div
-                  key="withdrawal"
-                  variants={buttonAnimation}
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                >
-                  <Button
-                    ghost
-                    imageSrc={theme === "dark" ? arrowTopLeft : withdrawBlack}
-                    text="Withdrawal"
-                    onClick={() => router.push("/withdrawal")}
-                  />
-                </motion.div>
-              )}
-              {expanded && isDemoAccount && (
+          {/* Show these on xl - Hide for archived accounts */}
+          {!archived && (
+            <div className="hidden xl:flex items-center gap-2.5">
+              <AnimatePresence>
+                {expanded && !isDemoAccount && (
+                  <motion.div
+                    key="deposit"
+                    variants={buttonAnimation}
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                  >
+                    <Button
+                      ghost
+                      imageSrc={theme === "dark" ? arrowDown : arrowDepositBlack}
+                      text="Deposit"
+                      onClick={() => router.push("/deposit")}
+                    />
+                  </motion.div>
+                )}
+                {expanded && !isDemoAccount && (
+                  <motion.div
+                    key="withdrawal"
+                    variants={buttonAnimation}
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                  >
+                    <Button
+                      ghost
+                      imageSrc={theme === "dark" ? arrowTopLeft : withdrawBlack}
+                      text="Withdrawal"
+                      onClick={() => router.push("/withdrawal")}
+                    />
+                  </motion.div>
+                )}
+                {expanded && isDemoAccount && (
                 <motion.div
                   key="topUp"
                   variants={buttonAnimation}
@@ -325,23 +382,61 @@ const AccountDetails = ({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
+            </div>
+          )}
 
-          {/* Toggle chevron (only desktop) */}
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className={`ml-1 flex dark:text-white text-black cursor-pointer transition-all duration-200 ease-in-out ${
-              expanded ? "rotate-180" : ""
-            }`}
-          >
-            <ChevronDown size={20} />
-          </button>
+          {/* Dropdown menu for archived accounts (limited options) */}
+          {archived && (
+            <div className="hidden xl:flex items-center">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Image
+                    className="h-6 w-6 cursor-pointer"
+                    src={theme === "dark" ? linearDots : linearDotsDark}
+                    alt="Menu"
+                  />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="font-medium border-x border-b border-t-0 rounded-b-[10px] rounded-t-none bg-white dark:bg-black border-[#9F8BCF]/25 px-[25px] py-2.5 flex flex-col gap-[5px] text-sm text-black/50 dark:text-white/50 w-[200px] mt-4.5"
+                  align="end"
+                >
+                  <DropdownMenuItem
+                    onClick={() => setAccountInfoDialogOpen(true)}
+                  >
+                    Account Information
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
+
+          {/* Toggle chevron (only desktop) - Hide for archived */}
+          {!archived && (
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className={`ml-1 flex dark:text-white text-black cursor-pointer transition-all duration-200 ease-in-out ${
+                expanded ? "rotate-180" : ""
+              }`}
+            >
+              <ChevronDown className="h-5 w-5" />
+            </button>
+          )}
+          {!archived && (
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className={`ml-1 flex dark:text-white text-black cursor-pointer transition-all duration-200 ease-in-out ${
+                expanded ? "rotate-180" : ""
+              }`}
+            >
+              <ChevronDown size={20} />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Details section */}
+      {/* Details section - Hide for archived accounts */}
       <AnimatePresence initial={false}>
-        {expanded && (
+        {expanded && !archived && (
           <motion.div
             key="expanded-content"
             initial={{ height: 0, opacity: 0 }}
@@ -442,75 +537,77 @@ const AccountDetails = ({
               </div>
 
               
-              {/* DropDown for mobile */}
-              <div className="xl:hidden flex items-center gap-2.5 pt-2">
-                <AnimatePresence>
-                  {expanded && !isDemoAccount && (
-                    <motion.div
-                      key="deposit"
-                      variants={buttonAnimation}
-                      initial="initial"
-                      animate="animate"
-                      exit="exit"
-                    >
-                      <Button
-                        ghost
-                        imageSrc={theme === "dark" ? arrowDown : arrowDepositBlack}
-                        text="Deposit"
-                        onClick={() => router.push("/deposit")}
-                      />
-                    </motion.div>
-                  )}
-                  {expanded && !isDemoAccount && (
-                    <motion.div
-                      key="withdrawal"
-                      variants={buttonAnimation}
-                      initial="initial"
-                      animate="animate"
-                      exit="exit"
-                    >
-                      <Button
-                        ghost
-                        imageSrc={arrowTopLeft}
-                        text="Withdrawal"
-                        onClick={() => router.push("/withdrawal")}
-                      />
-                    </motion.div>
-                  )}
-                  {expanded && isDemoAccount && (
-                    <motion.div
-                      key="topUp"
-                      variants={buttonAnimation}
-                      initial="initial"
-                      animate="animate"
-                      exit="exit"
-                    >
-                      <Button
-                        ghost
-                        imageSrc={theme === "dark" ? arrowDown : arrowDepositBlack}
-                        text="Top Up"
-                        onClick={() => setTopUpDialogOpen(true)}
-                      />
-                    </motion.div>
-                  )}
-                  {expanded && !isDemoAccount && (
-                    <motion.div
-                      key="transfer"
-                      variants={buttonAnimation}
-                      initial="initial"
-                      animate="animate"
-                      exit="exit"
-                    >
-                      <Button
-                        ghost
-                        imageSrc={transfer}
-                        text="Transfer"
-                        onClick={() => setTransferDialogOpen(true)}
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+              {/* DropDown for mobile - Hide for archived accounts */}
+              {!archived && (
+                <div className="xl:hidden flex items-center gap-2.5 pt-2">
+                  <AnimatePresence>
+                    {expanded && !isDemoAccount && (
+                      <motion.div
+                        key="deposit"
+                        variants={buttonAnimation}
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
+                      >
+                        <Button
+                          ghost
+                          imageSrc={theme === "dark" ? arrowDown : arrowDepositBlack}
+                          text="Deposit"
+                          onClick={() => router.push("/deposit")}
+                        />
+                      </motion.div>
+                    )}
+                    {expanded && !isDemoAccount && (
+                      <motion.div
+                        key="withdrawal"
+                        variants={buttonAnimation}
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
+                      >
+                        <Button
+                          ghost
+                          imageSrc={arrowTopLeft}
+                          text="Withdrawal"
+                          onClick={() => router.push("/withdrawal")}
+                        />
+                      </motion.div>
+                    )}
+                    {expanded && isDemoAccount && (
+                      <motion.div
+                        key="topUp"
+                        variants={buttonAnimation}
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
+                      >
+                        <Button
+                          ghost
+                          imageSrc={theme === "dark" ? arrowDown : arrowDepositBlack}
+                          text="Top Up"
+                          onClick={() => setTopUpDialogOpen(true)}
+                        />
+                      </motion.div>
+                    )}
+                    {expanded && !isDemoAccount && (
+                      <motion.div
+                        key="transfer"
+                        variants={buttonAnimation}
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
+                      >
+                        <Button
+                          ghost
+                          imageSrc={transfer}
+                          text="Transfer"
+                          onClick={() => setTransferDialogOpen(true)}
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
@@ -536,12 +633,15 @@ const AccountDetails = ({
         currency={"USD"} // To Do: think what to do about currency ---- static for now
       />
 
-      <TradeNowDialouge
-        tradeNowDialog={tradeNowDialog}
-        setTradeNowDialog={setTradeNowDialog}
-        server={"ZuperiorFX-Limited"}
-        mtLogin={String(accountDetails?.acc) || ""}
-      />
+      {/* Trade Now Dialog - Only show for non-archived accounts */}
+      {!archived && (
+        <TradeNowDialouge
+          tradeNowDialog={tradeNowDialog}
+          setTradeNowDialog={setTradeNowDialog}
+          server={"ZuperiorFX-Limited"}
+          mtLogin={String(accountDetails?.acc) || ""}
+        />
+      )}
 
       <TransferFundsDialog
         open={transferDialogOpen}
@@ -570,22 +670,27 @@ const AccountDetails = ({
 const Button = ({
   ghost = false,
   imageSrc,
+  icon,
   onClick,
   text,
+  disabled = false,
 }: {
   ghost?: boolean;
   imageSrc?: string | StaticImageData;
+  icon?: React.ReactNode;
   onClick?: () => void;
   text: string;
+  disabled?: boolean;
 }) => {
   return (
     <button
-      className={`flex rounded-[10px]  items-center md:gap-1 py-2 px-2 ${
+      className={`flex rounded-[10px] items-center md:gap-1 py-2 px-2 ${
         ghost
           ? "border-[1.5px] border-[#9F8BCF]/25 text-black dark:text-white/75"
           : "bg-gradient-to-tr to-[#9F8BCF] from-[#6242A5] text-white/75"
-      } font-semibold text-sm leading-[14px] cursor-pointer`}
+      } font-semibold text-sm leading-[14px] cursor-pointer ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
       onClick={onClick}
+      disabled={disabled}
     >
       {imageSrc && (
         <Image
@@ -595,6 +700,11 @@ const Button = ({
           width={24}
           className="w-5 h-5 md:w-5 md:h-5"
         />
+      )}
+      {icon && (
+        <span className="w-5 h-5 md:w-5 md:h-5 flex items-center justify-center">
+          {icon}
+        </span>
       )}
       <span className="text-xs md:text-sm leading-[14px]">{text}</span>
     </button>

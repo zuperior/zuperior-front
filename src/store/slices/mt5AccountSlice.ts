@@ -7,6 +7,7 @@ import { mt5Service } from "@/services/api.service";
 // --------------------
 // Static account data from database
 export interface MT5AccountDB {
+  id?: string;
   accountId: string;
   nameOnAccount?: string | null;
   leverage?: number | null;
@@ -14,6 +15,7 @@ export interface MT5AccountDB {
   accountType: string;
   password?: string | null;
   createdAt?: string;
+  archived?: boolean;
   // Cached balance fields
   balance?: number;
   equity?: number;
@@ -155,9 +157,9 @@ export const fetchMt5Groups = createAsyncThunk(
 // ✅ Get User Accounts from Database (Static fields only)
 export const fetchUserAccountsFromDb = createAsyncThunk(
   "mt5/fetchUserAccountsFromDb",
-  async (_, { rejectWithValue }) => {
+  async (opts?: { includeArchived?: boolean }, { rejectWithValue }) => {
     try {
-      const response = await mt5Service.getUserAccountsFromDb();
+      const response = await mt5Service.getUserAccountsFromDb({ includeArchived: opts?.includeArchived ?? true });
       const normalized = normalizeOk(response);
 
       if (!normalized.success || !normalized.data?.accounts) {
