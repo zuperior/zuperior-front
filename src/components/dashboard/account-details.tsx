@@ -77,11 +77,11 @@ const AccountDetails = ({
   // Equity = Balance + P/L
   // Available for Withdrawal = Equity
   // P/L = Equity - Balance (if not directly provided)
-  
+
   // IMPORTANT: Parse balance from accountDetails - this comes from Redux state via mapMT5AccountToTpAccount
   const bal = parseFloat(accountDetails.balance || "0");
   const eq = parseFloat(accountDetails.equity || "0");
-  
+
   // Log the balance and P/L being displayed for debugging
   useEffect(() => {
     console.log(`[AccountDetails] 💰 Account ${accountId} - Balance: ${bal}, Equity: ${eq}, closed_pnl: ${accountDetails.closed_pnl}`, {
@@ -90,7 +90,7 @@ const AccountDetails = ({
       closedPnl: accountDetails.closed_pnl
     });
   }, [accountId, bal, eq, accountDetails.balance, accountDetails.equity, accountDetails.closed_pnl]);
-  
+
   // Calculate P/L: Use closed_pnl (profit from API) if available, otherwise calculate from Equity - Balance
   // CRITICAL: closed_pnl comes from the MT5 API Profit field and should be used directly for accuracy
   let pnl = 0;
@@ -109,13 +109,13 @@ const AccountDetails = ({
     pnl = eq - bal;
     console.log(`[AccountDetails] 📊 Account ${accountId} - Using calculated P/L (Equity - Balance): ${pnl}`);
   }
-  
+
   // Ensure relationships: Equity = Balance + P/L
   const equity = eq || (bal + pnl);
-  
+
   // Available for Withdrawal = Equity (per user requirement)
   const availableForWithdrawal = equity;
-  
+
   const equityFormatted = `${equity.toFixed(2)}`;
   // Header should display Equity (Balance + P/L), details row labeled "Balance" should show actual balance
   const headerBalance = `$${equity.toFixed(2)}`;
@@ -161,7 +161,7 @@ const AccountDetails = ({
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
   // Ensure numbers align vertically across rows (tabular figures)
   const numericStyle: React.CSSProperties = { fontVariantNumeric: 'tabular-nums' };
-  
+
   // Determine if account is Demo
   const isDemoAccount = accountType?.toLowerCase() === 'demo' || accountDetails?.account_type_requested?.toLowerCase() === 'demo';
 
@@ -251,10 +251,10 @@ const AccountDetails = ({
                   if (result?.success) {
                     // Refresh accounts list after unarchiving (including archived accounts)
                     await dispatch(fetchUserAccountsFromDb({ includeArchived: true }) as any);
-                    
+
                     // Also refresh account balances to ensure all data is up to date
                     dispatch(fetchAllAccountsWithBalance() as any);
-                    
+
                     // Wait a moment for Redux state to update, then switch to appropriate tab
                     setTimeout(() => {
                       // Dispatch custom event to notify AccountsSection to switch tabs
@@ -263,7 +263,7 @@ const AccountDetails = ({
                       });
                       window.dispatchEvent(event);
                     }, 500); // Small delay to ensure state is updated
-                    
+
                     toast.success("Account Activated", {
                       description: "Your account has been successfully activated and is now available for trading.",
                       duration: 5000,
@@ -328,60 +328,94 @@ const AccountDetails = ({
                   </motion.div>
                 )}
                 {expanded && isDemoAccount && (
-                <motion.div
-                  key="topUp"
-                  variants={buttonAnimation}
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                >
-                  <Button
-                    ghost
-                    imageSrc={theme === "dark" ? arrowDown : arrowDepositBlack}
-                    text="Top Up"
-                    onClick={() => setTopUpDialogOpen(true)}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  <motion.div
+                    key="topUp"
+                    variants={buttonAnimation}
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                  >
+                    <Button
+                      ghost
+                      imageSrc={theme === "dark" ? arrowDown : arrowDepositBlack}
+                      text="Top Up"
+                      onClick={() => setTopUpDialogOpen(true)}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Image
-                  className="h-6 w-6 cursor-pointer"
-                  src={theme === "dark" ? linearDots : linearDotsDark}
-                  alt="Menu"
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="font-medium border-x border-b border-t-0 rounded-b-[10px] rounded-t-none bg-white dark:bg-black border-[#9F8BCF]/25 px-[25px] py-2.5 flex flex-col gap-[5px] text-sm text-black/50 dark:text-white/50 w-[200px] mt-4.5"
-                align="end"
-              >
-                <DropdownMenuItem onClick={() => setChangePasswordOpen(true)}>
-                  Change password
-                </DropdownMenuItem>
-                <div className="w-full h-px bg-black/5 dark:bg-white/5" />
-                <DropdownMenuItem onClick={() => setOpenDialog(true)}>
-                  Change leverage
-                </DropdownMenuItem>
-                <div className="w-full h-px bg-black/5 dark:bg-white/5" />
-                <DropdownMenuItem
-                  onClick={() => setRenameAccountDialogOpen(true)}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Image
+                    className="h-6 w-6 cursor-pointer"
+                    src={theme === "dark" ? linearDots : linearDotsDark}
+                    alt="Menu"
+                  />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="font-medium border-x border-b border-t-0 rounded-b-[10px] rounded-t-none bg-white dark:bg-black border-[#9F8BCF]/25 px-[25px] py-2.5 flex flex-col gap-[5px] text-sm text-black/50 dark:text-white/50 w-[200px] mt-4.5"
+                  align="end"
                 >
-                  Rename account
-                </DropdownMenuItem>
-                <div className="w-full h-px bg-black/5 dark:bg-white/5" />
-                <DropdownMenuItem
-                  onClick={() => setAccountInfoDialogOpen(true)}
-                >
-                  Account Information
-                </DropdownMenuItem>
-                <div className="w-full h-px bg-black/5 dark:bg-white/5" />
-                <DropdownMenuItem onClick={() => setTransferDialogOpen(true)}>
-                  Transfer funds
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <DropdownMenuItem onClick={() => setChangePasswordOpen(true)}>
+                    Change password
+                  </DropdownMenuItem>
+                  <div className="w-full h-px bg-black/5 dark:bg-white/5" />
+                  <DropdownMenuItem onClick={() => setOpenDialog(true)}>
+                    Change leverage
+                  </DropdownMenuItem>
+                  <div className="w-full h-px bg-black/5 dark:bg-white/5" />
+                  <DropdownMenuItem
+                    onClick={() => setRenameAccountDialogOpen(true)}
+                  >
+                    Rename account
+                  </DropdownMenuItem>
+                  <div className="w-full h-px bg-black/5 dark:bg-white/5" />
+                  <DropdownMenuItem
+                    onClick={() => setAccountInfoDialogOpen(true)}
+                  >
+                    Account Information
+                  </DropdownMenuItem>
+                  <div className="w-full h-px bg-black/5 dark:bg-white/5" />
+                  <DropdownMenuItem
+                    onClick={async () => {
+                      if (confirm("Are you sure you want to archive this account?")) {
+                        try {
+                          const accountIdToUse = accountInternalId || String(accountId);
+                          const result = await mt5Service.archiveAccount(accountIdToUse);
+                          if (result?.success) {
+                            // Refresh accounts list after archiving
+                            await dispatch(fetchUserAccountsFromDb({ includeArchived: true }) as any);
+                            // Also refresh account balances
+                            dispatch(fetchAllAccountsWithBalance() as any);
+
+                            toast.success("Account Archived", {
+                              description: "Your account has been successfully archived.",
+                              duration: 5000,
+                            });
+                          } else {
+                            throw new Error(result?.message || 'Failed to archive account');
+                          }
+                        } catch (error: any) {
+                          console.error('❌ Error archiving account:', error);
+                          const errorMessage = error?.response?.data?.message || error?.message || 'Failed to archive account. Please try again.';
+                          toast.error("Archive Failed", {
+                            description: errorMessage,
+                            duration: 5000,
+                          });
+                        }
+                      }
+                    }}
+                    className="text-red-500 hover:text-red-600 focus:text-red-600"
+                  >
+                    Archive Account
+                  </DropdownMenuItem>
+                  <div className="w-full h-px bg-black/5 dark:bg-white/5" />
+                  <DropdownMenuItem onClick={() => setTransferDialogOpen(true)}>
+                    Transfer funds
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )}
 
@@ -414,9 +448,8 @@ const AccountDetails = ({
           {!archived && (
             <button
               onClick={() => setExpanded(!expanded)}
-              className={`ml-1 flex dark:text-white text-black cursor-pointer transition-all duration-200 ease-in-out ${
-                expanded ? "rotate-180" : ""
-              }`}
+              className={`ml-1 flex dark:text-white text-black cursor-pointer transition-all duration-200 ease-in-out ${expanded ? "rotate-180" : ""
+                }`}
             >
               <ChevronDown className="h-5 w-5" />
             </button>
@@ -424,9 +457,8 @@ const AccountDetails = ({
           {!archived && (
             <button
               onClick={() => setExpanded(!expanded)}
-              className={`ml-1 flex dark:text-white text-black cursor-pointer transition-all duration-200 ease-in-out ${
-                expanded ? "rotate-180" : ""
-              }`}
+              className={`ml-1 flex dark:text-white text-black cursor-pointer transition-all duration-200 ease-in-out ${expanded ? "rotate-180" : ""
+                }`}
             >
               <ChevronDown size={20} />
             </button>
@@ -536,7 +568,7 @@ const AccountDetails = ({
                 </div>
               </div>
 
-              
+
               {/* DropDown for mobile - Hide for archived accounts */}
               {!archived && (
                 <div className="xl:hidden flex items-center gap-2.5 pt-2">
@@ -684,11 +716,10 @@ const Button = ({
 }) => {
   return (
     <button
-      className={`flex rounded-[10px] items-center md:gap-1 py-2 px-2 ${
-        ghost
+      className={`flex rounded-[10px] items-center md:gap-1 py-2 px-2 ${ghost
           ? "border-[1.5px] border-[#9F8BCF]/25 text-black dark:text-white/75"
           : "bg-gradient-to-tr to-[#9F8BCF] from-[#6242A5] text-white/75"
-      } font-semibold text-sm leading-[14px] cursor-pointer ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+        } font-semibold text-sm leading-[14px] cursor-pointer ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
       onClick={onClick}
       disabled={disabled}
     >

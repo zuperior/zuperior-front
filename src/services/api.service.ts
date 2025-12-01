@@ -459,9 +459,9 @@ const mt5Service = {
   getUserAccountsFromDb: async (opts?: { signal?: AbortSignal; includeArchived?: boolean }) => {
     const params = opts?.includeArchived ? { includeArchived: 'true' } : {};
     return singleFlight('mt5-accounts-db', (signal) =>
-      api.get('/api/mt5/user-accounts-db', { 
+      api.get('/api/mt5/user-accounts-db', {
         signal: opts?.signal ?? signal,
-        params 
+        params
       }).then(r => r.data),
       opts?.signal
     );
@@ -748,6 +748,14 @@ const mt5Service = {
     // If we get here, all retries failed
     console.error(`Error fetching MT5 user profile for ${login} after ${maxRetries} retries:`, lastError);
     throw lastError;
+  },
+
+  /** Archive an MT5 account */
+  archiveAccount: async (accountId: string, opts?: { signal?: AbortSignal }) => {
+    const response = await api.post(`/api/mt5-accounts/${accountId}/archive`, {}, {
+      signal: opts?.signal,
+    });
+    return normalizeOk(response.data);
   },
 
   /** Unarchive an MT5 account */
