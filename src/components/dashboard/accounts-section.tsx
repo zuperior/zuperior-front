@@ -13,8 +13,8 @@ import type { RootState } from "../../store";
 import AccountDetails from "./account-details";
 import { TpAccountSnapshot } from "@/types/user-details";
 import { MT5Account } from "@/store/slices/mt5AccountSlice";
-import { 
-  fetchUserAccountsFromDb, 
+import {
+  fetchUserAccountsFromDb,
   fetchAllAccountsWithBalance,
 } from "@/store/slices/mt5AccountSlice";
 
@@ -34,18 +34,18 @@ interface UnarchiveEventDetail {
 const mapMT5AccountToTpAccount = (mt5Account: MT5Account): TpAccountSnapshot => {
   // IMPORTANT: Always use the latest balance from Redux state (from fetchAllAccountsWithBalance)
   // Force number conversion to ensure we get the latest value, not cached
-  const balance = mt5Account.balance !== undefined && mt5Account.balance !== null 
-    ? Number(mt5Account.balance) 
+  const balance = mt5Account.balance !== undefined && mt5Account.balance !== null
+    ? Number(mt5Account.balance)
     : 0;
-  const equity = mt5Account.equity !== undefined && mt5Account.equity !== null 
-    ? Number(mt5Account.equity) 
+  const equity = mt5Account.equity !== undefined && mt5Account.equity !== null
+    ? Number(mt5Account.equity)
     : 0;
-  const profit = mt5Account.profit !== undefined && mt5Account.profit !== null 
-    ? Number(mt5Account.profit) 
+  const profit = mt5Account.profit !== undefined && mt5Account.profit !== null
+    ? Number(mt5Account.profit)
     : 0;
-  
+
   console.log(`[AccountsSection] 📊 Mapping account ${mt5Account.accountId} - Balance: ${balance}, Equity: ${equity}, Profit: ${profit}`);
-  
+
   return {
     tradingplatformaccountsid: parseInt(mt5Account.accountId),
     account_name: parseInt(mt5Account.accountId),
@@ -167,7 +167,7 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
         console.warn(`[AccountsSection] ⚠️ Failed to clear cache:`, e);
       }
     }
-    
+
     // Function to fetch balances - uses ref to get latest accounts without restarting effect
     const fetchBalances = () => {
       const currentAccounts = accountsRef.current;
@@ -175,9 +175,9 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
         console.log(`[AccountsSection] ⏭️ Skipping balance refresh - no accounts`);
         return;
       }
-      
+
       console.log(`[AccountsSection] 🔄 Refreshing account balances (${currentAccounts.length} accounts) - ${new Date().toLocaleTimeString()}`);
-      
+
       // Dispatch the action - fire and forget style to ensure polling never stops
       // The Redux reducer handles success/failure internally, and polling continues regardless
       try {
@@ -216,7 +216,7 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
     const onFocus = () => {
       try {
         dispatchRef.current(fetchAllAccountsWithBalance() as any);
-      } catch (_) {}
+      } catch (_) { }
     };
     const onVisibility = () => {
       if (document.visibilityState === 'visible') onFocus();
@@ -294,7 +294,7 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
     zIndex: 0,
   };
 
-  
+
   const cardMaskStyle: React.CSSProperties = {
     WebkitMaskImage:
       "linear-gradient(212deg,_rgb(49,27,71)_0%,_rgb(20,17,24)_100%)",
@@ -348,7 +348,7 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
           {/* Refresh button removed as requested */}
         </div>
       </div>
-            <Tabs
+      <Tabs
         defaultValue="live"
         value={activeTab}
         onValueChange={(value) => {
@@ -384,7 +384,7 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
             }}
             className="p-2 relative rounded-[10px]"
           >
-           {theme === "dark" ? (
+            {theme === "dark" ? (
               <div style={cardMaskStyle} className="border border-white/45" />
             ) : (
               <div
@@ -425,7 +425,7 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
             </div>
           ) : hasBasicAccountInfo ? (
             accounts
-              .filter((account) => account.accountType === "Live" && !(account.archived === true))
+              .filter((account) => account.accountType === "Live" && !account.archived)
               .map((account, index) => {
                 const mappedAccount = mapMT5AccountToTpAccount(account);
                 return (
@@ -436,7 +436,7 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
                     accountType={account.accountType}
                     accountDetails={mappedAccount}
                     isReady={true}
-                    archived={account.archived === true}
+                    archived={!!account.archived}
                     accountInternalId={account.id}
                   />
                 );
@@ -451,7 +451,7 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
         {/* Demo Accounts */}
         <TabsContent value="demo">
           {(() => {
-            const demoAccounts = accounts.filter((account) => account.accountType === "Demo" && !(account.archived === true));
+            const demoAccounts = accounts.filter((account) => account.accountType === "Demo" && !account.archived);
             if (demoAccounts.length > 0) {
               return demoAccounts.map((account, index) => {
                 const mappedAccount = mapMT5AccountToTpAccount(account);
@@ -463,7 +463,7 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
                     accountType={account.accountType}
                     accountDetails={mappedAccount}
                     isReady={true}
-                    archived={account.archived === true}
+                    archived={!!account.archived}
                     accountInternalId={account.id}
                   />
                 );
@@ -480,7 +480,12 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
         {/* Archived Accounts */}
         <TabsContent value="archived">
           {(() => {
-            const archivedAccounts = accounts.filter((account) => account.archived === true);
+            // Debug logging
+            console.log('[AccountsSection] All Accounts:', accounts.map(a => ({ id: a.accountId, archived: a.archived, type: typeof a.archived })));
+
+            const archivedAccounts = accounts.filter((account) => !!account.archived);
+            console.log('[AccountsSection] Archived Accounts Filtered:', archivedAccounts.length);
+
             if (archivedAccounts.length > 0) {
               return archivedAccounts.map((account, index) => {
                 const mappedAccount = mapMT5AccountToTpAccount(account);

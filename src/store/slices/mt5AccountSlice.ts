@@ -157,7 +157,7 @@ export const fetchMt5Groups = createAsyncThunk(
 // ✅ Get User Accounts from Database (Static fields only)
 export const fetchUserAccountsFromDb = createAsyncThunk(
   "mt5/fetchUserAccountsFromDb",
-  async (opts?: { includeArchived?: boolean }, { rejectWithValue }) => {
+  async (opts: { includeArchived?: boolean } | undefined, { rejectWithValue }) => {
     try {
       const response = await mt5Service.getUserAccountsFromDb({ includeArchived: opts?.includeArchived ?? true });
       const normalized = normalizeOk(response);
@@ -775,6 +775,7 @@ const mt5AccountSlice = createSlice({
             existing.leverage = dbAcc.leverage;
             existing.package = dbAcc.package;
             existing.password = dbAcc.password;
+            existing.archived = dbAcc.archived;
 
             // Use cached balance if state has no balance (e.g. page reload)
             if (existing.balance === undefined && dbAcc.balance !== undefined) {
@@ -964,6 +965,7 @@ const mt5AccountSlice = createSlice({
             existing.nameOnAccount = dbAcc.nameOnAccount;
             existing.leverage = dbAcc.leverage;
             existing.package = dbAcc.package;
+            existing.archived = dbAcc.archived;
           } else {
             state.accounts.push({ ...dbAcc } as MT5Account);
           }
