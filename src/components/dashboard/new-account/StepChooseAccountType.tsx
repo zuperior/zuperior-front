@@ -64,7 +64,7 @@ export const StepChooseAccountType: React.FC<StepChooseAccountTypeProps> = ({
         console.log('🔄 Fetching active groups for account type:', accountType);
         const response = await groupManagementService.getActiveGroups(accountType);
         console.log('✅ Active Groups Response:', response);
-        
+
         if (response.success && response.data) {
           console.log('✅ Groups received:', response.data);
           console.log('✅ First group leverage:', response.data[0]?.leverage);
@@ -107,34 +107,47 @@ export const StepChooseAccountType: React.FC<StepChooseAccountTypeProps> = ({
             <p className="text-sm text-gray-500">No account types available</p>
           </div>
         ) : (
-          <div className="relative w-full flex justify-center">
-            <div className="flex space-x-4 w-full md:w-[540px] flex-wrap justify-center">
+          <div className="relative w-full group">
+            {/* Left Fade/Arrow could go here if needed, using arrowMaskStyle if applicable */}
+
+            <div
+              ref={scrollRef}
+              className="flex space-x-4 w-full overflow-x-auto pb-4 px-1 scrollbar-hide cursor-grab active:cursor-grabbing select-none"
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
               {groups.map((group) => {
                 // Determine user role based on dedicated_name or group name
-                const isPro = group.dedicated_name?.toLowerCase().includes('pro') || 
-                             group.group.toLowerCase().includes('pro');
+                const isPro = group.dedicated_name?.toLowerCase().includes('pro') ||
+                  group.group.toLowerCase().includes('pro');
                 const userRole = isPro ? "For Experts" : "For Beginners";
                 const title = group.dedicated_name || group.group.split('\\').pop() || "Account";
 
                 return (
-                  <AccountTypeCard
-                    key={group.id}
-                    userRole={userRole}
-                    title={title}
-                    selected={isGroupSelected(group)}
-                    onClick={() => {
-                      setAccountPlan(group);
-                      // Update accountType to match the selected group's account_type
-                      if (group.account_type) {
-                        setAccountType(group.account_type);
-                      }
-                    }}
-                    leverage={group.leverage !== null && group.leverage !== undefined ? Number(group.leverage) : null}
-                    minDeposit={group.min_deposit ? Number(group.min_deposit) : null}
-                    spread={group.spread ? Number(group.spread) : null}
-                    commission={group.commission ? Number(group.commission) : null}
-                    description={null}
-                  />
+                  <div key={group.id} className="flex-shrink-0">
+                    <AccountTypeCard
+                      userRole={userRole}
+                      title={title}
+                      selected={isGroupSelected(group)}
+                      onClick={() => {
+                        setAccountPlan(group);
+                        // Update accountType to match the selected group's account_type
+                        if (group.account_type) {
+                          setAccountType(group.account_type);
+                        }
+                      }}
+                      leverage={group.leverage !== null && group.leverage !== undefined ? Number(group.leverage) : null}
+                      minDeposit={group.min_deposit ? Number(group.min_deposit) : null}
+                      spread={group.spread ? Number(group.spread) : null}
+                      commission={group.commission ? Number(group.commission) : null}
+                      description={null}
+                    />
+                  </div>
                 );
               })}
             </div>
