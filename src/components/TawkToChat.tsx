@@ -9,16 +9,6 @@ export default function TawkToChat() {
 
   useEffect(() => {
     // Initialize Tawk.to only on client side
-    // Skip in development to avoid CORS errors (localhost)
-    const isDevelopment = process.env.NODE_ENV === 'development' || 
-                          window.location.hostname === 'localhost' || 
-                          window.location.hostname === '127.0.0.1';
-    
-    if (isDevelopment) {
-      console.log('Tawk.to chat widget disabled in development to avoid CORS errors');
-      return;
-    }
-
     if (typeof window !== "undefined") {
       // Check if script is already loaded
       const existingScript = document.querySelector(
@@ -27,7 +17,7 @@ export default function TawkToChat() {
 
       if (!existingScript) {
         // Initialize Tawk_API
-        window.Tawk_API = window.Tawk_API || {};
+        window.Tawk_API = window.Tawk_API || {} as any;
         window.Tawk_LoadStart = new Date();
 
         // Create and append the script
@@ -36,7 +26,7 @@ export default function TawkToChat() {
         script.async = true;
         script.charset = "UTF-8";
         script.setAttribute("crossorigin", "*");
-        
+
         // Suppress CORS errors in console
         script.onerror = (error) => {
           console.warn('Tawk.to script load error (this is normal in development):', error);
@@ -49,13 +39,39 @@ export default function TawkToChat() {
         }
       }
 
+      // Function to classify Tawk iframes
+      const classifyTawkIframes = () => {
+        const iframes = document.querySelectorAll('iframe[title*="chat"]');
+        iframes.forEach((iframe: any) => {
+          // Check if it's the small icon widget (usually ~60x60)
+          // Check both offset dimensions and inline style
+          const width = iframe.offsetWidth || parseInt(iframe.style.width) || 0;
+          const height = iframe.offsetHeight || parseInt(iframe.style.height) || 0;
+
+          if (width > 0 && width < 100 && height < 100) {
+            iframe.classList.add('tawk-widget-icon');
+          } else {
+            iframe.classList.remove('tawk-widget-icon');
+          }
+        });
+      };
+
+      // Observer to watch for Tawk iframe injection
+      const observer = new MutationObserver(() => {
+        classifyTawkIframes();
+      });
+
+      observer.observe(document.body, { childList: true, subtree: true });
+      // Also run periodically to catch updates
+      const interval = setInterval(classifyTawkIframes, 1000);
+
       // Wait for Tawk.to API to be ready
       const checkTawkAPI = setInterval(() => {
         if (window.Tawk_API && typeof window.Tawk_API.hideWidget === "function") {
           clearInterval(checkTawkAPI);
 
-          // Hide the widget initially
-          window.Tawk_API.hideWidget();
+          // Show the widget initially
+          window.Tawk_API.showWidget();
 
           // Set user information if available
           if (user) {
@@ -120,10 +136,11 @@ export default function TawkToChat() {
       return () => {
         clearInterval(checkTawkAPI);
         clearTimeout(timeout);
+        observer.disconnect();
+        clearInterval(interval);
       };
     }
   }, [user]);
 
   return null; // This component doesn't render anything
 }
-
