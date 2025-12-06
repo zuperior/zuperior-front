@@ -769,6 +769,15 @@ const mt5Service = {
   cancelAll,
 };
 
+
+// --- Feature Suggestion Service Functions ---
+export const featureSuggestionService = {
+  create: async (data: { title: string; description: string }) => {
+    const response = await api.post('/api/feature-suggestions', data);
+    return response.data;
+  }
+};
+
 // --- Notification Service Functions ---
 const notificationService = {
   /** Get all notifications */
@@ -1009,4 +1018,69 @@ const groupManagementService = {
   },
 };
 
-export { authService, api, mt5Service, depositService, adminService, userService, notificationService, groupManagementService };
+// --- FCM Service Functions ---
+export const fcmService = {
+  /** Register FCM token */
+  registerToken: async (token: string, deviceInfo?: any, platform?: string) => {
+    const nextUrl = '/api/fcm/register';
+
+    try {
+      const response = await api.post(nextUrl, {
+        token,
+        deviceInfo,
+        platform: platform || 'web',
+      });
+      return response.data;
+    } catch (error: any) {
+      // Fallback to direct backend call
+      if (error?.response?.status === 404) {
+        const backendUrl = `${BACKEND_API_BASE}/fcm/register`;
+        const fallbackResponse = await api.post(backendUrl, {
+          token,
+          deviceInfo,
+          platform: platform || 'web',
+        });
+        return fallbackResponse.data;
+      }
+      throw error;
+    }
+  },
+
+  /** Unregister FCM token */
+  unregisterToken: async (token: string) => {
+    const nextUrl = `/api/fcm/unregister/${token}`;
+
+    try {
+      const response = await api.delete(nextUrl);
+      return response.data;
+    } catch (error: any) {
+      // Fallback to direct backend call
+      if (error?.response?.status === 404) {
+        const backendUrl = `${BACKEND_API_BASE}/fcm/unregister/${token}`;
+        const fallbackResponse = await api.delete(backendUrl);
+        return fallbackResponse.data;
+      }
+      throw error;
+    }
+  },
+
+  /** Get user's FCM tokens */
+  getUserTokens: async () => {
+    const nextUrl = '/api/fcm/tokens';
+
+    try {
+      const response = await api.get(nextUrl);
+      return response.data;
+    } catch (error: any) {
+      // Fallback to direct backend call
+      if (error?.response?.status === 404) {
+        const backendUrl = `${BACKEND_API_BASE}/fcm/tokens`;
+        const fallbackResponse = await api.get(backendUrl);
+        return fallbackResponse.data;
+      }
+      throw error;
+    }
+  },
+};
+
+export { authService, api, mt5Service, depositService, adminService, userService, notificationService, groupManagementService, featureSuggestionService, fcmService };

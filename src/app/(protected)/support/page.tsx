@@ -34,6 +34,16 @@ export default function SupportHub() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All");
 
+  const statusOptions = [
+    "All",
+    "New",
+    "Open",
+    "Under Review",
+    "Resolved",
+    "Closed",
+    "Reopened",
+  ];
+
   const handleTicketSubmit = async (data: TicketFormData) => {
     setLoading(true);
     try {
@@ -240,19 +250,41 @@ export default function SupportHub() {
       </div>
 
       {/* Previous Tickets Section */}
-      <TextAnimate
-        as="h3"
-        duration={0.2}
-        className="mb-4 mt-8 text-xl sm:text-2xl font-semibold dark:text-white/75"
-      >
-        Your Tickets
-      </TextAnimate>
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
+          <TextAnimate
+            as="h3"
+            duration={0.2}
+            className="text-xl sm:text-2xl font-semibold dark:text-white/75"
+          >
+            Your Tickets
+          </TextAnimate>
+          
+          {/* Status Filter */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <label className="text-sm font-medium dark:text-white/75 text-gray-700">
+              Filter by status:
+            </label>
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-[#1D1825] bg-white dark:bg-[#120f18] text-sm focus:outline-none focus:ring-2 focus:ring-[#6242a5] dark:text-white/75"
+            >
+              {statusOptions.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
 
-      <TicketList
-        selectedStatus={selectedStatus}
-        searchQuery={searchQuery}
-        onTicketClick={(ticket) => setSelectedTicket(ticket.id)}
-      />
+        <TicketList
+          selectedStatus={selectedStatus}
+          searchQuery={searchQuery}
+          onTicketClick={(ticket) => setSelectedTicket(ticket.id)}
+        />
+      </div>
     </div>
   );
 }

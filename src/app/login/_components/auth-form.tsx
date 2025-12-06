@@ -17,6 +17,7 @@ import SubmitButton from "./SubmitButton";
 import ForgotPasswordNewPasswordForm from "./ForgotPasswordNewPasswordForm";
 import { TwoFactorVerification } from "@/components/auth/TwoFactorVerification";
 import { attachReferral, getActiveReferralCode, getStoredReferralCode, resolveReferral, registerReferral } from "@/utils/referrals";
+import { initializeFCM } from "@/services/fcm.service";
 
 const AuthForm = () => {
   const router = useRouter();
@@ -140,6 +141,14 @@ const AuthForm = () => {
         }
       } catch {
         // non-blocking
+      }
+
+      // Initialize FCM for push notifications (non-blocking)
+      try {
+        await initializeFCM();
+      } catch (error) {
+        console.warn('Failed to initialize FCM:', error);
+        // Non-blocking - continue even if FCM fails
       }
 
       toast.success("Account created! Welcome aboard.");
@@ -438,6 +447,14 @@ const AuthForm = () => {
         // non-blocking
       }
 
+      // Initialize FCM for push notifications (non-blocking)
+      try {
+        await initializeFCM();
+      } catch (error) {
+        console.warn('Failed to initialize FCM:', error);
+        // Non-blocking - continue even if FCM fails
+      }
+
       toast.success("Welcome back! You've successfully logged in.");
       router.push("/");
     } catch (error: any) {
@@ -493,6 +510,14 @@ const AuthForm = () => {
       setRequiresTwoFactor(false);
       setTwoFactorOtpKey("");
       setTwoFactorEmail("");
+
+      // Initialize FCM for push notifications (non-blocking)
+      try {
+        await initializeFCM();
+      } catch (error) {
+        console.warn('Failed to initialize FCM:', error);
+        // Non-blocking - continue even if FCM fails
+      }
 
       toast.success("Welcome back! You've successfully logged in.");
       router.push("/");

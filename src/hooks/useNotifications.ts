@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { notificationService } from '@/services/api.service';
+import { initializeFCM, onForegroundMessage, cleanupFCM } from '@/services/fcm.service';
 
 export interface Notification {
   id: string;
@@ -18,6 +19,8 @@ export const useNotifications = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fcmTokenRef = useRef<string | null>(null);
+  const fcmUnsubscribeRef = useRef<(() => void) | null>(null);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -90,6 +93,61 @@ export const useNotifications = () => {
       throw err;
     }
   }, [notifications]);
+
+  // Initialize FCM and listen for push notifications
+  useEffect(() => {
+    let mounted = true;
+
+    const setupFCM = async () => {
+      try {
+        // Initialize FCM and register token
+        const token = await initializeFCM();
+        if (token && mounted) {
+          fcmTokenRef.current = token;
+        }
+
+        // Listen for foreground push notifications
+        const unsubscribe = onForegroundMessage((payload) => {
+          if (mounted) {
+            // Refresh notifications when push is received
+            fetchNotifications();
+            fetchUnreadCount();
+
+            // Show browser notification if permission granted
+            if ('Notification' in window && Notification.permission === 'granted') {
+              const notificationTitle = payload.notification?.title || payload.data?.title || 'New Notification';
+              const notificationBody = payload.notification?.body || payload.data?.body || 'You have a new notification';
+              
+              new Notification(notificationTitle, {
+                body: notificationBody,
+                icon: '/logo.png',
+                tag: payload.data?.notificationId || 'notification',
+              });
+            }
+          }
+        });
+
+        if (unsubscribe && mounted) {
+          fcmUnsubscribeRef.current = unsubscribe;
+        }
+      } catch (error) {
+        console.error('Error setting up FCM:', error);
+      }
+    };
+
+    setupFCM();
+
+    return () => {
+      mounted = false;
+      // Cleanup FCM on unmount
+      if (fcmTokenRef.current) {
+        cleanupFCM(fcmTokenRef.current);
+      }
+      if (fcmUnsubscribeRef.current) {
+        fcmUnsubscribeRef.current();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     fetchNotifications();

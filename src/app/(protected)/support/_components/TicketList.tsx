@@ -21,6 +21,7 @@ const statusColors: Record<string, { bg: string; text: string }> = {
   "Escalated to provider": { bg: "bg-purple-600", text: "text-white" },
   Reopened: { bg: "bg-red-500", text: "text-white" },
   "Solution Provided": { bg: "bg-green-500", text: "text-white" },
+  Resolved: { bg: "bg-green-500", text: "text-white" },
   Closed: { bg: "bg-gray-500", text: "text-white" },
   Open: { bg: "bg-blue-600", text: "text-white" },
 };

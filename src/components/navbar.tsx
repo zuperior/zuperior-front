@@ -39,9 +39,10 @@ import MoonDark from "@/assets/icons/moonDark.png";
 import Wallet from "@/assets/icons/wallet.png";
 import Profile from "@/assets/icons/profile.png";
 import ProfileDark from "@/assets/icons/userDark.png";
-import { CircleUser, Headset, LogOut, Settings } from "lucide-react";
+import { CircleUser, Headset, LogOut, Settings, Lightbulb } from "lucide-react";
 import { WalletMoveDialog } from "@/components/wallet/WalletMoveDialog";
 import { NotificationPanel } from "@/components/NotificationPanel";
+import { SuggestFeatureDialog } from "@/components/SuggestFeatureDialog";
 
 export function Navbar() {
   const { theme, setTheme } = useTheme();
@@ -52,6 +53,7 @@ export function Navbar() {
   const [walletNumber, setWalletNumber] = useState<string>("");
   const [hideBalance, setHideBalance] = useState<boolean>(false);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+  const [suggestFeatureDialogOpen, setSuggestFeatureDialogOpen] = useState(false);
   const [transferDirection, setTransferDirection] = useState<"MT5_TO_WALLET" | "WALLET_TO_MT5">("MT5_TO_WALLET");
   const dispatch = useAppDispatch();
   const mt5Total = useAppSelector((s) => s.mt5.totalBalance);
@@ -92,8 +94,8 @@ export function Navbar() {
           if (!Number.isNaN(bal)) setWalletBalance(bal);
           if (j?.data?.walletNumber) setWalletNumber(String(j.data.walletNumber));
         })
-        .catch(() => {});
-    } catch {}
+        .catch(() => { });
+    } catch { }
   };
 
   // Initial fetch and live update via custom event from pages/dialogs
@@ -102,7 +104,7 @@ export function Navbar() {
     try {
       const pref = localStorage.getItem('hideBalance');
       if (pref === '1' || pref === 'true') setHideBalance(true);
-    } catch {}
+    } catch { }
     refreshWalletBalance();
     const handler = (e: Event) => {
       // Support CustomEvent with optional { detail: { balance } }
@@ -121,7 +123,7 @@ export function Navbar() {
     if (!token) return; // skip if not logged in
     // Try to fetch accounts/balances if we don't have any total yet
     dispatch(fetchUserAccountsFromDb() as any).finally(() => {
-      dispatch(fetchAllAccountsWithBalance() as any).catch(()=>{});
+      dispatch(fetchAllAccountsWithBalance() as any).catch(() => { });
     });
   }, [dispatch]);
 
@@ -146,7 +148,7 @@ export function Navbar() {
 
   const onToggleHide = (val: boolean) => {
     setHideBalance(val);
-    try { localStorage.setItem('hideBalance', val ? '1' : '0'); } catch {}
+    try { localStorage.setItem('hideBalance', val ? '1' : '0'); } catch { }
   };
 
   const handleLogoutWithDelay = () => {
@@ -221,7 +223,7 @@ export function Navbar() {
                       <button
                         type="button"
                         className="opacity-70 hover:opacity-100"
-                        onClick={(e)=>{ e.preventDefault(); navigator.clipboard.writeText(walletNumber); }}
+                        onClick={(e) => { e.preventDefault(); navigator.clipboard.writeText(walletNumber); }}
                         aria-label="Copy wallet number"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
@@ -355,6 +357,16 @@ export function Navbar() {
                   <span>Help Desk</span>
                 </Link>
               </DropdownMenuItem>
+
+              <DropdownMenuItem
+                className="flex items-center gap-2 text-black dark:text-white/50 dark:hover:text-white cursor-pointer"
+                onClick={() => setSuggestFeatureDialogOpen(true)}>
+                <Lightbulb
+                  className="text-black dark:text-white/75"
+                  size={20}
+                />
+                <span>Suggest a feature</span>
+              </DropdownMenuItem>
             </div>
 
             <div className="w-full h-px dark:bg-white/10 bg-black/10" />
@@ -425,10 +437,15 @@ export function Navbar() {
             setTransferDialogOpen(v);
             if (!v) {
               refreshWalletBalance();
-              dispatch(fetchAllAccountsWithBalance() as any).catch(() => {});
+              dispatch(fetchAllAccountsWithBalance() as any).catch(() => { });
             }
           }}
           direction={transferDirection}
+        />
+
+        <SuggestFeatureDialog
+          open={suggestFeatureDialogOpen}
+          onOpenChange={setSuggestFeatureDialogOpen}
         />
       </div>
     </header>
