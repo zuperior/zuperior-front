@@ -771,7 +771,7 @@ const mt5Service = {
 
 
 // --- Feature Suggestion Service Functions ---
-const featureSuggestionService = {
+export const featureSuggestionService = {
   create: async (data: { title: string; description: string }) => {
     const response = await api.post('/api/feature-suggestions', data);
     return response.data;
@@ -1019,7 +1019,7 @@ const groupManagementService = {
 };
 
 // --- FCM Service Functions ---
-const fcmService = {
+export const fcmService = {
   /** Register FCM token */
   registerToken: async (token: string, deviceInfo?: any, platform?: string) => {
     const nextUrl = '/api/fcm/register';

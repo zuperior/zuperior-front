@@ -4,7 +4,6 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
 import { setAccounts, setBalance } from "./accountsSlice";
 import { setAddressVerified, setDocumentVerified, setKycFromDatabase } from "./kycSlice";
-import { store } from "..";
 
 interface UserState {
   data: Omit<User, "tp_accounts_last_snapshot_info"> | null;
@@ -23,7 +22,7 @@ export const getUser = createAsyncThunk<
   { email: string; access_token: string }
 >(
   "user/getUser",
-  async ({ email, access_token }, { rejectWithValue, dispatch }) => {
+  async ({ email, access_token }, { rejectWithValue, dispatch, getState }) => {
     try {
       const response = await axios.post(
         "/api/get-user",
@@ -73,11 +72,11 @@ export const getUser = createAsyncThunk<
         }));
       }
 
+      // Use getState from thunk API instead of importing store directly
+      const state = getState() as any;
       const balance =
-        store
-          .getState()
-          .accounts.data?.filter((acc) => acc?.account_type === "Live")
-          ?.reduce((sum, acc) => sum + Number(acc?.balance ?? 0), 0) ?? 0;
+        state.accounts?.data?.filter((acc: any) => acc?.account_type === "Live")
+          ?.reduce((sum: number, acc: any) => sum + Number(acc?.balance ?? 0), 0) ?? 0;
 
       dispatch(setBalance(balance));
 

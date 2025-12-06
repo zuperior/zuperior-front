@@ -68,10 +68,12 @@ export default function ProtectedLayout({
     <div className="flex h-screen flex-col bg-[linear-gradient(180deg,#F7F5FC_0%,#F2EDFF_100%)] dark:bg-[#01040D]">
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 flex flex-col gap-6 overflow-y-auto dark:bg-[#01040D]">
+        <div className="flex-1 flex flex-col overflow-hidden dark:bg-[#01040D]">
           <Navbar />
-          <div className="lg:px-8 md:px-4 px-1 flex-1">{children}</div>
-        </main>
+          <main className="flex-1 overflow-y-auto">
+            <div className="lg:px-8 md:px-4 px-1 py-6">{children}</div>
+          </main>
+        </div>
       </div>
     </div>
   );

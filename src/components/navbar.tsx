@@ -161,7 +161,7 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 flex py-5 items-center justify-between border-b border-black/10 dark:border-white/10 bg-white dark:bg-[#01040D] px-[15px] z-20">
+    <header className="sticky top-0 flex py-5 items-center justify-between border-b border-black/10 dark:border-white/10 bg-white dark:bg-[#01040D] px-[15px] z-50 shrink-0">
       {/* Right Side */}
       <div className="flex items-center gap-2.5 ml-auto">
         {/* <Button className="rounded-[10px] flex items-center gap-[5px] py-2 px-6 text-white bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-xs leading-[14px] cursor-pointer">

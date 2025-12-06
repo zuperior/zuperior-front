@@ -82,16 +82,6 @@ export interface AddReplyResponse {
   data: TicketReply;
 }
 
-export interface UpdateTicketStatusParams {
-  status: string;
-}
-
-export interface UpdateTicketStatusResponse {
-  success: boolean;
-  message: string;
-  data: Ticket;
-}
-
 /**
  * Get all tickets for the authenticated user
  */
@@ -190,39 +180,6 @@ export async function addTicketReply(
     return response.data.data;
   } catch (error) {
     console.error('Error adding reply:', error);
-    throw error;
-  }
-}
-
-/**
- * Update ticket status
- */
-export async function updateTicketStatus(
-  ticketId: string | number,
-  params: UpdateTicketStatusParams,
-  access_token?: string
-): Promise<Ticket> {
-  try {
-    const token = access_token || (typeof window !== 'undefined' ? localStorage.getItem('userToken') : null);
-    
-    if (!token) {
-      throw new Error('Authentication required');
-    }
-
-    const response = await axios.patch<UpdateTicketStatusResponse>(
-      `/api/support/tickets/${ticketId}/status`,
-      params,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    return response.data.data;
-  } catch (error) {
-    console.error('Error updating ticket status:', error);
     throw error;
   }
 }

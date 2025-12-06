@@ -13,16 +13,12 @@ import {
   MessageSquare,
   Send,
   User,
-  CheckCircle,
-  XCircle,
-  RotateCcw,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import {
   getTicketById,
   TicketWithReplies,
   addTicketReply,
-  updateTicketStatus,
 } from "@/services/getTickets";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -39,7 +35,6 @@ const statusColors: Record<string, { bg: string; text: string }> = {
   "Escalated to provider": { bg: "bg-purple-600", text: "text-white" },
   Reopened: { bg: "bg-red-500", text: "text-white" },
   "Solution Provided": { bg: "bg-green-500", text: "text-white" },
-  Resolved: { bg: "bg-green-500", text: "text-white" },
   Closed: { bg: "bg-gray-500", text: "text-white" },
   Open: { bg: "bg-blue-600", text: "text-white" },
 };
@@ -56,7 +51,6 @@ export default function TicketDetails({ ticketId, onBack }: TicketDetailsProps) 
   const [loading, setLoading] = useState(true);
   const [replyContent, setReplyContent] = useState("");
   const [submittingReply, setSubmittingReply] = useState(false);
-  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   useEffect(() => {
     fetchTicket();
@@ -92,22 +86,6 @@ export default function TicketDetails({ ticketId, onBack }: TicketDetailsProps) 
     }
   };
 
-  const handleStatusChange = async (newStatus: string) => {
-    if (updatingStatus || !ticket) return;
-
-    setUpdatingStatus(true);
-    try {
-      await updateTicketStatus(ticketId, { status: newStatus });
-      toast.success(`Ticket status updated to ${newStatus}`);
-      fetchTicket();
-    } catch (error: any) {
-      console.error("Error updating ticket status:", error);
-      toast.error("Failed to update ticket status");
-    } finally {
-      setUpdatingStatus(false);
-    }
-  };
-
   if (loading || !ticket) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -136,7 +114,7 @@ export default function TicketDetails({ ticketId, onBack }: TicketDetailsProps) 
           <div className="flex items-start justify-between">
             <div className="flex-1 space-y-3">
               {/* Status, Ticket ID, Priority */}
-              <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-3">
                 <Badge
                   className={`${statusColors[ticket.status]?.bg} ${statusColors[ticket.status]?.text} border-0 text-xs font-medium px-2.5 py-1 h-6`}
                 >
@@ -149,70 +127,6 @@ export default function TicketDetails({ ticketId, onBack }: TicketDetailsProps) 
                   className={`h-2 w-2 rounded-full ${priorityColors[ticket.priority]}`}
                   title={`Priority: ${ticket.priority}`}
                 />
-                
-                {/* Status Action Buttons */}
-                {ticket.status !== "Closed" && ticket.status !== "Resolved" && (
-                  <div className="flex items-center gap-2 ml-auto">
-                    {ticket.status !== "Resolved" && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleStatusChange("Resolved")}
-                        disabled={updatingStatus}
-                        className="h-7 text-xs border-green-500 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
-                      >
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Mark Resolved
-                      </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleStatusChange("Closed")}
-                      disabled={updatingStatus}
-                      className="h-7 text-xs border-gray-500 text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-900/20"
-                    >
-                      <XCircle className="h-3 w-3 mr-1" />
-                      Close
-                    </Button>
-                  </div>
-                )}
-                {ticket.status === "Closed" && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleStatusChange("Reopened")}
-                    disabled={updatingStatus}
-                    className="h-7 text-xs border-blue-500 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 ml-auto"
-                  >
-                    <RotateCcw className="h-3 w-3 mr-1" />
-                    Reopen
-                  </Button>
-                )}
-                {ticket.status === "Resolved" && (
-                  <div className="flex items-center gap-2 ml-auto">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleStatusChange("Closed")}
-                      disabled={updatingStatus}
-                      className="h-7 text-xs border-gray-500 text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-900/20"
-                    >
-                      <XCircle className="h-3 w-3 mr-1" />
-                      Close
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleStatusChange("Open")}
-                      disabled={updatingStatus}
-                      className="h-7 text-xs border-blue-500 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                    >
-                      <RotateCcw className="h-3 w-3 mr-1" />
-                      Reopen
-                    </Button>
-                  </div>
-                )}
               </div>
               
               {/* Title */}

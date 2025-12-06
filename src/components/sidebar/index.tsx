@@ -51,7 +51,7 @@ export function Sidebar() {
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed lg:relative top-0 left-0 h-full flex flex-col justify-between border-r border-gray-200 dark:border-[#1a2032] bg-white dark:bg-[#01040D] text-white transition-all duration-300 ease-in-out z-40",
+          "fixed lg:relative top-0 left-0 h-full flex flex-col justify-between border-r border-gray-200 dark:border-[#1a2032] bg-white dark:bg-[#01040D] text-white transition-all duration-300 ease-in-out z-[60] relative",
           mobileOpen ? "w-[280px]" : collapsed ? "w-22.5" : "w-[280px]",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
