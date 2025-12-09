@@ -323,7 +323,7 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ ease: "easeInOut" }}
-            className="text-2xl font-bold text-black/85 dark:text-white/85 tracking-tighter px-2 md:px-0"
+            className="text-xl sm:text-2xl font-bold text-black/85 dark:text-white/85 tracking-tighter"
           >
             Accounts
           </motion.h2>
@@ -333,7 +333,7 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
             <DialogTrigger asChild>
               <Button
                 onClick={onOpenNewAccount}
-                className="relative gap-1 cursor-pointer font-semibold text-white rounded-[15px] px-6 py-2.5 text-xs leading-6 h-11 
+                className="relative gap-1 cursor-pointer font-semibold text-white rounded-[15px] px-4 sm:px-6 py-2 sm:py-2.5 text-xs leading-6 h-9 sm:h-11 
             [background:radial-gradient(ellipse_27%_80%_at_0%_0%,rgba(163,92,162,0.5),rgba(0,0,0,1))]
              hover:bg-transparent dark:[background:black]"
               >

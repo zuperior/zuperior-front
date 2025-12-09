@@ -110,8 +110,8 @@ export function DashboardContent() {
   }
 
   return (
-    <div className="space-y-[25px]">
-      <TextAnimate className="text-2xl font-bold text-black/85 dark:text-white/85 tracking-tighter px-2 md:px-0">
+    <div className="space-y-[25px] px-2.5 sm:px-0">
+      <TextAnimate className="text-xl sm:text-2xl font-bold text-black/85 dark:text-white/85 tracking-tighter">
         {`Welcome, ${name || "User"}`}
       </TextAnimate>
 

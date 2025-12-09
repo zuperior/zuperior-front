@@ -53,7 +53,7 @@ const WalletBalance = ({ balance }: { balance: string | number }) => {
 
   return (
     <div
-      className="relative w-full text-white rounded-[15px] overflow-hidden py-[25px] pl-[30px] pr-10 bg-[linear-gradient(120deg,#6242a5_0%,rgb(98,66,165)_32.947987049549546%,rgba(120,74,164,0.82826)_42.942944088497676%,rgba(163,91,162,0.4)_67.86787015897734%,rgba(163,91,162,0.4)_100%,rgb(0,0,0)_100%)] dark:bg-[radial-gradient(ellipse_27%_80%_at_0%_0%,rgba(163,92,162,0.5),rgba(0,0,0,1))]"
+      className="relative w-full text-white rounded-[15px] overflow-hidden py-4 pl-5 pr-6 sm:py-[25px] sm:pl-[30px] sm:pr-10 bg-[linear-gradient(120deg,#6242a5_0%,rgb(98,66,165)_32.947987049549546%,rgba(120,74,164,0.82826)_42.942944088497676%,rgba(163,91,162,0.4)_67.86787015897734%,rgba(163,91,162,0.4)_100%,rgb(0,0,0)_100%)] dark:bg-[radial-gradient(ellipse_27%_80%_at_0%_0%,rgba(163,92,162,0.5),rgba(0,0,0,1))]"
     >
       <FloatingDots />
       <div
@@ -82,12 +82,12 @@ const WalletBalance = ({ balance }: { balance: string | number }) => {
           </p>
         </div>
       </div>
-      <div className="mt-2.5 relative overflow-hidden h-12 text-white">
+      <div className="mt-2.5 relative overflow-hidden h-10 sm:h-12 text-white">
         <AnimatePresence mode="wait">
           {showBalance ? (
             <motion.div
               key="wallet-visible"
-              className="flex text-[42px] tracking-tighter leading-[46px] font-bold"
+              className="flex text-3xl sm:text-[42px] tracking-tighter leading-tight sm:leading-[46px] font-bold"
               initial={{ opacity: 0, x: -10 }}
               exit={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
@@ -98,7 +98,7 @@ const WalletBalance = ({ balance }: { balance: string | number }) => {
               }}
             >
               <span>${whole}</span>
-              <span className="text-[26px] text-white/75 leading-normal mt-auto">
+              <span className="text-lg sm:text-[26px] text-white/75 leading-normal mt-auto">
                 .{decimal}
               </span>
             </motion.div>
@@ -113,10 +113,10 @@ const WalletBalance = ({ balance }: { balance: string | number }) => {
                 ease: "easeInOut",
                 delay: 0,
               }}
-              className="flex text-[42px] leading-[46px] font-bold"
+              className="flex text-3xl sm:text-[42px] leading-tight sm:leading-[46px] font-bold"
             >
               ****
-              <span className="text-[26px] text-white/75 leading-normal mb-auto ml-px tracking-tighter">
+              <span className="text-lg sm:text-[26px] text-white/75 leading-normal mb-auto ml-px tracking-tighter">
                 **
               </span>
             </motion.div>

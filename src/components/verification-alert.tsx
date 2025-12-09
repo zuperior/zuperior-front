@@ -63,10 +63,10 @@ export default function VerificationAlert({
             />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-black/75 dark:text-white/75 leading-4 -tracking-[0.02em]">
+            <h2 className="text-xs sm:text-sm font-bold text-black/75 dark:text-white/75 leading-4 -tracking-[0.02em]">
               {title}
             </h2>
-            <p className="text-xs font-semibold text-black/50 dark:text-white/50 mt-[5px]">
+            <p className="text-[11px] sm:text-xs font-semibold text-black/50 dark:text-white/50 mt-[5px]">
               {message}
             </p>
           </div>
