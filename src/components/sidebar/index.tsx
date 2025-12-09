@@ -10,12 +10,11 @@ import { ReferralBanner } from "@/components/sidebar/referral-banner";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-  import { useTheme } from "next-themes";
+import { useTheme } from "next-themes";
 
-export function Sidebar() {
+export function Sidebar({ mobileOpen = false, setMobileOpen = () => { } }: { mobileOpen?: boolean; setMobileOpen?: (open: boolean) => void }) {
   const theme = useTheme();
   const { collapsed, toggleSidebar } = useSidebarState();
-  const [mobileOpen, setMobileOpen] = useState(false);
 
   const menuItems = getMenuItems({ theme: theme.theme === "light" ? "light" : "dark" })
   const primaryItems = menuItems.slice(0, 7);
@@ -29,30 +28,17 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile/Tablet Hamburger Button */}
-      <AnimatePresence>
-        {!mobileOpen && (
-          <motion.button
-            key="menu"
-            className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-full bg-gray-800 text-white"
-            onClick={() => setMobileOpen(true)}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            variants={iconVariants}
-            transition={{ duration: 0.2 }}
-          >
-            <Menu size={20} />
-          </motion.button>
-        )}
-      </AnimatePresence>
-
 
       {/* Sidebar */}
       <div
         className={cn(
           "fixed lg:relative top-0 left-0 h-full flex flex-col justify-between border-r border-gray-200 dark:border-[#1a2032] bg-white dark:bg-[#01040D] text-white transition-all duration-300 ease-in-out z-[60] relative",
-          mobileOpen ? "w-[280px]" : collapsed ? "w-22.5" : "w-[280px]",
+          // On mobile/tablet: w-0 when closed, w-[280px] when open
+          // On desktop (lg): collapsed ? w-22.5 : w-[280px]
+          "lg:w-auto",
+          mobileOpen ? "w-[280px]" : "w-0 lg:w-auto",
+          collapsed && "lg:w-22.5",
+          !collapsed && "lg:w-[280px]",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
@@ -89,9 +75,9 @@ export function Sidebar() {
               collapsed ? "px-3" : "px-4.5"
             )}
           >
-            <SidebarMenu items={primaryItems} collapsed={collapsed}  onLinkClick={() => setMobileOpen(false)} />
+            <SidebarMenu items={primaryItems} collapsed={collapsed} onLinkClick={() => setMobileOpen(false)} />
             <div className="w-full h-px bg-gradient-to-r from-transparent via-[#9F8ACF]/50 to-transparent" />
-            <SidebarMenu items={secondaryItems} collapsed={collapsed}    onLinkClick={() => setMobileOpen(false)}  />
+            <SidebarMenu items={secondaryItems} collapsed={collapsed} onLinkClick={() => setMobileOpen(false)} />
           </nav>
         </div>
 

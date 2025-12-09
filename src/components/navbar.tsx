@@ -39,12 +39,12 @@ import MoonDark from "@/assets/icons/moonDark.png";
 import Wallet from "@/assets/icons/wallet.png";
 import Profile from "@/assets/icons/profile.png";
 import ProfileDark from "@/assets/icons/userDark.png";
-import { CircleUser, Headset, LogOut, Settings, Lightbulb } from "lucide-react";
+import { CircleUser, Headset, LogOut, Settings, Lightbulb, Menu } from "lucide-react";
 import { WalletMoveDialog } from "@/components/wallet/WalletMoveDialog";
 import { NotificationPanel } from "@/components/NotificationPanel";
 import { SuggestFeatureDialog } from "@/components/SuggestFeatureDialog";
 
-export function Navbar() {
+export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
@@ -162,6 +162,15 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 flex py-5 items-center justify-between border-b border-black/10 dark:border-white/10 bg-white dark:bg-[#01040D] px-[15px] z-50 shrink-0">
+      {/* Left Side - Mobile Menu Button */}
+      <button
+        onClick={onMenuClick}
+        className="lg:hidden p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+        aria-label="Toggle menu"
+      >
+        <Menu className="h-5 w-5 text-black dark:text-white" />
+      </button>
+
       {/* Right Side */}
       <div className="flex items-center gap-2.5 ml-auto">
         {/* <Button className="rounded-[10px] flex items-center gap-[5px] py-2 px-6 text-white bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-xs leading-[14px] cursor-pointer">
