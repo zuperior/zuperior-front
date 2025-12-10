@@ -7,8 +7,8 @@ import { SidebarHeader } from "@/components/sidebar/sidebar-header";
 import { SidebarMenu } from "@/components/sidebar/sidebar-menu";
 import { SidebarToggle } from "@/components/sidebar/sidebar-toggle";
 import { ReferralBanner } from "@/components/sidebar/referral-banner";
-import { Menu, X } from "lucide-react";
-import { useState } from "react";
+import { X } from "lucide-react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "next-themes";
 
@@ -20,11 +20,20 @@ export function Sidebar({ mobileOpen = false, setMobileOpen = () => { } }: { mob
   const primaryItems = menuItems.slice(0, 7);
   const secondaryItems = menuItems.slice(7);
 
-  const iconVariants = {
-    hidden: { opacity: 0, x: -10 },
-    visible: { opacity: 1, x: 0 },
-    exit: { opacity: 0, x: 10 },
-  };
+  // On mobile: always show icons only (no text), on desktop: use collapsed state
+  const [isMobileView, setIsMobileView] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobileView(window.innerWidth < 1024);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // For display purposes, on mobile we always want icons-only view
+  const displayCollapsed = isMobileView ? true : collapsed;
 
   return (
     <>
@@ -32,25 +41,31 @@ export function Sidebar({ mobileOpen = false, setMobileOpen = () => { } }: { mob
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed lg:relative top-0 left-0 h-full flex flex-col justify-between border-r border-gray-200 dark:border-[#1a2032] bg-white dark:bg-[#01040D] text-white transition-all duration-300 ease-in-out z-[60] relative",
-          // On mobile/tablet: w-0 when closed, w-[280px] when open
+          "fixed lg:relative top-0 left-0 h-dvh flex flex-col justify-between border-r border-transparent lg:border-gray-200 lg:dark:border-[#1a2032] bg-white dark:bg-[#01040D] text-black dark:text-white transition-all duration-300 ease-in-out z-60",
+          // On mobile/tablet: w-0 when closed, completely hidden
           // On desktop (lg): collapsed ? w-22.5 : w-[280px]
           "lg:w-auto",
-          mobileOpen ? "w-[280px]" : "w-0 lg:w-auto",
+          mobileOpen ? "w-[90px] lg:w-auto" : "w-0 overflow-hidden border-0 lg:w-auto lg:border-r",
           collapsed && "lg:w-22.5",
           !collapsed && "lg:w-[280px]",
-          mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          mobileOpen ? "translate-x-0 lg:translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        <SidebarHeader collapsed={collapsed} />
-        <SidebarToggle collapsed={collapsed} onToggle={toggleSidebar} />
+        {/* Show logo on mobile, full header on desktop */}
+        <div className={cn("block")}>
+          <SidebarHeader collapsed={displayCollapsed} />
+        </div>
+        {/* Toggle only visible on desktop */}
+        <div className={cn("lg:block", isMobileView && "hidden")}>
+          <SidebarToggle collapsed={collapsed} onToggle={toggleSidebar} />
+        </div>
 
         {/* Mobile/Tablet Cross Button */}
         <AnimatePresence>
           {mobileOpen && (
             <motion.button
               key="cross"
-              className="absolute top-7 -right-15 lg:hidden p-1.5 rounded-full bg-gray-800 text-white z-50"
+              className="absolute top-7 -right-15 lg:hidden p-1.5 rounded-full bg-gray-800 dark:bg-gray-800 text-white z-50"
               onClick={() => setMobileOpen(false)}
               initial={{ opacity: 0, x: 20, rotate: 90, scale: 0.8 }}
               animate={{ opacity: 1, x: 0, rotate: 0, scale: 1 }}
@@ -68,20 +83,25 @@ export function Sidebar({ mobileOpen = false, setMobileOpen = () => { } }: { mob
           )}
         </AnimatePresence>
 
-        <div className="flex-1 overflow-hidden">
+        {/* Show menu icons on mobile, full menu on desktop */}
+        <div className={cn("flex-1 overflow-hidden")}>
           <nav
             className={cn(
               "flex flex-col gap-2.5 hide-scrollbar overflow-y-auto h-full pb-10 md:pt-10",
-              collapsed ? "px-3" : "px-4.5"
+              "px-3 lg:px-4.5"
             )}
           >
-            <SidebarMenu items={primaryItems} collapsed={collapsed} onLinkClick={() => setMobileOpen(false)} />
-            <div className="w-full h-px bg-gradient-to-r from-transparent via-[#9F8ACF]/50 to-transparent" />
-            <SidebarMenu items={secondaryItems} collapsed={collapsed} onLinkClick={() => setMobileOpen(false)} />
+            {/* On mobile: always show icons only, on desktop: use collapsed state */}
+            <SidebarMenu items={primaryItems} collapsed={displayCollapsed} onLinkClick={() => setMobileOpen(false)} />
+            <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-[#9F8ACF]/50 to-transparent" />
+            <SidebarMenu items={secondaryItems} collapsed={displayCollapsed} onLinkClick={() => setMobileOpen(false)} />
           </nav>
         </div>
 
-        <ReferralBanner collapsed={collapsed} />
+        {/* Hide referral banner on mobile */}
+        <div className={cn("lg:block", isMobileView && "hidden")}>
+          <ReferralBanner collapsed={displayCollapsed} />
+        </div>
       </div>
 
       {/* Dark overlay for mobile/tablet when sidebar is open */}

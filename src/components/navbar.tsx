@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
+import { cn } from "@/lib/utils";
 import { Button } from "../components/ui/button";
 import { authService } from "@/services/api.service";
 import {
@@ -36,7 +37,8 @@ import MoonDark from "@/assets/icons/moonDark.png";
 // import QrDark from "@/assets/icons/qrDark.png";
 // import Bell from "@/assets/icons/bell.png";
 // import BellDark from "@/assets/icons/bellDark.png";
-import Wallet from "@/assets/icons/wallet.png";
+import { getMenuItems } from "@/lib/sidebar-config";
+import { wallet, depositsBlack } from "@/lib/sidebar-assets";
 import Profile from "@/assets/icons/profile.png";
 import ProfileDark from "@/assets/icons/userDark.png";
 import { CircleUser, Headset, LogOut, Settings, Lightbulb, Menu } from "lucide-react";
@@ -47,6 +49,12 @@ import { SuggestFeatureDialog } from "@/components/SuggestFeatureDialog";
 export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
+  // Get icons from sidebar menu items
+  const currentTheme = theme.resolvedTheme || theme.theme || "dark";
+  const menuItems = getMenuItems({ theme: currentTheme === "light" ? "light" : "dark" });
+  const paymentMethodsMenuItem = menuItems.find(item => item.name === "Payment Methods");
+  // Light mode: use wallet icon directly, Dark mode: use payment method icon from sidebar
+  const walletIcon = currentTheme === "light" ? wallet : paymentMethodsMenuItem?.icon;
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
@@ -183,7 +191,13 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
           <DropdownMenuTrigger asChild>
             <Button className="hidden md:flex rounded-[10px] items-center gap-[6px] py-2 px-4 text-white dark:bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-xs leading-[14px] cursor-pointer [background:radial-gradient(ellipse_27%_80%_at_0%_0%,rgba(163,92,162,0.5),rgba(0,0,0,1))] hover:bg-transparent">
               {formattedTotalBalance}
-              <Image className="h-5 w-5" src={Wallet} alt="Wallet" />
+              {walletIcon && (
+                <Image 
+                  className="h-5 w-5" 
+                  src={walletIcon} 
+                  alt="Wallet" 
+                />
+              )}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-62 p-3 dark:bg-[#01040D] border border-[#9F8BCF]/25 rounded-[12px] space-y-3">
@@ -339,7 +353,11 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
                 <Link
                   href="/wallet"
                   className="flex items-center gap-2 text-black dark:text-white/50 dark:hover:text-white transition w-full">
-                  <Image className="h-5 w-5" src={Wallet} alt="Wallet" />
+                  <Image 
+                    className="h-5 w-5" 
+                    src={walletIcon || wallet} 
+                    alt="Wallet" 
+                  />
                   <span>Wallet</span>
                 </Link>
               </DropdownMenuItem>

@@ -46,17 +46,15 @@ export function SidebarHeader({ collapsed }: SidebarHeaderProps) {
       ref={dropdownRef}
     >
       <div
-        className={`flex w-full items-center justify-center ${
-          collapsed ? "justify-center" : ""
-        }`}
+        className={`flex w-full items-center justify-center ${collapsed ? "justify-center" : ""
+          }`}
       >
         {/* This is the new parent container for the dropdown */}
-        <div className="relative flex items-center gap-15">
+        <div className="relative flex items-center gap-4">
           <Link href="/" className={`flex items-center ${collapsed ? "" : ""}`}>
             <div
-              className={`object-contain relative ${
-                collapsed ? "w-12 h-12" : "h-16 w-16 pl-0"
-              }`}
+              className={`object-contain relative ${collapsed ? "w-12 h-12" : "h-16 w-16 pl-0 lg:h-16 lg:w-16"
+                }`}
             >
               <Image
                 alt="Zuperior Logo"
@@ -77,7 +75,7 @@ export function SidebarHeader({ collapsed }: SidebarHeaderProps) {
             </div>
 
             {!collapsed && (
-              <div className="flex flex-col">
+              <div className="hidden lg:flex flex-col">
                 <span className="text-[25px] leading-[-0.05em] font-bold text-black dark:text-white/75">
                   Zuperior
                 </span>
@@ -92,7 +90,7 @@ export function SidebarHeader({ collapsed }: SidebarHeaderProps) {
             <ChevronDown
               onClick={toggleDropdown}
               size={15}
-              className="cursor-pointer dark:text-white/75 text-black"
+              className="hidden lg:flex cursor-pointer dark:text-white/75 text-black"
             />
           )}
 

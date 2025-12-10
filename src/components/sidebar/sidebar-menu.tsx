@@ -120,9 +120,9 @@ export function SidebarMenu({ items, collapsed, onLinkClick }: SidebarMenuProps)
               IconWithTooltip
             )}
 
-            {/* Button with text */}
+            {/* Button with text - hidden on mobile/tablet, only show on desktop */}
             {!collapsed && (
-              <div className="flex-1">
+              <div className="flex-1 lg:flex hidden">
                 <Button
                   onClick={() => handleItemClick(item)}
                   className={cn(
