@@ -104,8 +104,8 @@ export function USDTManualStep1Form({
       toast.error("Please enter a valid amount");
       return false;
     }
-    if (amountNum < 10) {
-      toast.error("Minimum deposit amount is $10");
+    if (amountNum < 1) {
+      toast.error("Minimum deposit amount is $1");
       return false;
     }
 
@@ -137,8 +137,8 @@ export function USDTManualStep1Form({
     if (isNaN(amountNum)) return;
     const totalAfterDeposit = lifetimeDeposit + amountNum;
 
-    if (amountNum < 10) {
-      toast.error("Minimum deposit amount is $10");
+    if (amountNum < 1) {
+      toast.error("Minimum deposit amount is $1");
       return;
     }
     if (startupAllowance && amountNum > startupAllowance.allowed) {

@@ -89,8 +89,8 @@ export function Step1Form({
       toast.error("Please enter a valid amount");
       return false;
     }
-    if (amountNum < 10) {
-      toast.error("Minimum deposit amount is $10");
+    if (amountNum < 1) {
+      toast.error("Minimum deposit amount is $1");
       return false;
     }
 
@@ -131,8 +131,8 @@ export function Step1Form({
       return;
     }
 
-    if (amountNum < 10) {
-      toast.error("Minimum deposit amount is $10");
+    if (amountNum < 1) {
+      toast.error("Minimum deposit amount is $1");
       return;
     }
     if (step === "unverified" && totalAfterDeposit > 5000) {
@@ -208,8 +208,8 @@ export function Step1Form({
                         {selectedAccountObj.acc} (
                         {selectedAccountObj.account_type_requested
                           ? (/^standard$/i.test(selectedAccountObj.account_type_requested)
-                              ? 'Startup'
-                              : selectedAccountObj.account_type_requested.charAt(0).toUpperCase() + selectedAccountObj.account_type_requested.slice(1))
+                            ? 'Startup'
+                            : selectedAccountObj.account_type_requested.charAt(0).toUpperCase() + selectedAccountObj.account_type_requested.slice(1))
                           : ''}
                         )
                       </span>
@@ -248,8 +248,8 @@ export function Step1Form({
                         {account.acc} (
                         {account.account_type_requested
                           ? (/^standard$/i.test(account.account_type_requested)
-                              ? 'Startup'
-                              : account.account_type_requested.charAt(0).toUpperCase() + account.account_type_requested.slice(1))
+                            ? 'Startup'
+                            : account.account_type_requested.charAt(0).toUpperCase() + account.account_type_requested.slice(1))
                           : ''}
                         )
                       </span>
