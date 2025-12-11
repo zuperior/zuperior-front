@@ -75,7 +75,7 @@ export function SidebarHeader({ collapsed }: SidebarHeaderProps) {
             </div>
 
             {!collapsed && (
-              <div className="hidden lg:flex flex-col">
+              <div className="flex flex-col">
                 <span className="text-[25px] leading-[-0.05em] font-bold text-black dark:text-white/75">
                   Zuperior
                 </span>
@@ -90,7 +90,7 @@ export function SidebarHeader({ collapsed }: SidebarHeaderProps) {
             <ChevronDown
               onClick={toggleDropdown}
               size={15}
-              className="hidden lg:flex cursor-pointer dark:text-white/75 text-black"
+              className="cursor-pointer dark:text-white/75 text-black"
             />
           )}
 

@@ -22,7 +22,7 @@ export function Sidebar({ mobileOpen = false, setMobileOpen = () => { } }: { mob
 
   // On mobile: always show icons only (no text), on desktop: use collapsed state
   const [isMobileView, setIsMobileView] = useState(false);
-  
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobileView(window.innerWidth < 1024);
@@ -32,8 +32,8 @@ export function Sidebar({ mobileOpen = false, setMobileOpen = () => { } }: { mob
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // For display purposes, on mobile we always want icons-only view
-  const displayCollapsed = isMobileView ? true : collapsed;
+  // For display purposes, on mobile show full view when open, icons-only when closed
+  const displayCollapsed = isMobileView ? !mobileOpen : collapsed;
 
   return (
     <>
@@ -41,23 +41,19 @@ export function Sidebar({ mobileOpen = false, setMobileOpen = () => { } }: { mob
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed lg:relative top-0 left-0 h-dvh flex flex-col justify-between border-r border-transparent lg:border-gray-200 lg:dark:border-[#1a2032] bg-white dark:bg-[#01040D] text-black dark:text-white transition-all duration-300 ease-in-out z-60",
+          "fixed lg:relative top-0 left-0 h-dvh flex flex-col justify-between border-r border-transparent lg:border-gray-200 lg:dark:border-[#1a2032] bg-white dark:bg-[#01040D] text-black dark:text-white transition-all duration-300 ease-in-out z-50",
           // On mobile/tablet: w-0 when closed, completely hidden
           // On desktop (lg): collapsed ? w-22.5 : w-[280px]
           "lg:w-auto",
-          mobileOpen ? "w-[90px] lg:w-auto" : "w-0 overflow-hidden border-0 lg:w-auto lg:border-r",
+          mobileOpen ? "w-[280px] lg:w-auto pt-16 lg:pt-0" : "w-0 overflow-hidden border-0 lg:w-auto lg:border-r",
           collapsed && "lg:w-22.5",
           !collapsed && "lg:w-[280px]",
           mobileOpen ? "translate-x-0 lg:translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
         {/* Show logo on mobile, full header on desktop */}
-        <div className={cn("block")}>
+        <div className={cn("block flex-shrink-0")}>
           <SidebarHeader collapsed={displayCollapsed} />
-        </div>
-        {/* Toggle only visible on desktop */}
-        <div className={cn("lg:block", isMobileView && "hidden")}>
-          <SidebarToggle collapsed={collapsed} onToggle={toggleSidebar} />
         </div>
 
         {/* Mobile/Tablet Cross Button */}
@@ -87,7 +83,7 @@ export function Sidebar({ mobileOpen = false, setMobileOpen = () => { } }: { mob
         <div className={cn("flex-1 overflow-hidden")}>
           <nav
             className={cn(
-              "flex flex-col gap-2.5 hide-scrollbar overflow-y-auto h-full pb-10 md:pt-10",
+              "flex flex-col gap-2.5 hide-scrollbar overflow-y-auto h-full pb-10 pt-4 md:pt-10",
               "px-3 lg:px-4.5"
             )}
           >
@@ -102,6 +98,23 @@ export function Sidebar({ mobileOpen = false, setMobileOpen = () => { } }: { mob
         <div className={cn("lg:block", isMobileView && "hidden")}>
           <ReferralBanner collapsed={displayCollapsed} />
         </div>
+      </div>
+
+      {/* Toggle only visible on desktop - positioned outside sidebar to appear above border */}
+      <div
+        className={cn(
+          "lg:block hidden",
+          isMobileView && "hidden"
+        )}
+        style={{
+          position: 'fixed',
+          left: collapsed ? 'calc(90px - 12px)' : 'calc(280px - 12px)',
+          top: '60px',
+          zIndex: 9999,
+          transition: 'left 300ms ease-in-out'
+        }}
+      >
+        <SidebarToggle collapsed={collapsed} onToggle={toggleSidebar} />
       </div>
 
       {/* Dark overlay for mobile/tablet when sidebar is open */}

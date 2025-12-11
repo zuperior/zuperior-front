@@ -25,7 +25,7 @@ export default function ProtectedLayout({
   const [authChecked, setAuthChecked] = useState(false);
   const [userFetched, setUserFetched] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
+
   // Enable session checking (WebSocket + polling) for account deletion
   useSessionCheck();
 
@@ -39,7 +39,7 @@ export default function ProtectedLayout({
       router.push("/login");
     } else {
       setAuthChecked(true); // Mark auth as confirmed
-      
+
       // Load user data from localStorage first if available and not yet fetched
       if (storedUser && !userData && !userFetched) {
         try {
@@ -57,7 +57,7 @@ export default function ProtectedLayout({
           console.error("Failed to parse stored user:", error);
         }
       }
-      
+
       // Fetch KYC status from database (non-blocking)
       dispatch(fetchKycStatus()).catch((error) => {
         console.error("Failed to load KYC status:", error);
@@ -75,7 +75,7 @@ export default function ProtectedLayout({
       <div className="flex flex-1 overflow-hidden">
         <Sidebar mobileOpen={mobileMenuOpen} setMobileOpen={setMobileMenuOpen} />
         <div className="flex-1 flex flex-col overflow-hidden dark:bg-[#01040D]">
-          <Navbar onMenuClick={() => setMobileMenuOpen(true)} />
+          <Navbar onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)} />
           <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
             <div className="lg:px-8 md:px-4 px-1 py-6">{children}</div>
           </main>
