@@ -44,44 +44,59 @@ export const requestNotificationPermission = async (): Promise<NotificationPermi
  * Get FCM token for current device
  */
 export const getFCMToken = async (): Promise<string | null> => {
-  if (typeof window === 'undefined' || !messaging) {
-    console.warn('Firebase Messaging not available (server-side or not initialized)');
+  console.log('🔵 [FCM] getFCMToken called');
+
+  if (typeof window === 'undefined') {
+    console.warn('⚠️ [FCM] Running on server-side, skipping FCM');
+    return null;
+  }
+
+  if (!messaging) {
+    console.warn('⚠️ [FCM] Firebase Messaging not initialized');
     return null;
   }
 
   try {
+    console.log('🔵 [FCM] Requesting notification permission...');
     // Request permission first
     const permission = await requestNotificationPermission();
+    console.log('🔵 [FCM] Permission status:', permission);
+
     if (permission !== 'granted') {
-      console.warn('Notification permission not granted');
+      console.warn('⚠️ [FCM] Notification permission not granted:', permission);
       return null;
     }
+
+    console.log('🔵 [FCM] Getting FCM token from Firebase...');
+    console.log('🔵 [FCM] VAPID key present:', !!VAPID_KEY);
 
     // Get FCM token
     // Note: VAPID key is required for web push. Get it from Firebase Console > Project Settings > Cloud Messaging
-    const token = VAPID_KEY 
+    const token = VAPID_KEY
       ? await getToken(messaging, {
-          vapidKey: VAPID_KEY,
-        })
+        vapidKey: VAPID_KEY,
+      })
       : await getToken(messaging);
 
     if (token) {
-      console.log('✅ FCM token obtained:', token.substring(0, 20) + '...');
+      console.log('✅ [FCM] Token obtained from Firebase:', token.substring(0, 20) + '...');
       return token;
     } else {
-      console.warn('No FCM token available');
+      console.warn('⚠️ [FCM] No FCM token available from Firebase');
       return null;
     }
   } catch (error: any) {
-    console.error('Error getting FCM token:', error);
-    
+    console.error('❌ [FCM] Error getting FCM token:', error);
+    console.error('❌ [FCM] Error code:', error.code);
+    console.error('❌ [FCM] Error message:', error.message);
+
     // Handle specific errors
     if (error.code === 'messaging/permission-blocked') {
-      console.warn('Notification permission is blocked');
+      console.warn('⚠️ [FCM] Notification permission is blocked');
     } else if (error.code === 'messaging/permission-default') {
-      console.warn('Notification permission is default (not granted)');
+      console.warn('⚠️ [FCM] Notification permission is default (not granted)');
     }
-    
+
     return null;
   }
 };
@@ -90,17 +105,23 @@ export const getFCMToken = async (): Promise<string | null> => {
  * Register FCM token with backend
  */
 export const registerFCMToken = async (token: string, deviceInfo?: any, platform?: string): Promise<boolean> => {
+  console.log('🔵 [FCM] registerFCMToken called with token:', token.substring(0, 20) + '...');
   try {
+    console.log('🔵 [FCM] Calling API service to register token...');
     const response = await apiFcmService.registerToken(token, deviceInfo, platform);
+    console.log('🔵 [FCM] API response:', response);
+
     if (response.success) {
-      console.log('✅ FCM token registered with backend');
+      console.log('✅ [FCM] Token registered with backend successfully');
       return true;
     } else {
-      console.error('Failed to register FCM token:', response.message);
+      console.error('❌ [FCM] Failed to register FCM token:', response.message);
       return false;
     }
   } catch (error: any) {
-    console.error('Error registering FCM token:', error);
+    console.error('❌ [FCM] Error registering FCM token:', error);
+    console.error('❌ [FCM] Error response:', error.response?.data);
+    console.error('❌ [FCM] Error status:', error.response?.status);
     return false;
   }
 };
@@ -129,23 +150,33 @@ export const unregisterFCMToken = async (token: string): Promise<boolean> => {
  * Call this when user logs in
  */
 export const initializeFCM = async (): Promise<string | null> => {
+  console.log('🔵 [FCM] Starting FCM initialization...');
   try {
+    console.log('🔵 [FCM] Attempting to get FCM token...');
     const token = await getFCMToken();
+
     if (token) {
+      console.log('✅ [FCM] Token obtained successfully:', token.substring(0, 30) + '...');
+
       // Get device info
       const deviceInfo = {
         browser: navigator.userAgent,
         platform: navigator.platform,
         language: navigator.language,
       };
+      console.log('🔵 [FCM] Device info:', deviceInfo);
 
       // Register with backend
-      await registerFCMToken(token, deviceInfo, 'web');
+      console.log('🔵 [FCM] Registering token with backend...');
+      const result = await registerFCMToken(token, deviceInfo, 'web');
+      console.log('✅ [FCM] Token registered with backend:', result);
       return token;
+    } else {
+      console.warn('⚠️ [FCM] No token obtained from Firebase');
     }
     return null;
   } catch (error) {
-    console.error('Error initializing FCM:', error);
+    console.error('❌ [FCM] Error initializing FCM:', error);
     return null;
   }
 };

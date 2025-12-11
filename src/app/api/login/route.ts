@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     );
 
     const jsonResponse = NextResponse.json(response.data);
-    
+
     // Only set cookies if login is complete (not 2FA required)
     if (!response.data?.requiresTwoFactor) {
       const token = response.data?.token;
