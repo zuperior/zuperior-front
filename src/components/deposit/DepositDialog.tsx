@@ -262,9 +262,14 @@ export function DepositDialog({
       console.log('💎 [DEPOSIT] Selected crypto:', selectedCrypto);
       console.log('💎 [DEPOSIT] Selected network:', selectedNetwork);
 
+      const token = localStorage.getItem('userToken');
+
       const response = await fetch("/api/checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify(requestPayload),
       });
 
@@ -453,24 +458,24 @@ export function DepositDialog({
       </Dialog>
 
       <Dialog open={confirmCloseOpen} onOpenChange={setConfirmCloseOpen}>
-        <DialogContent className="sm:max-w-[425px] border-[#27272a] bg-[#09090b] text-white">
-          <DialogHeader>
-            <DialogTitle className="text-white">Confirm Close</DialogTitle>
-            <DialogDescription className="text-zinc-400">
-              Are you sure you want to close the deposit process? Your current
-              payment might be interrupted.
+        <DialogContent className="sm:max-w-[425px] border-[#27272a] bg-[#09090b] text-white z-[9999] gap-4 shadow-2xl p-6">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-xl font-semibold text-white tracking-tight">Stop Deposit?</DialogTitle>
+            <DialogDescription className="text-base text-zinc-400 leading-relaxed">
+              Are you sure you want to cancel? Your current payment session will be terminated and cannot be resumed.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="flex-row gap-3 pt-4 sm:justify-end w-full">
             <Button
               variant="outline"
               onClick={() => setConfirmCloseOpen(false)}
-              className="border-[#27272a] bg-transparent text-white hover:bg-[#27272a] hover:text-white"
+              className="flex-1 sm:flex-none border-[#27272a] bg-[#18181b] text-white hover:bg-[#27272a] hover:text-white transition-colors"
             >
-              Cancel
+              Continue Deposit
             </Button>
             <Button
-              className="bg-[#a370f0] hover:bg-[#925bd6] text-white"
+              variant="destructive"
+              className="flex-1 sm:flex-none bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/20"
               onClick={async () => {
                 try {
                   // Call cancel API if we have a cregisId
@@ -489,7 +494,7 @@ export function DepositDialog({
                 onOpenChange(false);
               }}
             >
-              Confirm
+              Cancel Process
             </Button>
           </DialogFooter>
         </DialogContent>

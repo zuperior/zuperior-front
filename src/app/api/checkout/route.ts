@@ -18,7 +18,7 @@ const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://local
 export async function POST(req: NextRequest) {
   try {
     console.log('🚀 [CHECKOUT] ========== NEW CHECKOUT REQUEST ==========');
-    
+
     const body = (await req.json()) as {
       order_amount: string;
       order_currency: string;
@@ -50,10 +50,10 @@ export async function POST(req: NextRequest) {
     if (!order_amount || !order_currency) {
       console.error('❌ [CHECKOUT] Missing required fields');
       return NextResponse.json(
-        { 
+        {
           code: "10000",
           msg: "Payment initiation failed",
-          error: "Missing required fields: order_amount, order_currency" 
+          error: "Missing required fields: order_amount, order_currency"
         },
         { status: 400 }
       );
@@ -63,10 +63,10 @@ export async function POST(req: NextRequest) {
     if (order_amount.trim() === '' || order_amount === '0') {
       console.error('❌ [CHECKOUT] Invalid amount:', order_amount);
       return NextResponse.json(
-        { 
+        {
           code: "10000",
           msg: "Payment initiation failed",
-          error: "Invalid amount: must be greater than 0" 
+          error: "Invalid amount: must be greater than 0"
         },
         { status: 400 }
       );
@@ -76,10 +76,10 @@ export async function POST(req: NextRequest) {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
     const successUrl = config.SUCCESS_URL || `${baseUrl}/deposit/success`;
     const cancelUrl = config.CANCEL_URL || `${baseUrl}/deposit/cancel`;
-    
-    console.log('📋 [CHECKOUT] Using URLs:', { 
+
+    console.log('📋 [CHECKOUT] Using URLs:', {
       baseUrl,
-      successUrl, 
+      successUrl,
       cancelUrl,
       hasSuccessUrl: !!successUrl,
       hasCancelUrl: !!cancelUrl,
@@ -89,10 +89,10 @@ export async function POST(req: NextRequest) {
     if (!successUrl || !cancelUrl) {
       console.error('❌ [CHECKOUT] Empty URLs detected!');
       return NextResponse.json(
-        { 
+        {
           code: "10000",
           msg: "Payment initiation failed",
-          error: "Server configuration error: Missing callback URLs" 
+          error: "Server configuration error: Missing callback URLs"
         },
         { status: 500 }
       );
@@ -107,9 +107,9 @@ export async function POST(req: NextRequest) {
 
     // Call Cregis Checkout API to get dynamic payment address
     console.log('🔄 [CHECKOUT] Calling Cregis Checkout API...');
-    
+
     const { createPaymentOrder } = await import('@/lib/cregis-payment.service');
-    
+
     const cregisResult = await createPaymentOrder({
       orderAmount: order_amount,
       orderCurrency: order_currency,
@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
     }
 
     const thirdPartyId = cregisResult.data.orderId;
-    
+
     console.log('✅ [CHECKOUT] Cregis payment order created:', {
       cregisId: cregisResult.data.cregis_id,
       thirdPartyId,
@@ -144,36 +144,63 @@ export async function POST(req: NextRequest) {
     // If backend fails, we'll still return the address so user can deposit
     try {
       const cookieStore = await cookies();
-      const token = cookieStore.get('token')?.value;
+      const allCookies = cookieStore.getAll();
+      console.log('🍪 [CHECKOUT] Available cookies:', allCookies.map(c => c.name));
+
+      let token = cookieStore.get('token')?.value;
+
+      // Fallback: try 'userToken' or other common names if 'token' is missing
+      if (!token) {
+        token = cookieStore.get('userToken')?.value || cookieStore.get('auth_token')?.value;
+      }
+
+      // Fallback: try Authorization header
+      if (!token) {
+        const authHeader = req.headers.get('authorization');
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          token = authHeader.substring(7);
+          console.log('🔑 [CHECKOUT] Token found in Authorization header');
+        }
+      }
+
+      console.log('🔑 [CHECKOUT] Token found:', !!token ? 'Yes (length: ' + token.length + ')' : 'No');
+      console.log('🌐 [CHECKOUT] Backend URL:', BACKEND_API_URL);
 
       if (token && account_number) {
-        console.log('📞 [CHECKOUT] Attempting to call backend to create deposit record...');
-        
-        const backendResponse = await fetch(`${BACKEND_API_URL}/deposit/cregis-crypto`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            mt5AccountId: account_number,
-            amount: order_amount,
-            currency: order_currency,
-            network: network || 'TRC20',
-            cregisOrderId: thirdPartyId,
-            cregisId: cregisResult.data.cregis_id,
-            paymentUrl: cregisResult.data.checkout_url || cregisResult.data.paymentUrl,
-          }),
-        });
+        console.log('📞 [CHECKOUT] Calling Backend Endpoint (V1 path -> V2 logic)...');
+        const backendEndpoint = `${BACKEND_API_URL}/deposit/cregis-crypto`;
+        console.log('🔗 [CHECKOUT] Target Endpoint:', backendEndpoint);
 
-        if (backendResponse.ok) {
-          const backendData = await backendResponse.json();
-          console.log('✅ [CHECKOUT] Deposit record created in backend:', backendData);
-        } else {
-          const errorText = await backendResponse.text();
-          console.warn('⚠️ [CHECKOUT] Backend call failed (continuing anyway):', errorText);
-          console.warn('⚠️ [CHECKOUT] Backend might not be running or route not found');
-          console.warn('💡 [CHECKOUT] User can still deposit - address will be shown');
+        try {
+          const backendResponse = await fetch(backendEndpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              mt5AccountId: account_number,
+              amount: order_amount,
+              currency: order_currency,
+              network: network || 'TRC20',
+              cregisOrderId: thirdPartyId,
+              cregisId: cregisResult.data.cregis_id,
+              paymentUrl: cregisResult.data.checkout_url || cregisResult.data.paymentUrl,
+            }),
+          });
+
+          console.log('📡 [CHECKOUT] Backend Response Status:', backendResponse.status);
+
+          if (backendResponse.ok) {
+            const backendData = await backendResponse.json();
+            console.log('✅ [CHECKOUT] Deposit record created in backend:', backendData);
+          } else {
+            const errorText = await backendResponse.text();
+            console.error('❌ [CHECKOUT] Backend call failed with status:', backendResponse.status);
+            console.error('❌ [CHECKOUT] Backend response body:', errorText);
+          }
+        } catch (fetchError) {
+          console.error('❌ [CHECKOUT] Fetch failed entirely:', fetchError);
         }
       } else {
         console.warn('⚠️ [CHECKOUT] No auth token or account - skipping backend call');
@@ -181,7 +208,6 @@ export async function POST(req: NextRequest) {
     } catch (backendError) {
       console.warn('⚠️ [CHECKOUT] Backend error (continuing anyway):', backendError);
       console.warn('💡 [CHECKOUT] User can still deposit - address will be shown');
-      // Don't return error - continue to show address even if backend fails
     }
 
     // Return Cregis checkout data to frontend
@@ -198,7 +224,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: unknown) {
     const error = err as Error;
-    
+
     console.error("❌ Checkout API error:", error);
     console.error("❌ Error stack:", error.stack);
 

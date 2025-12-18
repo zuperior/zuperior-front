@@ -43,29 +43,29 @@ function generateSignature(
   const filtered = Object.entries(params).filter(
     ([, value]) => value !== null && value !== undefined && value !== ""
   );
-  
+
   // Sort parameters by key
   const sorted = filtered.sort(([a], [b]) => a.localeCompare(b));
-  
+
   // Create string to sign: secretKey + sorted key-value pairs
   const stringToSign = secretKey + sorted.map(([k, v]) => `${k}${v}`).join("");
-  
+
   console.log("🔐 Generating signature:", {
     paramsCount: filtered.length,
     sortedKeys: sorted.map(([k]) => k),
     stringToSignLength: stringToSign.length,
     stringToSign: stringToSign.substring(0, 100) + "..."
   });
-  
+
   // Generate MD5 hash in lowercase
   const signature = crypto
     .createHash("md5")
     .update(stringToSign)
     .digest("hex")
     .toLowerCase();
-  
+
   console.log("✅ Generated signature:", signature);
-  
+
   return signature;
 }
 
@@ -113,7 +113,7 @@ export async function createPaymentOrder({
     if (!cancelUrl || cancelUrl.trim() === '') {
       throw new Error('cancelUrl must not be empty');
     }
-    
+
     // Validate validTime is within Cregis acceptable range (10-60 minutes)
     if (validTime < 10 || validTime > 60) {
       console.warn(`⚠️ validTime ${validTime} is outside Cregis range (10-60 minutes). Clamping to valid range.`);
@@ -185,14 +185,14 @@ export async function createPaymentOrder({
         data: data.data,
         fullResponse: data
       });
-      
+
       console.error("💡 Troubleshooting hints:");
       if (errorMessage.includes('checkout counter')) {
         console.error("   → This usually means currency format is incorrect or currency not enabled for Payment Engine");
         console.error("   → Try checking available currencies with /api/cregis/check-currencies");
         console.error("   → Contact Cregis support to enable this currency for Payment Engine API");
       }
-      
+
       // Provide helpful error messages for common issues
       if (errorMessage.includes('whitelist')) {
         // Extract IP from error message (supports both IPv4 and IPv6)
@@ -200,12 +200,12 @@ export async function createPaymentOrder({
         const detectedIp = ipMatch ? ipMatch[0] : 'your server IP';
         throw new Error(`IP whitelist error: Your server IP needs to be added to Cregis whitelist. IP: ${detectedIp}. Please contact Cregis support to add this IP to the whitelist.`);
       }
-      
+
       throw new Error(`Cregis API error: ${errorMessage}`);
     }
 
     console.log("✅ Payment order created successfully:", data);
-    
+
     // Extract payment data from Cregis response
     const paymentData = {
       cregis_id: data.data?.cregis_id,
@@ -214,7 +214,7 @@ export async function createPaymentOrder({
       expire_time: data.data?.expire_time,
       orderId,
     };
-    
+
     console.log("📋 Extracted payment data:", {
       hasCregisId: !!paymentData.cregis_id,
       hasCheckoutUrl: !!paymentData.checkout_url,
@@ -222,7 +222,7 @@ export async function createPaymentOrder({
       paymentInfoCount: paymentData.payment_info?.length || 0,
       orderId: paymentData.orderId,
     });
-    
+
     // Verify payment_info is present
     if (!paymentData.payment_info || paymentData.payment_info.length === 0) {
       console.error("❌ Missing payment_info in Cregis response!");
