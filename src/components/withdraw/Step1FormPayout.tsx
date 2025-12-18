@@ -50,6 +50,13 @@ export function Step1FormPayout({
   const [approvedMethods, setApprovedMethods] = useState<ApprovedMethod[]>([]);
   const [wallet, setWallet] = useState<any>(null);
   
+  // State for withdrawal limits from group_management
+  const [withdrawalLimits, setWithdrawalLimits] = useState<{
+    minWithdrawal: number | null;
+    maxWithdrawal: number | null;
+  } | null>(null);
+  const [loadingWithdrawalLimits, setLoadingWithdrawalLimits] = useState(false);
+  
   // Compute available balance for display and quick-fill
   const availableBalance = useMemo(() => {
     const raw = useWallet
@@ -62,6 +69,50 @@ export function Step1FormPayout({
   useEffect(() => {
     setKycStep(store.getState().kyc.verificationStatus);
   }, []);
+
+  // Fetch withdrawal limits when account is selected
+  useEffect(() => {
+    const fetchWithdrawalLimits = async () => {
+      // Only fetch if not using wallet and account is selected
+      if (useWallet || !selectedAccount) {
+        setWithdrawalLimits(null);
+        return;
+      }
+
+      const accountNumber = selectedAccount.acc?.toString();
+      if (!accountNumber) {
+        setWithdrawalLimits(null);
+        return;
+      }
+
+      setLoadingWithdrawalLimits(true);
+      try {
+        const response = await fetch(`/api/mt5/deposit-limits/${accountNumber}`);
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          setWithdrawalLimits({
+            minWithdrawal: data.data.minWithdrawal,
+            maxWithdrawal: data.data.maxWithdrawal,
+          });
+          console.log('📊 Withdrawal limits fetched:', {
+            minWithdrawal: data.data.minWithdrawal,
+            maxWithdrawal: data.data.maxWithdrawal,
+          });
+        } else {
+          setWithdrawalLimits(null);
+          console.warn('⚠️ No withdrawal limits found for account:', accountNumber);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching withdrawal limits:', error);
+        setWithdrawalLimits(null);
+      } finally {
+        setLoadingWithdrawalLimits(false);
+      }
+    };
+
+    fetchWithdrawalLimits();
+  }, [selectedAccount, useWallet]);
 
   // Load approved payment methods (wallet addresses + bank accounts)
   useEffect(() => {
@@ -128,10 +179,27 @@ export function Step1FormPayout({
       toast.error("Please enter a valid amount");
       return false;
     }
+
+    // Check withdrawal limits from group_management
+    // If min_withdrawal is null/empty, treat as no minimum limit (infinite)
+    // If max_withdrawal is null/empty, treat as no maximum limit (infinite)
+    if (!useWallet && withdrawalLimits) {
+      if (withdrawalLimits.minWithdrawal !== null && withdrawalLimits.minWithdrawal !== undefined && amountNum < withdrawalLimits.minWithdrawal) {
+        toast.error(`Minimum withdrawal for this account is $${withdrawalLimits.minWithdrawal}`);
+        return false;
+      }
+      if (withdrawalLimits.maxWithdrawal !== null && withdrawalLimits.maxWithdrawal !== undefined && amountNum > withdrawalLimits.maxWithdrawal) {
+        toast.error(`Maximum withdrawal for this account is $${withdrawalLimits.maxWithdrawal}`);
+        return false;
+      }
+    }
+
+    // Fallback to default minimum if no withdrawal limit is set
     if (amountNum < 10) {
       toast.error("Minimum withdrawal amount is $10");
       return false;
     }
+
     if (amountNum > balance) {
       toast.error(
         `Insufficient funds. Your balance is ${balance.toFixed(2)} USD`
@@ -284,14 +352,27 @@ export function Step1FormPayout({
           <button
             type="button"
             className="hover:opacity-80 cursor-pointer font-medium"
-            onClick={() => setAmount(availableBalance.toFixed(2))}
-            title="Click to withdraw full balance"
+            onClick={() => {
+              // Set amount to the minimum of available balance and max withdrawal limit
+              const maxAllowed = effectiveMaxWithdrawal === Infinity 
+                ? availableBalance 
+                : Math.min(availableBalance, effectiveMaxWithdrawal);
+              setAmount(maxAllowed.toFixed(2));
+            }}
+            title="Click to withdraw maximum allowed"
           >
             ${availableBalance.toFixed(2)}
           </button>
         </div>
 
-        {kycStep && (
+        {/* Show withdrawal limits */}
+        {!useWallet && selectedAccount && (
+          <p className="text-xs mt-2 text-[#945393] font-medium">
+            {getLimitMessage()}
+          </p>
+        )}
+
+        {useWallet && kycStep && (
           <p className="text-xs mt-2 text-[#945393]">{getLimitMessage()}</p>
         )}
       </div>

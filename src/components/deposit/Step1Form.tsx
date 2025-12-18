@@ -328,20 +328,25 @@ export function Step1Form({
     const minLimit = depositLimits?.minLimit ?? groupInfo?.MinLimit;
     const maxLimit = depositLimits?.maxLimit ?? groupInfo?.MaxLimit;
 
-    if (minLimit !== undefined && minLimit !== null) {
+    if (minLimit !== undefined && minLimit !== null && !isNaN(minLimit)) {
       if (minLimit > min) {
         min = minLimit;
       }
     }
-    if (maxLimit !== undefined && maxLimit !== null) {
+    if (maxLimit !== undefined && maxLimit !== null && !isNaN(maxLimit)) {
       if (maxLimit < max) {
         max = maxLimit;
         source = depositLimits ? `Account Package Limit` : `Group Limit (${groupInfo?.DedicatedName || groupInfo?.Group || 'Limited'})`;
       }
     }
 
+    // If max is still Infinity and we have a selected account, set a reasonable default
+    if (max === Infinity && selectedAccountNumber) {
+      max = 100000; // Default max if no limit found
+    }
+
     return { effectiveMin: min, effectiveMax: max, limitSource: source };
-  }, [step, groupInfo, depositLimits]);
+  }, [step, groupInfo, depositLimits, selectedAccountNumber]);
 
   const getLimitMessage = () => {
     if (!selectedAccountObj) return ""; // Show nothing if no account selected
@@ -470,7 +475,7 @@ export function Step1Form({
               </span>
             </div>
             {/* Limit range display */}
-            {selectedAccountObj && (
+            {selectedAccountNumber && (
               <p className="text-xs mt-2 text-[#945393] font-medium">
                 {effectiveMin > 0 ? `$${effectiveMin}` : "$1"} - {effectiveMax === Infinity ? "Unlimited" : `$${effectiveMax.toFixed(2)}`}
               </p>
