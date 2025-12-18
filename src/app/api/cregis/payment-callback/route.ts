@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
       try {
         const isValid = verifyCallbackSignature(callbackParams, PAYMENT_API_KEY, sign);
-        
+
         if (!isValid) {
           console.error("❌ Invalid signature in callback");
           return NextResponse.json(
@@ -75,18 +75,18 @@ export async function POST(req: NextRequest) {
     try {
       // First, try to find deposit by cregis_id or third_party_id
       const searchId = cregis_id || third_party_id;
-      
+
       if (!searchId) {
         console.warn("⚠️ No cregis_id or third_party_id provided in callback");
-        return NextResponse.json({ 
-          success: false, 
-          message: "Missing cregis_id or third_party_id" 
+        return NextResponse.json({
+          success: false,
+          message: "Missing cregis_id or third_party_id"
         }, { status: 400 });
       }
 
       // Call backend to update deposit status
       // Pass payment_detail array if present (contains receive_amount and tx_id)
-      const updateResponse = await fetch(`${BACKEND_API_URL}/deposit/cregis-callback`, {
+      const updateResponse = await fetch(`${BACKEND_API_URL}/cregis/payment-callback`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -112,10 +112,10 @@ export async function POST(req: NextRequest) {
       if (!updateResponse.ok) {
         const errorText = await updateResponse.text();
         console.error("❌ Failed to update deposit in backend:", errorText);
-        
+
         // Still return success to Cregis to prevent retries for transient errors
-        return NextResponse.json({ 
-          success: true, 
+        return NextResponse.json({
+          success: true,
           message: "Callback received but database update failed",
           error: errorText
         });
@@ -133,24 +133,24 @@ export async function POST(req: NextRequest) {
           currency: paid_currency || order_currency,
           txHash: tx_hash || txid
         });
-        
+
         if (to_address) {
           console.log('📍 Crypto deposit address:', to_address);
         }
       }
 
-      return NextResponse.json({ 
-        success: true, 
+      return NextResponse.json({
+        success: true,
         message: "Callback processed successfully",
         data: updateData,
       });
 
     } catch (dbError) {
       console.error("❌ Database update error:", dbError);
-      
+
       // Return success to Cregis to prevent retries
-      return NextResponse.json({ 
-        success: true, 
+      return NextResponse.json({
+        success: true,
         message: "Callback received but processing error occurred",
         error: dbError instanceof Error ? dbError.message : "Unknown error"
       });
