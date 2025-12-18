@@ -95,6 +95,7 @@ export async function POST(req: NextRequest) {
           cregis_id: cregis_id,
           third_party_id: third_party_id,
           status: depositStatus,
+          event_type: event_type, // Pass event_type for proper status mapping fallback
           order_amount: order_amount,
           order_currency: order_currency,
           received_amount: received_amount,
@@ -105,7 +106,7 @@ export async function POST(req: NextRequest) {
           to_address: to_address,
           block_height: block_height,
           block_time: block_time,
-          payment_detail: body.payment_detail, // Pass payment_detail array if present
+          payment_detail: body.payment_detail, // Pass payment_detail array if present (contains receive_amount and tx_id)
         }),
       });
 
