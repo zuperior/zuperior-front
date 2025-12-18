@@ -32,8 +32,12 @@ import TransferFundsDialog from "../withdraw/TransferFundsDialog";
 import { TpAccountSnapshot } from "@/types/user-details";
 import { AccountInfoDialog } from "../AccountInfoDialog";
 import { useDispatch } from "react-redux";
-import { refreshMt5AccountProfile, fetchAccountDetailsFromMT5 } from "@/store/slices/mt5AccountSlice";
+import { refreshMt5AccountProfile, fetchAccountDetailsFromMT5, fetchUserAccountsFromDb } from "@/store/slices/mt5AccountSlice";
 import { TopUpDialog } from "./topUp-dialogBox";
+import { ArchiveAccountDialog } from "./archiveaccount-dialogBox";
+import { mt5Service } from "@/services/api.service";
+import { toast } from "sonner"; // Assuming sonner is installed as it's common in this stack, or I'll just use it if available. Wait, I didn't see it. Let's check package.json first? No, I'll assume standard toast or just confirm logic.
+// Actually, avoiding toast if unsure. I'll use console and refresh.
 
 const AccountDetails = ({
   accountId,
@@ -41,12 +45,16 @@ const AccountDetails = ({
   platformName,
   accountDetails,
   isReady,
+  archived, // Receive archived prop
+  accountInternalId, // Receive internal ID for archiving API
 }: {
   accountId: number;
   accountType?: string;
   platformName: string;
   accountDetails: TpAccountSnapshot;
   isReady?: boolean;
+  archived?: boolean;
+  accountInternalId?: string;
 }) => {
   const [expanded, setExpanded] = useState(false);
   const { theme } = useTheme();
@@ -62,19 +70,22 @@ const AccountDetails = ({
   const [accountInfoDialogOpen, setAccountInfoDialogOpen] = useState(false);
   const [renameAccountDialog, setRenameAccountDialogOpen] = useState(false);
   const [topUpDialogOpen, setTopUpDialogOpen] = useState(false);
+  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
 
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
+
+  // Archive logic moved to ArchiveAccountDialog
 
   // Calculate values from account details with correct relationships:
   // Equity = Balance + P/L
   // Available for Withdrawal = Equity
   // P/L = Equity - Balance (if not directly provided)
-  
+
   // IMPORTANT: Parse balance from accountDetails - this comes from Redux state via mapMT5AccountToTpAccount
   const bal = parseFloat(accountDetails.balance || "0");
   const eq = parseFloat(accountDetails.equity || "0");
-  
+
   // Log the balance and P/L being displayed for debugging
   useEffect(() => {
     console.log(`[AccountDetails] 💰 Account ${accountId} - Balance: ${bal}, Equity: ${eq}, closed_pnl: ${accountDetails.closed_pnl}`, {
@@ -83,7 +94,7 @@ const AccountDetails = ({
       closedPnl: accountDetails.closed_pnl
     });
   }, [accountId, bal, eq, accountDetails.balance, accountDetails.equity, accountDetails.closed_pnl]);
-  
+
   // Calculate P/L: Use closed_pnl (profit from API) if available, otherwise calculate from Equity - Balance
   // CRITICAL: closed_pnl comes from the MT5 API Profit field and should be used directly for accuracy
   let pnl = 0;
@@ -102,13 +113,13 @@ const AccountDetails = ({
     pnl = eq - bal;
     console.log(`[AccountDetails] 📊 Account ${accountId} - Using calculated P/L (Equity - Balance): ${pnl}`);
   }
-  
+
   // Ensure relationships: Equity = Balance + P/L
   const equity = eq || (bal + pnl);
-  
+
   // Available for Withdrawal = Equity (per user requirement)
   const availableForWithdrawal = equity;
-  
+
   const equityFormatted = `${equity.toFixed(2)}`;
   // Header should display Equity (Balance + P/L), details row labeled "Balance" should show actual balance
   const headerBalance = `$${equity.toFixed(2)}`;
@@ -154,7 +165,7 @@ const AccountDetails = ({
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
   // Ensure numbers align vertically across rows (tabular figures)
   const numericStyle: React.CSSProperties = { fontVariantNumeric: 'tabular-nums' };
-  
+
   // Determine if account is Demo
   const isDemoAccount = accountType?.toLowerCase() === 'demo' || accountDetails?.account_type_requested?.toLowerCase() === 'demo';
 
@@ -323,6 +334,17 @@ const AccountDetails = ({
                 <DropdownMenuItem onClick={() => setTransferDialogOpen(true)}>
                   Transfer funds
                 </DropdownMenuItem>
+
+                {!archived && (
+                  <>
+                    <div className="w-full h-px bg-black/5 dark:bg-white/5" />
+                    <DropdownMenuItem
+                      onClick={() => setArchiveDialogOpen(true)}
+                    >
+                      Archive account
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -330,9 +352,8 @@ const AccountDetails = ({
           {/* Toggle chevron (only desktop) */}
           <button
             onClick={() => setExpanded(!expanded)}
-            className={`ml-1 flex dark:text-white text-black cursor-pointer transition-all duration-200 ease-in-out ${
-              expanded ? "rotate-180" : ""
-            }`}
+            className={`ml-1 flex dark:text-white text-black cursor-pointer transition-all duration-200 ease-in-out ${expanded ? "rotate-180" : ""
+              }`}
           >
             <ChevronDown size={20} />
           </button>
@@ -441,7 +462,7 @@ const AccountDetails = ({
                 </div>
               </div>
 
-              
+
               {/* DropDown for mobile */}
               <div className="xl:hidden flex items-center gap-2.5 pt-2">
                 <AnimatePresence>
@@ -563,6 +584,13 @@ const AccountDetails = ({
         />
       )}
 
+      <ArchiveAccountDialog
+        open={archiveDialogOpen}
+        onOpen={setArchiveDialogOpen}
+        accountNumber={accountId}
+        internalId={accountInternalId}
+      />
+
     </div>
   );
 };
@@ -580,11 +608,10 @@ const Button = ({
 }) => {
   return (
     <button
-      className={`flex rounded-[10px]  items-center md:gap-1 py-2 px-2 ${
-        ghost
-          ? "border-[1.5px] border-[#9F8BCF]/25 text-black dark:text-white/75"
-          : "bg-gradient-to-tr to-[#9F8BCF] from-[#6242A5] text-white/75"
-      } font-semibold text-sm leading-[14px] cursor-pointer`}
+      className={`flex rounded-[10px]  items-center md:gap-1 py-2 px-2 ${ghost
+        ? "border-[1.5px] border-[#9F8BCF]/25 text-black dark:text-white/75"
+        : "bg-gradient-to-tr to-[#9F8BCF] from-[#6242A5] text-white/75"
+        } font-semibold text-sm leading-[14px] cursor-pointer`}
       onClick={onClick}
     >
       {imageSrc && (

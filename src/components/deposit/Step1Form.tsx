@@ -10,11 +10,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { mt5Service } from "@/services/api.service";
 import { Step1FormProps } from "./types";
 import { toast } from "sonner";
 import { useEffect, useMemo, useState } from "react";
 import { store } from "@/store";
 import { TpAccountSnapshot } from "@/types/user-details";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../store";
 
 
 export function Step1Form({
@@ -36,6 +39,24 @@ export function Step1Form({
   const [step, setStep] = useState<"unverified" | "partial" | "verified" | "">(
     ""
   );
+
+  // No real-time fetch needed as we rely on DB package
+  // const [fetchedGroup, setFetchedGroup] = useState<string | null>(null);
+
+  const groups = useSelector((state: RootState) => state.mt5.groups);
+
+  useEffect(() => {
+    console.log('Debugger - Redux Groups State:', groups);
+    groups.forEach((g, i) => {
+      console.log(`Group [${i}]:`, {
+        Name: g.Group,
+        Dedicated: g.DedicatedName,
+        dedicated_lowercase: g.dedicated_name,
+        Min: g.MinLimit,
+        Max: g.MaxLimit
+      });
+    });
+  }, [groups]);
 
   useEffect(() => {
     const status = store.getState().kyc.verificationStatus;
@@ -78,6 +99,75 @@ export function Step1Form({
     return { allowed: parseFloat(allowed.toFixed(2)), balance, equity, credit };
   }, [selectedAccountObj]);
 
+  // Find applicable group info (Centralized logic)
+  const groupInfo = useMemo(() => {
+    if (!selectedAccountObj) return null;
+
+    const mt5Accounts = store.getState().mt5.accounts;
+    // Ensure we are looking at the same account ID (handle string vs number)
+    const originalAccount = mt5Accounts.find(a => String(a.accountId) === String(selectedAccountNumber));
+
+    // STRICT: Use the 'package' field from the DB account to match 'dedicated_name'
+    // As per user request: MT5Account (DB) -> package === group_management -> dedicated_name
+    let accountPackage = originalAccount?.package || selectedAccountObj.account_type_requested;
+
+    if (!accountPackage) {
+      console.warn('Debugger - No package found for account:', selectedAccountNumber, originalAccount, selectedAccountObj);
+      return null;
+    }
+
+    let identifierLower = accountPackage.toLowerCase();
+
+    // Explicit mapping: UI shows "Startup" for "standard" package, so we must match against "Startup"
+    if (identifierLower === 'standard') {
+      identifierLower = 'startup';
+    }
+
+    // DEBUG: Log all groups and our target package
+    console.log('Debugger - Group Lookup:', {
+      TargetPackage: accountPackage,
+      NormalizedIdentifier: identifierLower,
+      AccountID: selectedAccountNumber
+    });
+
+    if (groups.length > 0) {
+      console.log('Debugger - All Groups Available:', groups.map(g => ({
+        Group: g.Group,
+        DedicatedName: g.DedicatedName,
+        dedicated_name: g.dedicated_name, // Log both casings just in case
+        Min: g.MinLimit,
+        Max: g.MaxLimit
+      })));
+    }
+
+    // Match against DedicatedName (primary) or Group name (fallback)
+    const foundGroup = groups.find(g => {
+      const dName = (g.DedicatedName || g.dedicated_name || '').toLowerCase();
+      // Also check standard group name as fallback
+      const gName = (g.Group || '').toLowerCase();
+
+      // Strict match on Dedicated Name first as requested
+      if (dName === identifierLower) return true;
+      if (gName === identifierLower) return true;
+
+      return false;
+    });
+
+    if (foundGroup) {
+      console.log('Debugger - Group Matched:', {
+        Name: foundGroup.Group,
+        Dedicated: foundGroup.DedicatedName,
+        Min: foundGroup.MinLimit,
+        Max: foundGroup.MaxLimit
+      });
+    } else {
+      console.warn('Debugger - No Matching Group Found for:', identifierLower);
+    }
+
+    return foundGroup;
+  }, [selectedAccountObj, selectedAccountNumber, groups]);
+
+
   const handleAccountChange = (value: string) => {
     setSelectedAccount(value);
   };
@@ -104,13 +194,21 @@ export function Step1Form({
       }
     }
 
-    if (step === "unverified" && totalAfterDeposit > 5000) {
-      toast.error("Deposit limit is $5,000 for Unverified accounts");
-      return false;
-    }
     if (step === "partial" && totalAfterDeposit > 10000) {
       toast.error("Deposit limit is $10,000 for Partially Verified accounts");
       return false;
+    }
+
+    // Check Group Limits (Min/Max)
+    if (groupInfo) {
+      if (groupInfo.MinLimit !== undefined && groupInfo.MinLimit !== null && amountNum < groupInfo.MinLimit) {
+        toast.error(`Minimum deposit for this account group is $${groupInfo.MinLimit}`);
+        return false;
+      }
+      if (groupInfo.MaxLimit !== undefined && groupInfo.MaxLimit !== null && amountNum > groupInfo.MaxLimit) {
+        toast.error(`Maximum deposit for this account group is $${groupInfo.MaxLimit}`);
+        return false;
+      }
     }
 
     return true;
@@ -126,9 +224,9 @@ export function Step1Form({
     const totalAfterDeposit = lifetimeDeposit + amountNum;
 
     // Enforce Startup dynamic cap while typing
-    if (startupAllowance && amountNum > startupAllowance.allowed) {
-      toast.error(`You can deposit up to $${startupAllowance.allowed.toFixed(2)} for Startup accounts right now.`);
-      return;
+    // Enforce Startup dynamic cap while typing - check against effectiveMax
+    if (amountNum > effectiveMax) {
+      // Just a warning, blocking handled in validateAmount
     }
 
     if (amountNum < 1) {
@@ -142,6 +240,18 @@ export function Step1Form({
     if (step === "partial" && totalAfterDeposit > 10000) {
       toast.error("Deposit limit is $10,000 for Partially Verified accounts");
       return;
+    }
+
+    // Check Group Limits (Min/Max) - duplicate check for real-time feedback
+    if (groupInfo) {
+      if (groupInfo.MinLimit !== undefined && groupInfo.MinLimit !== null && amountNum < groupInfo.MinLimit) {
+        toast.error(`Minimum deposit for this account group is $${groupInfo.MinLimit}`);
+        return;
+      }
+      if (groupInfo.MaxLimit !== undefined && groupInfo.MaxLimit !== null && amountNum > groupInfo.MaxLimit) {
+        toast.error(`Maximum deposit for this account group is $${groupInfo.MaxLimit}`);
+        return;
+      }
     }
   };
 
@@ -172,15 +282,55 @@ export function Step1Form({
     nextStep();
   };
 
-  const getLimitMessage = () => {
-    if (step === "verified") {
-      return "No deposit limits (Unlimited account)";
+  const { effectiveMin, effectiveMax, limitSource } = useMemo(() => {
+    let min = 1; // Default global min
+    let max = Infinity;
+    let source = "";
+
+    // 1. Verification Limits
+    if (step === "unverified") {
+      max = 5000;
+      source = "Unverified Account";
     } else if (step === "partial") {
-      return "Maximum deposit limit: $10,000";
-    } else if (step === "unverified") {
-      return "Maximum deposit limit: $5,000";
+      max = 10000;
+      source = "Partially Verified";
     }
-    return "";
+
+    // 2. Startup Account Logic
+    if (startupAllowance) {
+      if (startupAllowance.allowed < max) {
+        max = startupAllowance.allowed;
+        source = "Startup Account Limit";
+      }
+    }
+
+    // 3. Group Limits
+    if (groupInfo) {
+      // Check Min Limit
+      if (groupInfo.MinLimit !== undefined && groupInfo.MinLimit !== null) {
+        if (groupInfo.MinLimit > min) {
+          min = groupInfo.MinLimit;
+        }
+      }
+      // Check Max Limit
+      if (groupInfo.MaxLimit !== undefined && groupInfo.MaxLimit !== null) {
+        if (groupInfo.MaxLimit < max) {
+          max = groupInfo.MaxLimit;
+          source = `Group Limit (${groupInfo.DedicatedName || groupInfo.Group || 'Limited'})`;
+        }
+      }
+    }
+
+    return { effectiveMin: min, effectiveMax: max, limitSource: source };
+  }, [step, startupAllowance, groupInfo]);
+
+  const getLimitMessage = () => {
+    if (!selectedAccountObj) return ""; // Show nothing if no account selected
+
+    const minText = effectiveMin > 0 ? `$${effectiveMin}` : "$1";
+    const maxText = effectiveMax === Infinity ? "Unlimited" : `$${effectiveMax.toFixed(2)}`;
+
+    return `Allowed: ${minText} - ${maxText}`;
   };
 
   return (
@@ -300,14 +450,11 @@ export function Step1Form({
                 {selectedCrypto?.name || "USD"}
               </span>
             </div>
-            {startupAllowance && (
-              <p className="text-xs mt-2 text-[#945393]">
-                You can deposit up to ${startupAllowance.allowed.toFixed(2)} on this Startup account
-              </p>
-            )}
-            {step && (
-              <p className="text-xs mt-2 text-[#945393]">{getLimitMessage()}</p>
-            )}
+            {/* Combined limit message */}
+            <p className="text-xs mt-2 text-[#945393] font-medium">
+              {getLimitMessage()} <br />
+              {limitSource && <span className="text-[10px] opacity-80">(Limit Source: {limitSource})</span>}
+            </p>
           </div>
           <Button
             className="flex-1 cursor-pointer bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:bg-[#9d6ad9] w-full mt-3"

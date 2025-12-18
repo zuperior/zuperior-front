@@ -76,6 +76,10 @@ export interface MT5Group {
   MarginCall: number;
   MarginStopOut: number;
   DemoLeverage: number;
+  MinLimit?: number;
+  MaxLimit?: number;
+  DedicatedName?: string;
+  dedicated_name?: string;
 }
 
 export interface MT5State {
@@ -740,13 +744,11 @@ const mt5AccountSlice = createSlice({
         state.isLoading = false;
         state.isFetchingGroups = false;                // ✅ ADD
         state.lastGroupsFetchAt = Date.now();          // ✅ ADD
-        // ✅ Only include supported groups
-        state.groups = action.payload.filter((g: MT5Group) =>
-          [
-            "real\\Bbook\\Pro\\dynamic-2000x-10P",
-            "real\\Bbook\\Standard\\dynamic-2000x-20Pips",
-          ].includes(g.Group)
-        );
+
+        console.log("Debugger - API Groups Payload:", action.payload); // <--- LOG ADDED
+
+        // Remove hardcoded filter to allow all valid groups from backend
+        state.groups = action.payload;
       })
       .addCase(fetchMt5Groups.rejected, (state, action) => {
         state.isLoading = false;
