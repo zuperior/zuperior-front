@@ -64,12 +64,64 @@ const TransferFundsDialog = ({
   const router = useRouter();
 
   const MIN_TRANSFER = 0.01;
-  const MAX_TRANSFER = 100000;
+  const MAX_TRANSFER = 100000; // Fallback maximum
 
   const fromAccObj = filteredAccounts.find(
     (account) => account?.accountId && String(account.accountId) === fromAccount
   );
   const fromBalance = fromAccObj ? (fromAccObj.balance ?? 0) : 0;
+
+  // Fetch deposit limits for the "To Account" (destination) to get max transfer limit
+  const [depositLimits, setDepositLimits] = useState<{
+    minLimit: number | null;
+    maxLimit: number | null;
+  } | null>(null);
+  const [loadingLimits, setLoadingLimits] = useState(false);
+
+  // Fetch deposit limits when "To Account" is selected (destination account)
+  useEffect(() => {
+    const fetchDepositLimits = async () => {
+      // Only fetch if transferring to an MT5 account (not WALLET)
+      if (!toAccount || toAccount === 'WALLET') {
+        setDepositLimits(null);
+        return;
+      }
+
+      setLoadingLimits(true);
+      try {
+        const response = await fetch(`/api/mt5/deposit-limits/${toAccount}`);
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          setDepositLimits({
+            minLimit: data.data.minLimit,
+            maxLimit: data.data.maxLimit,
+          });
+          console.log('📊 Transfer deposit limits fetched for destination account:', data.data);
+        } else {
+          setDepositLimits(null);
+          console.warn('⚠️ No deposit limits found for destination account:', toAccount);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching deposit limits for transfer:', error);
+        setDepositLimits(null);
+      } finally {
+        setLoadingLimits(false);
+      }
+    };
+
+    fetchDepositLimits();
+  }, [toAccount]);
+
+  // Calculate effective maximum transfer limit
+  // Should be the minimum of: max_limit (from database) and account balance (available funds)
+  const effectiveMaxTransfer = (() => {
+    const maxLimit = depositLimits?.maxLimit !== null && depositLimits?.maxLimit !== undefined
+      ? depositLimits.maxLimit
+      : MAX_TRANSFER;
+    // Use the minimum of max_limit and available balance
+    return Math.min(maxLimit, fromBalance);
+  })();
 
   useEffect(() => {
     setPaymentMethod(method);
@@ -110,17 +162,54 @@ const TransferFundsDialog = ({
     const val = e.target.value;
     setAmount(val);
     const numVal = parseFloat(val);
-    if (val && (isNaN(numVal) || numVal < MIN_TRANSFER || numVal > MAX_TRANSFER || numVal > fromBalance)) {
-      setError(`Amount must be between $${MIN_TRANSFER} and $${MAX_TRANSFER}, and not exceed available balance`);
-    } else {
-      setError("");
+    
+    // Check minimum
+    if (val && (isNaN(numVal) || numVal < MIN_TRANSFER)) {
+      setError(`Minimum transfer amount is $${MIN_TRANSFER}`);
+      return;
     }
+    
+    // Check maximum (effectiveMaxTransfer is already min of max_limit and balance)
+    if (val && numVal > effectiveMaxTransfer) {
+      const maxLimit = depositLimits?.maxLimit ?? MAX_TRANSFER;
+      if (fromBalance < maxLimit) {
+        // Balance is the limiting factor
+        setError(`Amount cannot exceed available balance of $${fromBalance.toFixed(2)}`);
+      } else {
+        // Max limit is the limiting factor
+        const maxText = maxLimit === MAX_TRANSFER 
+          ? `$${MAX_TRANSFER.toLocaleString()}`
+          : `$${maxLimit.toFixed(2)} (account limit)`;
+        setError(`Maximum transfer amount is ${maxText}`);
+      }
+      return;
+    }
+    
+    setError("");
   };
 
   const handleTransfer = async () => {
     const numAmount = parseFloat(amount);
-    if (!amount || isNaN(numAmount) || numAmount < MIN_TRANSFER || numAmount > MAX_TRANSFER || numAmount > fromBalance) {
-      setError("Please enter a valid amount within limits");
+    
+    // Validate amount
+    if (!amount || isNaN(numAmount) || numAmount < MIN_TRANSFER) {
+      setError(`Minimum transfer amount is $${MIN_TRANSFER}`);
+      return;
+    }
+    
+    // Check maximum (effectiveMaxTransfer is already min of max_limit and balance)
+    if (numAmount > effectiveMaxTransfer) {
+      const maxLimit = depositLimits?.maxLimit ?? MAX_TRANSFER;
+      if (fromBalance < maxLimit) {
+        // Balance is the limiting factor
+        setError(`Amount cannot exceed available balance of $${fromBalance.toFixed(2)}`);
+      } else {
+        // Max limit is the limiting factor
+        const maxText = maxLimit === MAX_TRANSFER 
+          ? `$${MAX_TRANSFER.toLocaleString()}`
+          : `$${maxLimit.toFixed(2)} (account limit)`;
+        setError(`Maximum transfer amount is ${maxText}`);
+      }
       return;
     }
 
@@ -308,9 +397,23 @@ const TransferFundsDialog = ({
                     value={amount}
                     onChange={handleAmountChange}
                     min={MIN_TRANSFER}
-                    max={Math.min(MAX_TRANSFER, fromBalance)}
+                    max={Math.min(effectiveMaxTransfer, fromBalance)}
                     step="0.01"
                   />
+                  <p className="text-xs mt-1 text-[#945393] font-medium">
+                    {(() => {
+                      const maxLimit = depositLimits?.maxLimit ?? MAX_TRANSFER;
+                      const effectiveMax = Math.min(maxLimit, fromBalance);
+                      
+                      if (fromBalance < maxLimit) {
+                        return `Maximum transfer: $${effectiveMax.toFixed(2)} (limited by available balance)`;
+                      } else if (depositLimits?.maxLimit) {
+                        return `Maximum transfer: $${effectiveMax.toFixed(2)} (account limit)`;
+                      } else {
+                        return `Maximum transfer: $${effectiveMax.toFixed(2)}`;
+                      }
+                    })()}
+                  </p>
                   {error && (
                     <span className="text-red-500 text-xs">{error}</span>
                   )}
