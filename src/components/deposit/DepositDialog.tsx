@@ -347,133 +347,153 @@ export function DepositDialog({
   }, [open, resetAllStates]);
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(isOpen) => {
-        if (!isOpen) {
-          // If closing and on step 3, ask for confirmation
-          if (step === 3 && checkoutData && !paymentStatus) {
-            handleClosePayment();
+    <>
+      <Dialog
+        open={open}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            // If closing and on step 3, ask for confirmation
+            if (step === 3 && checkoutData && !paymentStatus) {
+              handleClosePayment();
+            } else {
+              resetAllStates();
+              onOpenChange(isOpen);
+            }
           } else {
-            resetAllStates();
             onOpenChange(isOpen);
           }
-        } else {
-          onOpenChange(isOpen);
-        }
-      }}
-    >
-      <DialogContent
-        className="border-2 border-transparent p-6 text-white rounded-[18px] flex flex-col items-center w-full
-            [background:linear-gradient(#fff,#fff)_padding-box,conic-gradient(from_var(--border-angle),#ddd,#f6e6fc,theme(colors.purple.400/48%))_border-box] dark:[background:linear-gradient(#070206,#030103)_padding-box,conic-gradient(from_var(--border-angle),#030103,#030103,theme(colors.purple.400/48%))_border-box] animate-border"
-        disableOutsideClick={step === 3} // Prevent outside clicks only during payment step
+        }}
       >
-        <DialogTitle className="sr-only">Deposit Funds</DialogTitle>
+        <DialogContent
+          className="border-2 border-transparent p-6 text-white rounded-[18px] flex flex-col items-center w-full
+            [background:linear-gradient(#fff,#fff)_padding-box,conic-gradient(from_var(--border-angle),#ddd,#f6e6fc,theme(colors.purple.400/48%))_border-box] dark:[background:linear-gradient(#070206,#030103)_padding-box,conic-gradient(from_var(--border-angle),#030103,#030103,theme(colors.purple.400/48%))_border-box] animate-border"
+          disableOutsideClick={step === 3} // Prevent outside clicks only during payment step
+        >
+          <DialogTitle className="sr-only">Deposit Funds</DialogTitle>
 
-        <DialogHeader className="w-full ">
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center space-x-2 w-full mx-10">
-              {[1, 2, 3, 4].map((num) => (
-                <React.Fragment key={num}>
-                  <div
-                    className={`flex h-8 w-8 px-4 mx-0 items-center justify-center rounded-full ${step >= num ? "bg-[#9F8BCF]" : "bg-[#594B7A]"
-                      }`}
-                  >
-                    <span className="text-sm font-medium">{num}</span>
-                  </div>
-                  {num !== 4 && (
+          <DialogHeader className="w-full ">
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center space-x-2 w-full mx-10">
+                {[1, 2, 3, 4].map((num) => (
+                  <React.Fragment key={num}>
                     <div
-                      className={`h-[4px] w-full mx-0 ${step > num ? "bg-[#6B5993]" : "bg-[#392F4F]"
+                      className={`flex h-8 w-8 px-4 mx-0 items-center justify-center rounded-full ${step >= num ? "bg-[#9F8BCF]" : "bg-[#594B7A]"
                         }`}
-                    />
-                  )}
-                </React.Fragment>
-              ))}
+                    >
+                      <span className="text-sm font-medium">{num}</span>
+                    </div>
+                    {num !== 4 && (
+                      <div
+                        className={`h-[4px] w-full mx-0 ${step > num ? "bg-[#6B5993]" : "bg-[#392F4F]"
+                          }`}
+                      />
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
             </div>
-          </div>
-        </DialogHeader>
+          </DialogHeader>
 
-        {step === 1 && (
-          <Step1Form
-            amount={amount}
-            setAmount={setAmount}
-            selectedNetwork={selectedNetwork}
-            selectedCrypto={selectedCrypto}
-            nextStep={nextStep}
-            accounts={filteredAccounts.map(mapMT5AccountToTpAccount)}
-            selectedAccount={selectedAccount}
-            setSelectedAccount={setSelectedAccount}
-            lifetimeDeposit={lifetimeDeposit}
-          />
-        )}
+          {step === 1 && (
+            <Step1Form
+              amount={amount}
+              setAmount={setAmount}
+              selectedNetwork={selectedNetwork}
+              selectedCrypto={selectedCrypto}
+              nextStep={nextStep}
+              accounts={filteredAccounts.map(mapMT5AccountToTpAccount)}
+              selectedAccount={selectedAccount}
+              setSelectedAccount={setSelectedAccount}
+              lifetimeDeposit={lifetimeDeposit}
+            />
+          )}
 
-        {step === 2 && (
-          <Step2Confirmation
-            amount={amount}
-            selectedNetwork={selectedNetwork}
-            selectedCrypto={selectedCrypto}
-            paymentMethod={selectedCrypto?.symbol || ""}
-            paymentImages={paymentImages}
-            error={error}
-            isProcessing={isProcessing}
-            selectedAccount={selectedAccount}
-            prevStep={prevStep}
-            handleContinueToPayment={handleContinueToPayment}
-            exchangeRate={exchangeRate}
-          />
-        )}
+          {step === 2 && (
+            <Step2Confirmation
+              amount={amount}
+              selectedNetwork={selectedNetwork}
+              selectedCrypto={selectedCrypto}
+              paymentMethod={selectedCrypto?.symbol || ""}
+              paymentImages={paymentImages}
+              error={error}
+              isProcessing={isProcessing}
+              selectedAccount={selectedAccount}
+              prevStep={prevStep}
+              handleContinueToPayment={handleContinueToPayment}
+              exchangeRate={exchangeRate}
+            />
+          )}
 
-        {step === 3 && checkoutData && (
-          <Step3Payment
-            amount={amount}
-            countdown={countdown}
-            selectedCrypto={selectedCrypto}
-            selectedNetwork={selectedNetwork}
-            checkoutData={checkoutData}
-            cregisId={cregisId || ""}
-            isLoading={isCheckingStatus}
-            selectedAccount={selectedAccount}
-            onClose={handleClosePayment} // Pass the close handler
-          />
-        )}
+          {step === 3 && checkoutData && (
+            <Step3Payment
+              amount={amount}
+              countdown={countdown}
+              selectedCrypto={selectedCrypto}
+              selectedNetwork={selectedNetwork}
+              checkoutData={checkoutData}
+              cregisId={cregisId || ""}
+              isLoading={isCheckingStatus}
+              selectedAccount={selectedAccount}
+              onClose={handleClosePayment} // Pass the close handler
+            />
+          )}
 
-        {step === 4 && paymentStatus && (
-          <Step4Status
-            statusData={paymentStatus}
-            onRetry={handleRetry}
-            onClose={() => onOpenChange(false)}
-            accountNumber={selectedAccount.split("|")[0]}
-            amount={amount}
-          />
-        )}
+          {step === 4 && paymentStatus && (
+            <Step4Status
+              statusData={paymentStatus}
+              onRetry={handleRetry}
+              onClose={() => onOpenChange(false)}
+              accountNumber={selectedAccount.split("|")[0]}
+              amount={amount}
+            />
+          )}
 
-        {/* Confirmation Dialog for closing during Step 3 */}
-        <Dialog open={confirmCloseOpen} onOpenChange={setConfirmCloseOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Confirm Close</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to close the deposit process? Your current
-                payment might be interrupted.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setConfirmCloseOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={() => {
-                  setConfirmCloseOpen(false);
-                  resetAllStates();
-                  onOpenChange(false);
-                }}
-              >
-                Confirm
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </DialogContent>
-    </Dialog>
+          {/* Confirmation Dialog for closing during Step 3 */}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={confirmCloseOpen} onOpenChange={setConfirmCloseOpen}>
+        <DialogContent className="sm:max-w-[425px] border-[#27272a] bg-[#09090b] text-white">
+          <DialogHeader>
+            <DialogTitle className="text-white">Confirm Close</DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              Are you sure you want to close the deposit process? Your current
+              payment might be interrupted.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setConfirmCloseOpen(false)}
+              className="border-[#27272a] bg-transparent text-white hover:bg-[#27272a] hover:text-white"
+            >
+              Cancel
+            </Button>
+            <Button
+              className="bg-[#a370f0] hover:bg-[#925bd6] text-white"
+              onClick={async () => {
+                try {
+                  // Call cancel API if we have a cregisId
+                  if (cregisId) {
+                    await fetch("/api/cregis/cancel-payment", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ cregisId }),
+                    });
+                  }
+                } catch (err) {
+                  console.error("Error cancelling payment:", err);
+                }
+                setConfirmCloseOpen(false);
+                resetAllStates();
+                onOpenChange(false);
+              }}
+            >
+              Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
