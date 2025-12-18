@@ -183,8 +183,8 @@ export async function POST(req: NextRequest) {
               amount: order_amount,
               currency: order_currency,
               network: network || 'TRC20',
-              cregisOrderId: thirdPartyId,
-              cregisId: cregisResult.data.cregis_id,
+              cregisOrderId: thirdPartyId, // order_id (for reference)
+              cregisId: cregisResult.data.cregis_id, // CRITICAL: This is what the callback uses to find the deposit
               paymentUrl: cregisResult.data.checkout_url || cregisResult.data.paymentUrl,
             }),
           });

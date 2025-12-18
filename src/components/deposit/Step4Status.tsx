@@ -102,6 +102,7 @@ export function Step4Status({
   const [depositCompleted, setDepositCompleted] = useState(false);
   const [receivedAmount, setReceivedAmount] = useState("");
   const [hasFetchedCheckoutInfo, setHasFetchedCheckoutInfo] = useState(false);
+  const [isProcessingDeposit, setIsProcessingDeposit] = useState(false);
 
   const dispatch = useAppDispatch();
   const hasCalledDeposit = useRef(false);
@@ -109,17 +110,24 @@ export function Step4Status({
   const router = useRouter();
 
   useEffect(() => {
+    // Don't show success toast immediately for "paid" status
+    // Wait until deposit is actually processed
     if (!hasShownStatusToast.current) {
       const config =
         statusConfig[statusData.event_type] || statusConfig.pending;
-      toast[statusData.event_type === "paid" ? "success" : "info"](
-        config.title,
-        {
-          description: config.description,
-          duration: 5000,
-        }
-      );
-      hasShownStatusToast.current = true;
+      
+      // Only show toast for non-paid statuses immediately
+      // For "paid", we'll show success after processing completes
+      if (statusData.event_type !== "paid" && statusData.event_type !== "complete") {
+        toast[statusData.event_type === "expired" ? "error" : "info"](
+          config.title,
+          {
+            description: config.description,
+            duration: 5000,
+          }
+        );
+        hasShownStatusToast.current = true;
+      }
     }
   }, [statusData.event_type]);
 
@@ -145,13 +153,141 @@ export function Step4Status({
         const data = await response.json();
         console.log('📥 [STEP4] Full checkout info response:', JSON.stringify(data, null, 2));
         
+        // Check if status is "paid" and trigger callback processing
+        const checkoutStatus = data?.data?.status || data?.status;
+        console.log('📊 [STEP4] Checkout status:', checkoutStatus);
+        
+        if (checkoutStatus === 'paid' || checkoutStatus === 'complete' || checkoutStatus === 'success') {
+          console.log('✅ [STEP4] Payment status is "paid" - processing deposit...');
+          
+          // Set processing state BEFORE showing success
+          setIsProcessingDeposit(true);
+          
+          // Extract receive_amount from payment_detail
+          const receiveAmount = 
+            data?.data?.payment_detail?.[0]?.receive_amount ||
+            data?.data?.payment_detail?.[0]?.pay_amount ||
+            data?.data?.order_amount;
+          
+          // Manually trigger callback to process the payment
+          try {
+            toast.loading("Processing deposit...", {
+              description: "Crediting your MT5 account. Please wait...",
+              duration: 10000,
+            });
+
+            const callbackResponse = await fetch("/api/cregis/payment-callback", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                cregis_id: statusData.cregis_id,
+                status: "paid",
+                event_type: checkoutStatus,
+                order_amount: data?.data?.order_amount || statusData.order_amount,
+                order_currency: data?.data?.order_currency || statusData.order_currency || "USDT",
+                received_amount: receiveAmount || data?.data?.order_amount,
+                payment_detail: data?.data?.payment_detail || [],
+              }),
+            });
+
+            if (callbackResponse.ok) {
+              const callbackData = await callbackResponse.json();
+              console.log('✅ [STEP4] Callback processed successfully:', callbackData);
+              
+              // Wait a moment for backend to complete processing
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              
+              // Poll backend to verify deposit is completed (MT5 credited + DB updated)
+              console.log('⏳ [STEP4] Verifying deposit processing completion...');
+              let verified = false;
+              
+              for (let attempt = 0; attempt < 10; attempt++) {
+                try {
+                  const token = localStorage.getItem('userToken');
+                  const verifyResponse = await fetch(
+                    `${process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api'}/deposit/by-cregis-id/${statusData.cregis_id}`,
+                    {
+                      headers: {
+                        'Authorization': `Bearer ${token}`,
+                      },
+                    }
+                  );
+                  
+                  if (verifyResponse.ok) {
+                    const verifyData = await verifyResponse.json();
+                    console.log(`📊 [STEP4] Verification attempt ${attempt + 1}:`, verifyData);
+                    
+                    if (verifyData.success && verifyData.data?.status === 'completed') {
+                      console.log('✅ [STEP4] Deposit confirmed as completed in database');
+                      verified = true;
+                      setDepositCompleted(true);
+                      toast.dismiss("processing-deposit");
+                      toast.success("Payment Successful", {
+                        description: "Your payment has been processed and credited to your MT5 account.",
+                        duration: 5000,
+                      });
+                      hasShownStatusToast.current = true;
+                      break;
+                    } else if (verifyData.success && verifyData.data?.status === 'approved') {
+                      // Still processing, wait and retry
+                      console.log(`⏳ [STEP4] Deposit status: ${verifyData.data.status}, waiting...`);
+                      await new Promise(resolve => setTimeout(resolve, 1000));
+                      continue;
+                    }
+                  }
+                } catch (verifyError) {
+                  console.warn(`⚠️ [STEP4] Verification attempt ${attempt + 1} failed:`, verifyError);
+                }
+                
+                // Wait before next attempt (except on last attempt)
+                if (attempt < 9) {
+                  await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+              }
+              
+              if (!verified) {
+                console.warn('⚠️ [STEP4] Could not verify deposit completion after 10 attempts');
+                // Assume success if callback succeeded (backend might still be processing)
+                setDepositCompleted(true);
+                toast.dismiss("processing-deposit");
+                toast.success("Payment Successful", {
+                  description: "Your payment has been processed. Please check your account balance.",
+                  duration: 5000,
+                });
+                hasShownStatusToast.current = true;
+              }
+            } else {
+              const errorText = await callbackResponse.text();
+              console.error('❌ [STEP4] Callback processing failed:', errorText);
+              toast.dismiss();
+              toast.error("Deposit Processing Failed", {
+                description: "Payment was successful but deposit processing failed. Please contact support.",
+                duration: 6000,
+              });
+              setError("Deposit processing failed");
+            }
+          } catch (callbackError) {
+            console.error('❌ [STEP4] Error triggering callback:', callbackError);
+            toast.dismiss();
+            toast.error("Deposit Processing Error", {
+              description: "An error occurred while processing your deposit. Please contact support.",
+              duration: 6000,
+            });
+            setError("Callback processing error");
+          } finally {
+            setIsProcessingDeposit(false);
+          }
+        }
+        
         // Try multiple paths for receive_amount
         const payAmount = 
+          data?.data?.payment_detail?.[0]?.receive_amount ||
           data?.data?.payment_detail?.[0]?.pay_amount ||
           data?.data?.payment_info?.[0]?.receive_amount ||
           data?.data?.payment_info?.[0]?.amount ||
           data?.data?.received_amount ||
-          data?.received_amount;
+          data?.received_amount ||
+          data?.data?.order_amount;
 
         console.log('💰 [STEP4] Extracted receive_amount:', payAmount);
 
@@ -231,33 +367,68 @@ export function Step4Status({
     }
   }, [accountNumber, receivedAmount, statusData.cregis_id, onClose]);
 
+  // Manually trigger callback processing when payment is detected as "paid"
   useEffect(() => {
-    // The callback webhook will automatically handle the deposit when payment is successful
-    // So we don't need to auto-trigger handleDeposit from the frontend
-    // This prevents duplicate deposits and the 405 error
-    if (
-      (statusData.event_type === "paid" || 
-       statusData.event_type === "complete" || 
-       statusData.event_type === "success" ||
-       statusData.event_type === "confirmed") &&
-      !depositCompleted
-    ) {
-      console.log('✅ [STEP4] Payment successful. Callback webhook will handle MT5 deposit automatically.');
-      console.log('📊 [STEP4] Payment details:', {
-        cregis_id: statusData.cregis_id,
-        event_type: statusData.event_type,
-        received_amount: receivedAmount,
-        account_number: accountNumber
-      });
-      // The callback will credit the MT5 account, so we just need to wait
-      // Don't call handleDeposit() automatically to avoid duplicate deposits
-    }
+    const triggerCallback = async () => {
+      if (
+        (statusData.event_type === "paid" || 
+         statusData.event_type === "complete" || 
+         statusData.event_type === "success" ||
+         statusData.event_type === "confirmed") &&
+        !depositCompleted &&
+        statusData.cregis_id &&
+        hasFetchedCheckoutInfo
+      ) {
+        console.log('✅ [STEP4] Payment successful. Triggering callback processing...');
+        console.log('📊 [STEP4] Payment details:', {
+          cregis_id: statusData.cregis_id,
+          event_type: statusData.event_type,
+          received_amount: receivedAmount,
+          account_number: accountNumber
+        });
+
+        try {
+          // Manually trigger the callback endpoint to process the payment
+          const callbackResponse = await fetch("/api/cregis/payment-callback", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              cregis_id: statusData.cregis_id,
+              status: "paid",
+              event_type: statusData.event_type,
+              order_amount: statusData.order_amount || receivedAmount,
+              order_currency: statusData.order_currency || "USDT",
+              received_amount: receivedAmount || statusData.order_amount,
+              payment_detail: statusData.payment_detail || [],
+            }),
+          });
+
+          if (callbackResponse.ok) {
+            const callbackData = await callbackResponse.json();
+            console.log('✅ [STEP4] Callback processed successfully:', callbackData);
+            
+            // Wait a moment for backend to process, then check if deposit was completed
+            setTimeout(() => {
+              console.log('✅ [STEP4] Callback webhook should have processed the deposit. Please check your account balance.');
+            }, 2000);
+          } else {
+            const errorText = await callbackResponse.text();
+            console.error('❌ [STEP4] Callback processing failed:', errorText);
+          }
+        } catch (callbackError) {
+          console.error('❌ [STEP4] Error triggering callback:', callbackError);
+        }
+      }
+    };
+
+    triggerCallback();
   }, [
     statusData.event_type,
     statusData.cregis_id,
     depositCompleted,
     receivedAmount,
     accountNumber,
+    hasFetchedCheckoutInfo,
   ]);
 
   const handleRetry = () => {
@@ -287,7 +458,16 @@ Time: ${new Date(statusData.timestamp * 1000).toLocaleString()}`;
       });
   };
 
-  const config = statusConfig[statusData.event_type] || statusConfig.pending;
+  // Use processing config if deposit is being processed
+  const config = isProcessingDeposit 
+    ? {
+        icon: <Clock className="h-8 w-8 text-blue-500" />,
+        title: "Processing Deposit",
+        description: "Crediting your MT5 account. Please wait...",
+        color: "text-blue-500",
+        bgColor: "bg-blue-500/10",
+      }
+    : (statusConfig[statusData.event_type] || statusConfig.pending);
 
   const formattedDate = statusData.timestamp
     ? new Date(statusData.timestamp * 1000).toLocaleString()

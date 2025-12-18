@@ -469,11 +469,12 @@ export function Step1Form({
                 {selectedCrypto?.name || "USD"}
               </span>
             </div>
-            {/* Combined limit message */}
-            <p className="text-xs mt-2 text-[#945393] font-medium">
-              {getLimitMessage()} <br />
-              {limitSource && <span className="text-[10px] opacity-80">(Limit Source: {limitSource})</span>}
-            </p>
+            {/* Limit range display */}
+            {selectedAccountObj && (
+              <p className="text-xs mt-2 text-[#945393] font-medium">
+                {effectiveMin > 0 ? `$${effectiveMin}` : "$1"} - {effectiveMax === Infinity ? "Unlimited" : `$${effectiveMax.toFixed(2)}`}
+              </p>
+            )}
           </div>
           <Button
             className="flex-1 cursor-pointer bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:bg-[#9d6ad9] w-full mt-3"
