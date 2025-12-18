@@ -82,22 +82,51 @@ export function Step1Form({
     (account) => (account.acc).toString() === selectedAccountNumber
   );
 
-  // Startup deposit allowance (max equity excluding bonus = $3,000)
-  const startupAllowance = useMemo(() => {
-    if (!selectedAccountObj) return null;
-    const pkg = String(selectedAccountObj.account_type_requested || '').toLowerCase();
-    const isStartup = pkg === 'startup' || pkg === 'standard';
-    if (!isStartup) return null;
+  // State for deposit limits from group_management
+  const [depositLimits, setDepositLimits] = useState<{
+    minLimit: number | null;
+    maxLimit: number | null;
+  } | null>(null);
+  const [loadingLimits, setLoadingLimits] = useState(false);
 
-    const balance = parseFloat(String(selectedAccountObj.balance || 0)) || 0;
-    const equity = parseFloat(String((selectedAccountObj as any).equity || 0)) || 0;
-    const credit = parseFloat(String((selectedAccountObj as any).credit || 0)) || 0;
-    const epsilon = 0.01;
-    const flat = Math.abs(equity - (balance + credit)) < epsilon;
-    const baseAmount = flat ? balance : (equity - credit);
-    const allowed = Math.max(0, 3000 - baseAmount);
-    return { allowed: parseFloat(allowed.toFixed(2)), balance, equity, credit };
-  }, [selectedAccountObj]);
+  // Fetch deposit limits when account is selected
+  useEffect(() => {
+    const fetchDepositLimits = async () => {
+      if (!selectedAccountNumber) {
+        setDepositLimits(null);
+        return;
+      }
+
+      setLoadingLimits(true);
+      try {
+        const response = await fetch(`/api/mt5/deposit-limits/${selectedAccountNumber}`);
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          setDepositLimits({
+            minLimit: data.data.minLimit,
+            maxLimit: data.data.maxLimit,
+          });
+          console.log('📊 Deposit limits fetched:', data.data);
+        } else {
+          setDepositLimits(null);
+          console.warn('⚠️ No deposit limits found for account:', selectedAccountNumber);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching deposit limits:', error);
+        setDepositLimits(null);
+      } finally {
+        setLoadingLimits(false);
+      }
+    };
+
+    fetchDepositLimits();
+  }, [selectedAccountNumber]);
+
+  // REMOVED: Startup deposit allowance calculation
+  // The maximum deposit limit from database should NOT be reduced by current balance
+  // It's a one-time deposit limit, not a cumulative limit
+  // const startupAllowance = useMemo(() => { ... }, [selectedAccountObj]);
 
   // Find applicable group info (Centralized logic)
   const groupInfo = useMemo(() => {
@@ -186,29 +215,25 @@ export function Step1Form({
 
     const totalAfterDeposit = lifetimeDeposit + amountNum;
 
-    // Enforce Startup dynamic cap if applicable
-    if (startupAllowance) {
-      if (amountNum > startupAllowance.allowed) {
-        toast.error(`Startup account deposit limit exceeded. You can deposit up to $${startupAllowance.allowed.toFixed(2)} now.`);
-        return false;
-      }
-    }
+    // REMOVED: Startup dynamic cap enforcement
+    // Maximum deposit limit should be the same as in database, not reduced by current balance
 
     if (step === "partial" && totalAfterDeposit > 10000) {
       toast.error("Deposit limit is $10,000 for Partially Verified accounts");
       return false;
     }
 
-    // Check Group Limits (Min/Max)
-    if (groupInfo) {
-      if (groupInfo.MinLimit !== undefined && groupInfo.MinLimit !== null && amountNum < groupInfo.MinLimit) {
-        toast.error(`Minimum deposit for this account group is $${groupInfo.MinLimit}`);
-        return false;
-      }
-      if (groupInfo.MaxLimit !== undefined && groupInfo.MaxLimit !== null && amountNum > groupInfo.MaxLimit) {
-        toast.error(`Maximum deposit for this account group is $${groupInfo.MaxLimit}`);
-        return false;
-      }
+    // Check Deposit Limits from group_management (Priority: Use API limits, fallback to groupInfo)
+    const minLimit = depositLimits?.minLimit ?? groupInfo?.MinLimit;
+    const maxLimit = depositLimits?.maxLimit ?? groupInfo?.MaxLimit;
+
+    if (minLimit !== undefined && minLimit !== null && amountNum < minLimit) {
+      toast.error(`Minimum deposit for this account is $${minLimit}`);
+      return false;
+    }
+    if (maxLimit !== undefined && maxLimit !== null && amountNum > maxLimit) {
+      toast.error(`Maximum deposit for this account is $${maxLimit}`);
+      return false;
     }
 
     return true;
@@ -223,8 +248,7 @@ export function Step1Form({
     if (isNaN(amountNum)) return;
     const totalAfterDeposit = lifetimeDeposit + amountNum;
 
-    // Enforce Startup dynamic cap while typing
-    // Enforce Startup dynamic cap while typing - check against effectiveMax
+    // Check against effectiveMax while typing
     if (amountNum > effectiveMax) {
       // Just a warning, blocking handled in validateAmount
     }
@@ -242,16 +266,17 @@ export function Step1Form({
       return;
     }
 
-    // Check Group Limits (Min/Max) - duplicate check for real-time feedback
-    if (groupInfo) {
-      if (groupInfo.MinLimit !== undefined && groupInfo.MinLimit !== null && amountNum < groupInfo.MinLimit) {
-        toast.error(`Minimum deposit for this account group is $${groupInfo.MinLimit}`);
-        return;
-      }
-      if (groupInfo.MaxLimit !== undefined && groupInfo.MaxLimit !== null && amountNum > groupInfo.MaxLimit) {
-        toast.error(`Maximum deposit for this account group is $${groupInfo.MaxLimit}`);
-        return;
-      }
+    // Check Deposit Limits from group_management (Priority: Use API limits, fallback to groupInfo)
+    const minLimit = depositLimits?.minLimit ?? groupInfo?.MinLimit;
+    const maxLimit = depositLimits?.maxLimit ?? groupInfo?.MaxLimit;
+
+    if (minLimit !== undefined && minLimit !== null && amountNum < minLimit) {
+      toast.error(`Minimum deposit for this account is $${minLimit}`);
+      return;
+    }
+    if (maxLimit !== undefined && maxLimit !== null && amountNum > maxLimit) {
+      toast.error(`Maximum deposit for this account is $${maxLimit}`);
+      return;
     }
   };
 
@@ -296,33 +321,27 @@ export function Step1Form({
       source = "Partially Verified";
     }
 
-    // 2. Startup Account Logic
-    if (startupAllowance) {
-      if (startupAllowance.allowed < max) {
-        max = startupAllowance.allowed;
-        source = "Startup Account Limit";
+    // 2. REMOVED: Startup Account Logic that subtracts balance
+    // Maximum deposit limit should be the same as in database, not reduced by current balance
+
+    // 3. Deposit Limits from group_management (Priority: API limits, fallback to groupInfo)
+    const minLimit = depositLimits?.minLimit ?? groupInfo?.MinLimit;
+    const maxLimit = depositLimits?.maxLimit ?? groupInfo?.MaxLimit;
+
+    if (minLimit !== undefined && minLimit !== null) {
+      if (minLimit > min) {
+        min = minLimit;
       }
     }
-
-    // 3. Group Limits
-    if (groupInfo) {
-      // Check Min Limit
-      if (groupInfo.MinLimit !== undefined && groupInfo.MinLimit !== null) {
-        if (groupInfo.MinLimit > min) {
-          min = groupInfo.MinLimit;
-        }
-      }
-      // Check Max Limit
-      if (groupInfo.MaxLimit !== undefined && groupInfo.MaxLimit !== null) {
-        if (groupInfo.MaxLimit < max) {
-          max = groupInfo.MaxLimit;
-          source = `Group Limit (${groupInfo.DedicatedName || groupInfo.Group || 'Limited'})`;
-        }
+    if (maxLimit !== undefined && maxLimit !== null) {
+      if (maxLimit < max) {
+        max = maxLimit;
+        source = depositLimits ? `Account Package Limit` : `Group Limit (${groupInfo?.DedicatedName || groupInfo?.Group || 'Limited'})`;
       }
     }
 
     return { effectiveMin: min, effectiveMax: max, limitSource: source };
-  }, [step, startupAllowance, groupInfo]);
+  }, [step, groupInfo, depositLimits]);
 
   const getLimitMessage = () => {
     if (!selectedAccountObj) return ""; // Show nothing if no account selected

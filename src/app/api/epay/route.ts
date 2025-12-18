@@ -56,13 +56,14 @@
 
 
 /**
- * app/api/epay/route.ts - USDT TRC20 Payment Gateway (Cregis)
+ * app/api/epay/route.ts - USDT TRC20/BEP20 Payment Gateway (Cregis)
  * 
- * NOTE: Despite the "epay" name, this endpoint now handles USDT TRC20 cryptocurrency deposits only.
+ * NOTE: Despite the "epay" name, this endpoint now handles USDT cryptocurrency deposits via Cregis.
+ * Supports both TRC20 (TRON) and BEP20 (BNB Smart Chain) networks.
  * Card/debit card payments have been removed. Only USDT payments via Cregis are supported.
  * 
  * Payment Flow:
- * 1. User initiates USDT deposit
+ * 1. User initiates USDT deposit (TRC20 or BEP20)
  * 2. Creates payment order with Cregis
  * 3. User is redirected to Cregis to complete USDT payment
  * 4. Cregis processes payment and sends callback
@@ -85,10 +86,10 @@ const config = {
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
 
 export async function POST(req: NextRequest) {
-  console.log('🚀 [EPAY] Starting USDT TRC20 payment request processing');
+  console.log('🚀 [EPAY] Starting USDT payment request processing');
   try {
     const body = await req.json();
-    console.log('💳 [EPAY] Received card payment request:', body);
+    console.log('💳 [EPAY] Received payment request:', body);
 
     const {
       orderAmount,
@@ -96,12 +97,14 @@ export async function POST(req: NextRequest) {
       failure_url,
       account_number,
       account_type,
+      network, // TRC20 or BEP20
     } = body;
 
     console.log('📊 Request body received:', {
       orderAmount,
       account_number,
       account_type,
+      network,
       has_success_url: !!success_url,
       has_failure_url: !!failure_url,
     });
@@ -146,10 +149,13 @@ export async function POST(req: NextRequest) {
     if (account_number) callbackUrl.searchParams.set('account', account_number);
     if (account_type) callbackUrl.searchParams.set('type', account_type);
 
-    console.log('💰 [EPAY] Creating Cregis payment order for USDT TRC20 deposit:', {
+    // Determine network (default to TRC20 for backward compatibility)
+    const selectedNetwork = network || 'TRC20';
+    console.log('💰 [EPAY] Creating Cregis payment order for USDT deposit:', {
       orderAmount,
       account_number,
       account_type,
+      network: selectedNetwork,
       callbackUrl: callbackUrl.toString(),
     });
     
@@ -168,7 +174,7 @@ export async function POST(req: NextRequest) {
     const paymentCurrency = config.PAYMENT_CURRENCY;
     
     console.log('📝 [EPAY] Using payer_id:', payerId);
-    console.log('💎 [EPAY] Using payment currency:', paymentCurrency, '(USDT TRC20)');
+    console.log('💎 [EPAY] Using payment currency:', paymentCurrency, `(USDT ${selectedNetwork})`);
     console.log('📝 [EPAY] Calling createPaymentOrder with:', {
       orderAmount: formattedAmount,
       orderCurrency: paymentCurrency,
@@ -209,7 +215,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      console.log("✅ [EPAY] Cregis payment order created successfully for USDT TRC20 deposit");
+      console.log(`✅ [EPAY] Cregis payment order created successfully for USDT ${selectedNetwork} deposit`);
       console.log("📋 [EPAY] Payment data:", JSON.stringify(result.data, null, 2));
 
       // Call backend to create deposit record
@@ -232,7 +238,7 @@ export async function POST(req: NextRequest) {
               cregisOrderId: result.data?.orderId,
               paymentUrl: result.data?.paymentUrl,
               currency: 'USDT',
-              network: 'TRC20',
+              network: selectedNetwork, // TRC20 or BEP20
             }),
           });
 

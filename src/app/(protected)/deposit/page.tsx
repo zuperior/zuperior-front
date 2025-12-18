@@ -37,7 +37,7 @@ export default function DepositPage() {
   const [isLoadingCrypto, setIsLoadingCrypto] = useState(true);
 
   useEffect(() => {
-    // Hardcoded USDT-TRC20 data since API is not needed
+    // Hardcoded USDT crypto options with TRC20 and BEP20 networks
     const cryptoList: Cryptocurrency[] = [
       {
         id: "USDT-TRC20",
@@ -48,6 +48,18 @@ export default function DepositPage() {
           {
             blockchain: "TRC20",
             logoUrl: "/trc20.png",
+          },
+        ],
+      },
+      {
+        id: "USDT-BEP20",
+        name: "USDT-BEP20",
+        symbol: "USDT",
+        icon: "/bep20.png",
+        networks: [
+          {
+            blockchain: "BEP20",
+            logoUrl: "/bep20.png",
           },
         ],
       },
@@ -108,7 +120,7 @@ export default function DepositPage() {
     setDepositDialogOpen(true);
   }, []);
 
-  // Filter items - show only USDT TRC20 crypto options
+  // Filter items - show USDT TRC20 and BEP20 crypto options
   const filteredItems = useMemo(() => {
     const items: any[] = cryptocurrencies.map((crypto) => ({ type: "crypto", data: crypto }));
     if (wireAvailable) items.unshift({ type: 'wire', data: { id: 'WIRE', name: 'Wire Transfer', icon: '/bank.png' } });
@@ -146,7 +158,7 @@ export default function DepositPage() {
           </TextAnimate> */}
         </div>
 
-        {/* Payment Cards - USDT TRC20 Only */}
+        {/* Payment Cards - USDT TRC20 and BEP20 */}
         <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredItems.map((item) => {
             if (item.type === 'wire') {
@@ -171,7 +183,7 @@ export default function DepositPage() {
           })}
         </div>
 
-        {/* Dialogs - USDT TRC20 Only */}
+        {/* Dialogs - USDT TRC20 and BEP20 */}
         <DepositDialog
           open={depositDialogOpen}
           onOpenChange={setDepositDialogOpen}

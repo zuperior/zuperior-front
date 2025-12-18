@@ -76,22 +76,51 @@ export function USDTManualStep1Form({
     (account) => account.accountId === selectedAccount
   );
 
-  // Startup deposit allowance (max equity excluding bonus = $3,000)
-  const startupAllowance = useMemo(() => {
-    if (!selectedAccountObj) return null;
-    const pkg = String(selectedAccountObj.package || '').toLowerCase();
-    const isStartup = pkg === 'startup' || pkg === 'standard';
-    if (!isStartup) return null;
+  // State for deposit limits from group_management
+  const [depositLimits, setDepositLimits] = useState<{
+    minLimit: number | null;
+    maxLimit: number | null;
+  } | null>(null);
+  const [loadingLimits, setLoadingLimits] = useState(false);
 
-    const balance = Number(selectedAccountObj.balance || 0) || 0;
-    const equity = Number(selectedAccountObj.equity || 0) || 0;
-    const credit = Number(selectedAccountObj.credit || 0) || 0;
-    const epsilon = 0.01;
-    const flat = Math.abs(equity - (balance + credit)) < epsilon;
-    const baseAmount = flat ? balance : (equity - credit);
-    const allowed = Math.max(0, 3000 - baseAmount);
-    return { allowed: parseFloat(allowed.toFixed(2)), balance, equity, credit };
-  }, [selectedAccountObj]);
+  // Fetch deposit limits when account is selected
+  useEffect(() => {
+    const fetchDepositLimits = async () => {
+      if (!selectedAccount) {
+        setDepositLimits(null);
+        return;
+      }
+
+      setLoadingLimits(true);
+      try {
+        const response = await fetch(`/api/mt5/deposit-limits/${selectedAccount}`);
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          setDepositLimits({
+            minLimit: data.data.minLimit,
+            maxLimit: data.data.maxLimit,
+          });
+          console.log('📊 Deposit limits fetched:', data.data);
+        } else {
+          setDepositLimits(null);
+          console.warn('⚠️ No deposit limits found for account:', selectedAccount);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching deposit limits:', error);
+        setDepositLimits(null);
+      } finally {
+        setLoadingLimits(false);
+      }
+    };
+
+    fetchDepositLimits();
+  }, [selectedAccount]);
+
+  // REMOVED: Startup deposit allowance calculation
+  // The maximum deposit limit from database should NOT be reduced by current balance
+  // It's a one-time deposit limit, not a cumulative limit
+  // const startupAllowance = useMemo(() => { ... }, [selectedAccountObj]);
 
   const handleAccountChange = (value: string) => {
     setSelectedAccount(value);
@@ -111,10 +140,8 @@ export function USDTManualStep1Form({
 
     const totalAfterDeposit = lifetimeDeposit + amountNum;
 
-    if (startupAllowance && amountNum > startupAllowance.allowed) {
-      toast.error(`Startup account deposit limit exceeded. You can deposit up to $${startupAllowance.allowed.toFixed(2)} now.`);
-      return false;
-    }
+    // REMOVED: Startup dynamic cap enforcement
+    // Maximum deposit limit should be the same as in database, not reduced by current balance
 
     if (step === "unverified" && totalAfterDeposit > 5000) {
       toast.error("Deposit limit is $5,000 for Unverified accounts");
@@ -123,6 +150,18 @@ export function USDTManualStep1Form({
     if (step === "partial" && totalAfterDeposit > 10000) {
       toast.error("Deposit limit is $10,000 for Partially Verified accounts");
       return false;
+    }
+
+    // Check Deposit Limits from group_management
+    if (depositLimits) {
+      if (depositLimits.minLimit !== null && amountNum < depositLimits.minLimit) {
+        toast.error(`Minimum deposit for this account is $${depositLimits.minLimit}`);
+        return false;
+      }
+      if (depositLimits.maxLimit !== null && amountNum > depositLimits.maxLimit) {
+        toast.error(`Maximum deposit for this account is $${depositLimits.maxLimit}`);
+        return false;
+      }
     }
 
     return true;
@@ -141,10 +180,8 @@ export function USDTManualStep1Form({
       toast.error("Minimum deposit amount is $1");
       return;
     }
-    if (startupAllowance && amountNum > startupAllowance.allowed) {
-      toast.error(`You can deposit up to $${startupAllowance.allowed.toFixed(2)} for Startup accounts right now.`);
-      return;
-    }
+    // REMOVED: Startup dynamic cap check while typing
+    // Maximum deposit limit should be the same as in database, not reduced by current balance
     if (step === "unverified" && totalAfterDeposit > 5000) {
       toast.error("Deposit limit is $5,000 for Unverified accounts");
       return;
@@ -258,11 +295,7 @@ export function USDTManualStep1Form({
             USDT
           </span>
         </div>
-        {startupAllowance && (
-          <p className="text-xs mt-2 text-[#945393]">
-            You can deposit up to ${startupAllowance.allowed.toFixed(2)} on this Startup account
-          </p>
-        )}
+        {/* REMOVED: Startup allowance message - maximum deposit limit should be the same as in database */}
         {step && (
           <p className="text-xs mt-2 text-[#945393]">{getLimitMessage()}</p>
         )}

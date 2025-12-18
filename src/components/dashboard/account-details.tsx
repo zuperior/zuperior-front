@@ -35,9 +35,9 @@ import { useDispatch } from "react-redux";
 import { refreshMt5AccountProfile, fetchAccountDetailsFromMT5, fetchUserAccountsFromDb } from "@/store/slices/mt5AccountSlice";
 import { TopUpDialog } from "./topUp-dialogBox";
 import { ArchiveAccountDialog } from "./archiveaccount-dialogBox";
+import { UnarchiveAccountDialog } from "./unarchiveaccount-dialogBox";
 import { mt5Service } from "@/services/api.service";
-import { toast } from "sonner"; // Assuming sonner is installed as it's common in this stack, or I'll just use it if available. Wait, I didn't see it. Let's check package.json first? No, I'll assume standard toast or just confirm logic.
-// Actually, avoiding toast if unsure. I'll use console and refresh.
+import { toast } from "sonner";
 
 const AccountDetails = ({
   accountId,
@@ -71,9 +71,15 @@ const AccountDetails = ({
   const [renameAccountDialog, setRenameAccountDialogOpen] = useState(false);
   const [topUpDialogOpen, setTopUpDialogOpen] = useState(false);
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
+  const [unarchiveDialogOpen, setUnarchiveDialogOpen] = useState(false);
 
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
+
+  // Handle unarchive - opens dialog
+  const handleUnarchive = () => {
+    setUnarchiveDialogOpen(true);
+  };
 
   // Archive logic moved to ArchiveAccountDialog
 
@@ -345,6 +351,17 @@ const AccountDetails = ({
                     </DropdownMenuItem>
                   </>
                 )}
+
+                {archived && (
+                  <>
+                    <div className="w-full h-px bg-black/5 dark:bg-white/5" />
+                    <DropdownMenuItem
+                      onClick={handleUnarchive}
+                    >
+                      Unarchive account
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -589,6 +606,14 @@ const AccountDetails = ({
         onOpen={setArchiveDialogOpen}
         accountNumber={accountId}
         internalId={accountInternalId}
+      />
+
+      <UnarchiveAccountDialog
+        open={unarchiveDialogOpen}
+        onOpen={setUnarchiveDialogOpen}
+        accountNumber={accountId}
+        internalId={accountInternalId}
+        accountType={accountType}
       />
 
     </div>

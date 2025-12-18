@@ -47,9 +47,12 @@ export async function POST(
 
     const data = await response.json();
 
+    console.log('📥 Backend unarchive response:', JSON.stringify(data, null, 2));
+
     return NextResponse.json({
       success: true,
-      data: data
+      data: data.data || data,
+      message: data.message || 'Account unarchived successfully'
     });
 
   } catch (error: any) {
