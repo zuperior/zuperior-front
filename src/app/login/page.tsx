@@ -9,9 +9,7 @@ import { persistReferralCode } from "@/utils/referrals";
 import { useAppSelector } from "@/store/hooks";
 import { useRouter } from "next/navigation";
 
-import loginScreenOne from "@/assets/login/login-screen-one.png";
-import loginScreenTwo from "@/assets/login/login-screen-two.png";
-import loginScreenThree from "@/assets/login/login-screen-three.png";
+// Using images from public folder
 
 import "swiper/css";
 import "swiper/css/pagination";
@@ -32,9 +30,8 @@ export default function LoginPage() {
     }
   }, [router]);
   const images = [
-    { id: 1, src: loginScreenOne },
-    { id: 2, src: loginScreenTwo },
-    { id: 3, src: loginScreenThree },
+    { id: 1, src: "/signup1.png" },
+    { id: 2, src: "/signup.png" },
   ];
   return (
     <div className="flex items-center justify-center h-screen bg-black">
@@ -52,7 +49,10 @@ export default function LoginPage() {
                 <Image
                   src={image.src}
                   alt="Zuperior"
+                  width={450}
+                  height={650}
                   className="h-[650px] w-[450px] object-cover rounded-xl"
+                  unoptimized
                 />
               </SwiperSlide>
             ))}

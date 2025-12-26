@@ -8,6 +8,7 @@ export function AccountTypeCard({
   spread,
   commission,
   description,
+  accountType,
 }: {
   userRole: string;
   title: string;
@@ -18,6 +19,7 @@ export function AccountTypeCard({
   spread?: number | null;
   commission?: number | null;
   description?: string | null;
+  accountType?: string;
 }) {
   // Format leverage display
   const formatLeverage = (lev: number | string | null | undefined): string => {
@@ -97,7 +99,11 @@ export function AccountTypeCard({
         </h3>
 
         <p className="text-xs dark:text-white/75 text-black  ">
-          {description || "Perfect for newbies--Kick off your trading journey with micro lots."}
+          {description || (accountType === "Demo" 
+            ? "Perfect for newbies--Kick off your trading journey with micro lots."
+            : (userRole === "For Experts" 
+              ? "Designed for skilled traders who demand performance, speed, and precision."
+              : "Ideal for traders taking their first steps with clarity and confidence."))}
         </p>
         <div className="mt-[15px] flex items-center flex-col gap-2.5">
           <p className={`text-xs font-semibold dark:text-white/75 text-black `}>

@@ -146,6 +146,7 @@ export const StepChooseAccountType: React.FC<StepChooseAccountTypeProps> = ({
                       spread={group.spread ? Number(group.spread) : null}
                       commission={group.commission ? Number(group.commission) : null}
                       description={null}
+                      accountType={accountType}
                     />
                   </div>
                 );

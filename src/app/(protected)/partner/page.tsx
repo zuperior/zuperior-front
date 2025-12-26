@@ -92,11 +92,11 @@ const IBCard = () => {
         {/* Description */}
         <div className="mx-auto w-[250px] text-sm text-zinc-400">
           <p className="mb-4 dark:text-white/75 text-black text-[15px]">
-            Earn up to 40% of our revenue from every active trader you refer.
+            Earn upto 40% of our revenue on every traders activity you refer
           </p>
           <div className="  h-px w-full mb-4 bg-gradient-to-r from-transparent to-transparent via-[#9985cc] dark:via-[#413555]" />
           <p className="dark:text-white/75 text-black text-[15px]">
-            Your earnings grow as they trade — straightforward and rewarding!
+            With fast daily payouts and a fully transparent no surprises commission structure
           </p>
         </div>
 
