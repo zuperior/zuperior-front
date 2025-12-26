@@ -41,7 +41,7 @@ import { getMenuItems } from "@/lib/sidebar-config";
 import { wallet, depositsBlack } from "@/lib/sidebar-assets";
 import Profile from "@/assets/icons/profile.png";
 import ProfileDark from "@/assets/icons/userDark.png";
-import { CircleUser, Headset, LogOut, Settings, Lightbulb, Menu } from "lucide-react";
+import { CircleUser, Headset, LogOut, Settings, Lightbulb, Menu, ChevronDown } from "lucide-react";
 import { WalletMoveDialog } from "@/components/wallet/WalletMoveDialog";
 import { NotificationPanel } from "@/components/NotificationPanel";
 import { SuggestFeatureDialog } from "@/components/SuggestFeatureDialog";
@@ -314,13 +314,27 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
         {/* Profile */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <div className="flex items-center cursor-pointer gap-px text-xs text-black dark:text-white font-semibold">
-              {firstName}
-              <Image
-                className="h-6 w-7 rounded-full"
-                src={theme === "dark" ? Profile : ProfileDark}
-                alt="Profile"
-              />
+            <div className="flex items-center cursor-pointer gap-2 text-xs text-black dark:text-white">
+              <div className="h-8 w-8 rounded-full border-2 border-purple-400/60 dark:border-purple-400/60 p-0.5">
+                <Image
+                  className="h-full w-full rounded-full"
+                  src="/userprofileicon.png"
+                  alt="Profile"
+                  width={32}
+                  height={32}
+                  quality={100}
+                  unoptimized
+                />
+              </div>
+              <div className="flex flex-col items-start">
+                <span className="text-sm font-semibold text-black dark:text-white">
+                  {userDetails?.name || firstName}
+                </span>
+                <span className="text-xs text-black/60 dark:text-white/50">
+                  {userDetails?.email ? `@${userDetails.email.split('@')[0]}` : ''}
+                </span>
+              </div>
+              <ChevronDown className="h-4 w-4 text-black/60 dark:text-white/50 ml-1" />
             </div>
           </DropdownMenuTrigger>
 
@@ -330,17 +344,23 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
             className="px-[25px] pt-2.5 pb-[15px] dark:bg-[#01040D] border border-t-0 border-[#9F8BCF]/25 rounded-b-[10px] rounded-t-none mt-[22px] space-y-2.5">
             <DropdownMenuItem asChild>
               <div className="flex items-center w-full gap-2 ">
-                {/* <Image className="h-6 w-6" src={user} alt="User" /> */}
-                <CircleUser
-                  style={{ height: 30, width: 30 }}
-                  className="text-black dark:text-white/75"
-                />
+                <div className="h-8 w-8 rounded-full border-2 border-purple-400/60 dark:border-purple-400/60 p-0.5">
+                  <Image
+                    className="h-full w-full rounded-full"
+                    src="/userprofileicon.png"
+                    alt="Profile"
+                    width={32}
+                    height={32}
+                    quality={100}
+                    unoptimized
+                  />
+                </div>
                 <div className="flex flex-col gap-1">
                   <p className="text-sm text-black dark:text-white/75 font-bold">
                     {userDetails?.name || firstName}
                   </p>
                   <p className="text-xs text-black dark:text-white/50 font-medium">
-                    {userDetails?.email}
+                    {userDetails?.email ? `@${userDetails.email.split('@')[0]}` : userDetails?.email}
                   </p>
                 </div>
               </div>
