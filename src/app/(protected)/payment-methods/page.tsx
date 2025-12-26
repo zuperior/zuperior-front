@@ -440,14 +440,14 @@ export default function PaymentMethodsPage() {
                     </thead>
                     <tbody className="bg-white dark:bg-transparent">
                       {paymentMethods.filter(pm => (pm.methodType ?? 'crypto') === 'bank').map((method, index) => (
-                        <tr key={method.id} className="text-sm leading-6.5 text-gray-800 dark:text-white/75 whitespace-nowrap font-semibold border-b border-gray-200 dark:border-[#9F8ACF]/10">
-                          <td className="px-4 py-[15px]">{index + 1}</td>
-                          <td className="px-4 py-[15px]">{method.bankName}</td>
-                          <td className="px-4 py-[15px]">{method.accountName}</td>
-                          <td className="px-4 py-[15px]">{method.accountNumber}</td>
-                          <td className="px-4 py-[15px]">{method.ifscSwiftCode}</td>
-                          <td className="px-4 py-[15px]">{method.accountType}</td>
-                          <td className={`px-4 py-[15px] text-center ${getStatusColor(method.status)}`}>{method.status}</td>
+                        <tr key={method.id} className="text-sm leading-6.5 text-gray-800 dark:text-white/75 font-semibold border-b border-gray-200 dark:border-[#9F8ACF]/10">
+                          <td className="px-4 py-[15px] whitespace-nowrap">{index + 1}</td>
+                          <td className="px-4 py-[15px] break-words word-break break-all">{method.bankName}</td>
+                          <td className="px-4 py-[15px] whitespace-nowrap">{method.accountName}</td>
+                          <td className="px-4 py-[15px] whitespace-nowrap">{method.accountNumber}</td>
+                          <td className="px-4 py-[15px] whitespace-nowrap">{method.ifscSwiftCode}</td>
+                          <td className="px-4 py-[15px] whitespace-nowrap">{method.accountType}</td>
+                          <td className={`px-4 py-[15px] text-center whitespace-nowrap ${getStatusColor(method.status)}`}>{method.status}</td>
                         </tr>
                       ))}
                     </tbody>
