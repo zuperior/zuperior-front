@@ -9,7 +9,6 @@ import { useSessionCheck } from "@/hooks/useSessionCheck";
 import { getUser } from "@/store/slices/getUserSlice";
 import Image from "next/image";
 import { FloatingDots } from "@/components/ui/floating-dots";
-import zuperLearn from "@/assets/sidebar/zuperLearn.svg";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
@@ -95,8 +94,10 @@ export default function ProtectedLayout({
                     <div className="flex items-center justify-center w-8 h-8 bg-[#FFFFFF] dark:bg-[#01040D] rounded-full relative ml-0.5">
                       <Image
                         className="w-4 h-4 object-contain"
-                        src={zuperLearn}
+                        src="/zuplearn.svg"
                         alt="Zuper Learn icon"
+                        width={16}
+                        height={16}
                       />
                     </div>
                     <div className="overflow-hidden">

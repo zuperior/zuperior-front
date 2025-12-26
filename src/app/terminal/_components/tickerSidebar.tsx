@@ -8,8 +8,6 @@ import Image from "next/image";
 import { ChevronDown, ArrowRight, X } from "lucide-react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import zuperFunded from "@/assets/sidebar/zuperFunded.svg";
-import zuperLearn from "@/assets/sidebar/zuperLearn.svg";
 import { Menu } from "lucide-react";
 
 const TickerSidebar: React.FC = () => {
@@ -86,20 +84,17 @@ const TickerSidebar: React.FC = () => {
             className="flex mx-2 items-center mb-2 relative"
             ref={dropdownRef}
           >
-            <Image
-              alt="Zuperior Logo"
-              src="/logo.png"
-              width={63}
-              height={63}
-              className="w-12 h-12"
-            />
-            <div className="flex flex-col ml-3">
-              <span className="text-[25px] font-bold text-black dark:text-white/75 leading-tight">
-                Zuperior
-              </span>
-              <span className="text-sm text-black dark:text-white/45 tracking-wide">
-                Trade Superior
-              </span>
+            <div className="w-12 h-12 flex items-center justify-center shrink-0">
+              <Image
+                alt="Zuperior Logo"
+                src="/logo_icon.png"
+                width={48}
+                height={48}
+                quality={100}
+                unoptimized
+                priority
+                className="object-contain"
+              />
             </div>
             <div className="flex-1" />
             <ChevronDown
@@ -119,48 +114,29 @@ const TickerSidebar: React.FC = () => {
                 >
                   <div className="py-2 w-full">
                     <Link
-                      href="https://zuperior-staging.onrender.com"
+                      href="https://zuperior.com/"
                       className="flex items-center justify-between px-4 py-2 hover:bg-[#9a86cc] dark:hover:bg-[#1E1429]/40 transition-colors"
                       onClick={() => setIsDropdownOpen(false)}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
                       <div className="flex items-center gap-2">
-                        <Image
-                          src="/logo.png"
-                          alt="Website"
-                          width={25}
-                          height={25}
-                          className="w-6 h-6"
-                        />
+                        <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                          <Image
+                            src="/logo_icon.png"
+                            alt="Website"
+                            width={24}
+                            height={24}
+                            quality={100}
+                            unoptimized
+                            className="object-contain"
+                          />
+                        </div>
                         <span className="dark:text-white/75 text-black text-sm">
                           Zuperior Website
                         </span>
                       </div>
                       <ArrowRight size={18} />
-                    </Link>
-                    <Link
-                      href="#"
-                      className="flex items-center justify-between px-4 py-2 hover:bg-[#9a86cc] dark:hover:bg-[#1E1429]/40 transition-colors group relative opacity-60 cursor-not-allowed"
-                      onClick={(e) => {
-                        e.preventDefault();
-                      }}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Image
-                          src={zuperFunded}
-                          alt="Funded"
-                          width={25}
-                          height={25}
-                          className="w-6 h-6"
-                        />
-                        <span className="dark:text-white/75 text-black group-hover:text-gray-100 text-sm">
-                          Zuper Funded
-                        </span>
-                        <div className="ml-2 text-center bg-[#9F8ACF]/30 px-2 py-[2px] rounded-[5px] font-semibold text-black/75 dark:text-white/75 tracking-tighter text-[10px]">
-                          Coming Soon
-                        </div>
-                      </div>
                     </Link>
                     <Link
                       href="https://zuperlearn.com"
@@ -170,13 +146,17 @@ const TickerSidebar: React.FC = () => {
                       rel="noopener noreferrer"
                     >
                       <div className="flex items-center gap-2">
-                        <Image
-                          src={zuperLearn}
-                          alt="Learn"
-                          width={25}
-                          height={25}
-                          className="w-5 h-5"
-                        />
+                        <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                          <Image
+                            src="/zuplearn.svg"
+                            alt="Learn"
+                            width={20}
+                            height={20}
+                            quality={100}
+                            unoptimized
+                            className="object-contain"
+                          />
+                        </div>
                         <span className="dark:text-white/75 text-black text-sm">
                           Zuper Learn
                         </span>

@@ -19,16 +19,8 @@ const ForexAdBanner = () => {
   return (
     <div className="relative overflow-hidden w-full rounded-[15px] dark:bg-black bg-[#FBFAFC]  p-6 md:p-[50px] text-black dark:text-white flex-1">
       <h2 className="text-[24px] md:text-[34px] font-medium tracking-tighter leading-9 capitalize z-10 bg-gradient-to-t from-[rgba(0,0,0,0.15)] to-[rgba(98,66,165,1)] text-transparent bg-clip-text dark:text-[#a14da0] ">
-        {/* #1 part */}
-        <span className="dark:text-[BF75BE]">
-          #1
-        </span>{" "}
-
-        {/* Leading Forex Broker part */}
         <span className="dark:text-white">
-          Leading
-          <br />
-          Forex Broker
+          Your Premium Forex <br></br>Broker
         </span>
       </h2>
 

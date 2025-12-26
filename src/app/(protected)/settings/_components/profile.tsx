@@ -74,7 +74,7 @@ function ProfileComponent({ profile, loading, onProfileRefresh }: ProfileCompone
             <button
               type="button"
               onClick={() => setVerifyDialogOpen(true)}
-              className="text-xs px-3 py-1 rounded-md bg-purple-600 hover:bg-purple-700 text-white font-medium transition-colors"
+              className="text-xs px-3 py-1 rounded-md bg-[#fac573] hover:bg-[#f5b85a] text-black font-medium transition-colors"
             >
               Verify Now
             </button>

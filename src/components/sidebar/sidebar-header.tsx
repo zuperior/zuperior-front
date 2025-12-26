@@ -4,8 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import { ChevronDown, ArrowRight } from "lucide-react";
-import zuperFunded from "@/assets/sidebar/zuperFunded.svg";
-import zuperLearn from "@/assets/sidebar/zuperLearn.svg";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTheme } from "next-themes";
 
@@ -53,14 +51,17 @@ export function SidebarHeader({ collapsed }: SidebarHeaderProps) {
         <div className="relative flex items-center gap-4">
           <Link href="/" className={`flex items-center ${collapsed ? "" : ""}`}>
             <div
-              className={`object-contain relative ${collapsed ? "w-12 h-12" : "h-16 w-16 pl-0 lg:h-16 lg:w-16"
+              className={`object-contain relative flex items-center justify-center ${collapsed ? "w-12 h-12" : "w-56 h-12"
                 }`}
             >
               <Image
                 alt="Zuperior Logo"
-                src="/logo.png"
-                width={collapsed ? 48 : 63}
-                height={collapsed ? 48 : 63}
+                src={collapsed ? "/logo_icon.png" : "/logo.webp"}
+                width={collapsed ? 48 : 224}
+                height={collapsed ? 48 : 48}
+                quality={100}
+                unoptimized
+                priority
                 className="object-contain transition-all duration-300"
                 style={!isDark ? {
                   // Light mode: Enhanced brightness, contrast, and saturation for better visibility on light backgrounds
@@ -73,17 +74,6 @@ export function SidebarHeader({ collapsed }: SidebarHeaderProps) {
                 }}
               />
             </div>
-
-            {!collapsed && (
-              <div className="flex flex-col">
-                <span className="text-[25px] leading-[-0.05em] font-bold text-black dark:text-white/75">
-                  Zuperior
-                </span>
-                <span className="text-sm text-black dark:text-white/45">
-                  Trade Superior
-                </span>
-              </div>
-            )}
           </Link>
 
           {!collapsed && (
@@ -107,53 +97,36 @@ export function SidebarHeader({ collapsed }: SidebarHeaderProps) {
                 {/* Menu Items */}
                 <div>
                   <Link
-                    href="https://zuperior-staging.onrender.com"
+                    href="https://zuperior.com/"
                     className="flex items-center px-4 py-2 hover:bg-[#9a86cc] dark:hover:bg-[#1E1429]/40 transition-colors"
                     onClick={() => setIsDropdownOpen(false)}
                     target="_blank" // Opens in a new tab (optional)
                     rel="noopener noreferrer" // Security for new tabs
                   >
-                    <Image
-                      src="/logo.png"
-                      alt="Website"
-                      width={25}
-                      height={25}
-                      className="w-6 h-6 mr-3 object-contain transition-all duration-300"
-                      style={!isDark ? {
-                        // Light mode: Enhanced visibility
-                        filter: 'brightness(1.15) contrast(1.3) saturate(1.4) drop-shadow(0 2px 8px rgba(124, 58, 237, 0.3))',
-                        opacity: 1,
-                      } : {
-                        // Dark mode: Original appearance
-                        filter: 'none',
-                        opacity: 1,
-                      }}
-                    />
+                    <div className="w-6 h-6 mr-3 flex items-center justify-center shrink-0">
+                      <Image
+                        src="/logo_icon.png"
+                        alt="Website"
+                        width={24}
+                        height={24}
+                        quality={100}
+                        unoptimized
+                        className="object-contain transition-all duration-300"
+                        style={!isDark ? {
+                          // Light mode: Enhanced visibility
+                          filter: 'brightness(1.15) contrast(1.3) saturate(1.4) drop-shadow(0 2px 8px rgba(124, 58, 237, 0.3))',
+                          opacity: 1,
+                        } : {
+                          // Dark mode: Original appearance
+                          filter: 'none',
+                          opacity: 1,
+                        }}
+                      />
+                    </div>
                     <span className="dark:text-white/75 text-black text-sm flex items-center gap-1">
                       Zuperior Website
                       <ArrowRight size={16} className="ml-12" />
                     </span>
-                  </Link>
-                  <Link
-                    href="#"
-                    className="flex items-center px-4 py-2 hover:bg-[#9a86cc] dark:hover:bg-[#1E1429]/40 transition-colors group relative opacity-60 cursor-not-allowed"
-                    onClick={(e) => {
-                      e.preventDefault(); // disable navigation
-                    }}
-                  >
-                    <Image
-                      src={zuperFunded}
-                      alt="Funded"
-                      width={25}
-                      height={25}
-                      className="w-6 h-6 mr-3"
-                    />
-                    <span className="dark:text-white/75 text-black group-hover:text-gray-100 text-sm">
-                      Zuper Funded
-                    </span>
-                    <div className="absolute right-2 bg-[#9F8ACF]/30 px-2 py-[2px] rounded-[5px] font-semibold text-black/75 dark:text-white/75 tracking-tighter text-[10px]">
-                      Coming Soon
-                    </div>
                   </Link>
                   <Link
                     href="https://zuperlearn.com"
@@ -162,13 +135,17 @@ export function SidebarHeader({ collapsed }: SidebarHeaderProps) {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <Image
-                      src={zuperLearn}
-                      alt="Learn"
-                      width={25}
-                      height={25}
-                      className="w-5 h-5 mr-3"
-                    />
+                    <div className="w-5 h-5 mr-3 flex items-center justify-center shrink-0">
+                      <Image
+                        src="/zuplearn.svg"
+                        alt="Learn"
+                        width={20}
+                        height={20}
+                        quality={100}
+                        unoptimized
+                        className="object-contain"
+                      />
+                    </div>
                     <span className="dark:text-white/75 text-black text-sm flex items-center gap-1">
                       Zuper Learn
                       <ArrowRight size={16} className="ml-21" />

@@ -83,7 +83,7 @@ export default function VerificationAlert({
           {cta && (
             <Link
               href="/kyc"
-              className="bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:bg-[#9d6ad9] font-semibold text-xs leading-[14px] px-6 py-2 rounded-[10px] transition-colors text-center w-[120px] sm:w-auto"
+              className="bg-[#fac573] text-black hover:bg-[#f5b85a] font-semibold text-xs leading-[14px] px-6 py-2 rounded-[10px] transition-colors text-center w-[120px] sm:w-auto"
             >
               {cta}
             </Link>

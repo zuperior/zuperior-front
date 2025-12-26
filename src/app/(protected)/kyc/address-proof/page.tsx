@@ -353,6 +353,7 @@ export default function AddressVerificationPage() {
             firstName={firstName}
             lastName={lastName}
             phoneNumber={phoneNumber}
+            userCountry={user?.account_bill_ads_general?.bill_country || user?.country || ""}
             setFirstName={setFirstName}
             setLastName={setLastName}
             setPhoneNumber={setPhoneNumber}

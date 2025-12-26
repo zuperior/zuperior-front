@@ -1,5 +1,4 @@
 import Image from "next/image";
-import logo from "../../../public/logo.png";
 import Link from "next/link";
 
 const ToolNavbar = () => {
@@ -8,7 +7,7 @@ const ToolNavbar = () => {
       <Link href={"/"} className="flex items-center cursor-pointer">
         <Image
           alt="Zuperior Logo"
-          src={logo}
+          src="/logo.webp"
           width={48}
           height={48}
           className="h-12 w-12 object-contain"
