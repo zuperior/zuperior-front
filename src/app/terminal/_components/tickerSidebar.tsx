@@ -148,7 +148,7 @@ const TickerSidebar: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <div className="w-5 h-5 flex items-center justify-center shrink-0">
                           <Image
-                            src="/zuplearn.svg"
+                            src="/zuplearn-logo.png"
                             alt="Learn"
                             width={20}
                             height={20}

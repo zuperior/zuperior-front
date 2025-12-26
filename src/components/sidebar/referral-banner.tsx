@@ -23,10 +23,12 @@ export function ReferralBanner({ collapsed }: ReferralBannerProps) {
           <div className="flex items-center justify-center w-8 h-8 bg-[#FFFFFF] dark:bg-[#01040D] rounded-full relative ml-0.5">
             <Image
               className="w-4 h-4 object-contain"
-              src="/zuplearn.svg"
+              src="/zuplearn-logo.png"
               alt="Gift icon"
               width={16}
               height={16}
+              quality={100}
+              unoptimized
             />
           </div>
           {!collapsed && (

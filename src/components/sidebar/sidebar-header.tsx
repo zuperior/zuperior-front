@@ -137,7 +137,7 @@ export function SidebarHeader({ collapsed }: SidebarHeaderProps) {
                   >
                     <div className="w-5 h-5 mr-3 flex items-center justify-center shrink-0">
                       <Image
-                        src="/zuplearn.svg"
+                        src="/zuplearn-logo.png"
                         alt="Learn"
                         width={20}
                         height={20}
