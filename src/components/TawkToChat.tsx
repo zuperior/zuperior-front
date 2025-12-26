@@ -56,14 +56,190 @@ export default function TawkToChat() {
         });
       };
 
+      // Function to make Tawk widget draggable
+      let dragCleanup: (() => void) | null = null;
+      const makeWidgetDraggable = () => {
+        // Find the Tawk.to widget container
+        const tawkWidget = document.querySelector('#tawkchat-container, [id*="tawk"], iframe[title*="chat"]') as HTMLElement;
+        
+        if (!tawkWidget) return;
+
+        // Check if already initialized
+        if (tawkWidget.hasAttribute('data-draggable-initialized')) return;
+
+        // Find the parent container that holds the widget
+        let widgetContainer = tawkWidget.parentElement;
+        while (widgetContainer && !widgetContainer.id?.includes('tawk') && widgetContainer !== document.body) {
+          widgetContainer = widgetContainer.parentElement;
+        }
+
+        if (!widgetContainer || widgetContainer === document.body) {
+          // If no parent found, wrap the widget
+          const wrapper = document.createElement('div');
+          wrapper.id = 'tawk-draggable-wrapper';
+          wrapper.style.cssText = 'position: fixed !important; z-index: 999999 !important; cursor: move !important;';
+          tawkWidget.parentNode?.insertBefore(wrapper, tawkWidget);
+          wrapper.appendChild(tawkWidget);
+          widgetContainer = wrapper;
+        }
+
+        // Mark as initialized
+        tawkWidget.setAttribute('data-draggable-initialized', 'true');
+
+        // Load saved position from localStorage
+        const savedPosition = localStorage.getItem('tawk-widget-position');
+        if (savedPosition) {
+          try {
+            const { top, left, right, bottom } = JSON.parse(savedPosition);
+            if (top !== undefined) widgetContainer.style.top = top;
+            if (left !== undefined) widgetContainer.style.left = left;
+            if (right !== undefined) widgetContainer.style.right = right;
+            if (bottom !== undefined) widgetContainer.style.bottom = bottom;
+          } catch (e) {
+            // Invalid saved position, use default
+            widgetContainer.style.bottom = '20px';
+            widgetContainer.style.right = '20px';
+          }
+        } else {
+          // Default position: bottom right
+          widgetContainer.style.bottom = '20px';
+          widgetContainer.style.right = '20px';
+        }
+
+        // Make sure it's positioned fixed
+        widgetContainer.style.position = 'fixed';
+        widgetContainer.style.zIndex = '999999';
+        widgetContainer.style.cursor = 'move';
+        widgetContainer.style.userSelect = 'none';
+
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+        let initialTop = 0;
+        let initialLeft = 0;
+
+        const handleMouseDown = (e: MouseEvent) => {
+          // Only allow dragging from the widget icon, not the chat window
+          const target = e.target as HTMLElement;
+          const iframe = target.closest('iframe');
+          if (iframe && iframe.offsetWidth > 100) return; // Don't drag if chat is open
+
+          isDragging = true;
+          const rect = widgetContainer.getBoundingClientRect();
+          
+          initialTop = rect.top;
+          initialLeft = rect.left;
+
+          startX = e.clientX;
+          startY = e.clientY;
+
+          // Remove all position styles to start fresh
+          widgetContainer.style.top = '';
+          widgetContainer.style.left = '';
+          widgetContainer.style.right = '';
+          widgetContainer.style.bottom = '';
+
+          // Set initial position based on current position
+          widgetContainer.style.top = `${initialTop}px`;
+          widgetContainer.style.left = `${initialLeft}px`;
+
+          e.preventDefault();
+          e.stopPropagation();
+        };
+
+        const handleMouseMove = (e: MouseEvent) => {
+          if (!isDragging) return;
+
+          const deltaX = e.clientX - startX;
+          const deltaY = e.clientY - startY;
+
+          const newLeft = initialLeft + deltaX;
+          const newTop = initialTop + deltaY;
+
+          widgetContainer.style.left = `${newLeft}px`;
+          widgetContainer.style.top = `${newTop}px`;
+        };
+
+        const handleMouseUp = () => {
+          if (!isDragging) return;
+          isDragging = false;
+
+          // Snap to nearest edge
+          const rect = widgetContainer.getBoundingClientRect();
+          const windowWidth = window.innerWidth;
+          const windowHeight = window.innerHeight;
+          const widgetWidth = rect.width;
+          const widgetHeight = rect.height;
+
+          const centerX = rect.left + widgetWidth / 2;
+          const centerY = rect.top + widgetHeight / 2;
+
+          // Determine which edge is closest
+          const distToLeft = centerX;
+          const distToRight = windowWidth - centerX;
+          const distToTop = centerY;
+          const distToBottom = windowHeight - centerY;
+
+          const minDist = Math.min(distToLeft, distToRight, distToTop, distToBottom);
+
+          // Clear all positions
+          widgetContainer.style.top = '';
+          widgetContainer.style.left = '';
+          widgetContainer.style.right = '';
+          widgetContainer.style.bottom = '';
+
+          let position: { top?: string; left?: string; right?: string; bottom?: string } = {};
+
+          if (minDist === distToLeft) {
+            // Snap to left
+            widgetContainer.style.left = '20px';
+            widgetContainer.style.top = `${Math.max(20, Math.min(centerY - widgetHeight / 2, windowHeight - widgetHeight - 20))}px`;
+            position = { left: '20px', top: widgetContainer.style.top };
+          } else if (minDist === distToRight) {
+            // Snap to right
+            widgetContainer.style.right = '20px';
+            widgetContainer.style.top = `${Math.max(20, Math.min(centerY - widgetHeight / 2, windowHeight - widgetHeight - 20))}px`;
+            position = { right: '20px', top: widgetContainer.style.top };
+          } else if (minDist === distToTop) {
+            // Snap to top
+            widgetContainer.style.top = '20px';
+            widgetContainer.style.left = `${Math.max(20, Math.min(centerX - widgetWidth / 2, windowWidth - widgetWidth - 20))}px`;
+            position = { top: '20px', left: widgetContainer.style.left };
+          } else {
+            // Snap to bottom
+            widgetContainer.style.bottom = '20px';
+            widgetContainer.style.left = `${Math.max(20, Math.min(centerX - widgetWidth / 2, windowWidth - widgetWidth - 20))}px`;
+            position = { bottom: '20px', left: widgetContainer.style.left };
+          }
+
+          // Save position to localStorage
+          localStorage.setItem('tawk-widget-position', JSON.stringify(position));
+        };
+
+        widgetContainer.addEventListener('mousedown', handleMouseDown);
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+
+        // Store cleanup function
+        dragCleanup = () => {
+          widgetContainer.removeEventListener('mousedown', handleMouseDown);
+          document.removeEventListener('mousemove', handleMouseMove);
+          document.removeEventListener('mouseup', handleMouseUp);
+        };
+      };
+
       // Observer to watch for Tawk iframe injection
       const observer = new MutationObserver(() => {
         classifyTawkIframes();
+        makeWidgetDraggable();
       });
 
       observer.observe(document.body, { childList: true, subtree: true });
       // Also run periodically to catch updates
-      const interval = setInterval(classifyTawkIframes, 1000);
+      const interval = setInterval(() => {
+        classifyTawkIframes();
+        makeWidgetDraggable();
+      }, 1000);
 
       // Wait for Tawk.to API to be ready
       const checkTawkAPI = setInterval(() => {
@@ -138,6 +314,9 @@ export default function TawkToChat() {
         clearTimeout(timeout);
         observer.disconnect();
         clearInterval(interval);
+        if (dragCleanup) {
+          dragCleanup();
+        }
       };
     }
   }, [user]);
