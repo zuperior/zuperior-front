@@ -319,11 +319,14 @@ function PaymentTile({
 
       <div className="flex flex-col items-center mt-2 mb-4 text-center">
         <Image
-          className="h-10 w-10"
+          className="h-16 w-16 md:h-20 md:w-20"
           src={icon}
           alt={name}
-          width={40}
-          height={40}
+          width={80}
+          height={80}
+          quality={100}
+          unoptimized
+          style={{ imageRendering: 'crisp-edges' }}
         />
         <h3 className="mt-4 text-[18px] font-bold text-black dark:text-white">
           {name}
@@ -369,7 +372,16 @@ function TransferAmountCard({
       )}
 
       <div className="flex items-start gap-4">
-        <Image className="h-8 w-8 shrink-0" src={icon} alt={name} />
+        <Image 
+          className="h-12 w-12 md:h-16 md:w-16 shrink-0" 
+          src={icon} 
+          alt={name}
+          width={64}
+          height={64}
+          quality={100}
+          unoptimized
+          style={{ imageRendering: 'crisp-edges' }}
+        />
         <div>
           <h3 className="text-lg font-medium text-[#000000] dark:text-[#FFFFFF]">
             {name}

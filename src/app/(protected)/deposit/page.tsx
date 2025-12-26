@@ -214,11 +214,14 @@ function PaymentMethodCard({
     >
       <div className="flex flex-col items-center mt-2 mb-4 text-center">
         <Image
-          className="h-10 w-10"
+          className="h-16 w-16 md:h-20 md:w-20"
           src={icon}
           alt={name}
-          width={40}
-          height={40}
+          width={80}
+          height={80}
+          quality={100}
+          unoptimized
+          style={{ imageRendering: 'crisp-edges' }}
         />
         <h3 className="mt-4 text-[18px] font-bold text-black dark:text-white">
           {name}

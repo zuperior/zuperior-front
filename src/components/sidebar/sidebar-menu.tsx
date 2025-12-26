@@ -93,9 +93,20 @@ export function SidebarMenu({ items, collapsed, onLinkClick }: SidebarMenuProps)
               collapsed && "rounded-[10px] mx-auto"
             )}
           >
-            {/* White lighting effect on right side for active menu */}
+            {/* Subtle highlight on right side for active menu - matching image 1 exactly */}
             {(isActive || isSubActive) && (
-              <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-white/80 dark:bg-white/60 rounded-r-[10px] shadow-[0_0_12px_rgba(255,255,255,0.8),0_0_6px_rgba(255,255,255,0.6)] dark:shadow-[0_0_12px_rgba(255,255,255,0.6),0_0_6px_rgba(255,255,255,0.4)]" />
+              <div 
+                className="absolute right-0"
+                style={{
+                  width: '1px',
+                  height: '32px',
+                  top: 'calc(51.9231% - 16px)',
+                  background: 'linear-gradient(rgba(0, 0, 0, 0) 0%, rgba(255, 255, 255, 0.7) 50.9009%, rgba(0, 0, 0, 0) 100%)',
+                  opacity: 1,
+                  overflow: 'visible',
+                  zIndex: 1,
+                }}
+              />
             )}
             {/* Tooltip only when collapsed */}
             {collapsed ? (
