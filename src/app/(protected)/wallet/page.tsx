@@ -13,9 +13,15 @@ import { TransactionsTable } from '@/components/transactions/TransactionTable';
 import { useRouter } from 'next/navigation';
 import WalletBalance from '@/components/dashboard/wallet-balance';
 import { WalletMoveDialog } from '@/components/wallet/WalletMoveDialog';
+import Image from 'next/image';
+import { useTheme } from 'next-themes';
+import { wallet as walletIcon } from '@/lib/sidebar-assets';
+import bitcoinLoop from '@/assets/home/bitcoin-loop.png';
+import { ArrowRight, ArrowLeft } from 'lucide-react';
 
 export default function WalletPage() {
   const dispatch = useAppDispatch();
+  const { theme } = useTheme();
   const [wallet, setWallet] = useState<any>(null);
   const [amount, setAmount] = useState('');
   const [amountOut, setAmountOut] = useState('');
@@ -127,35 +133,114 @@ export default function WalletPage() {
     setLoadingOut(false);
   };
 
+  const maskStyle = {
+    WebkitMaskImage:
+      "linear-gradient(130deg, rgba(255, 255, 255, 0.1) 10%, rgba(255, 255, 255, 0.25) 100%)",
+    maskImage:
+      "linear-gradient(130deg, rgba(255, 255, 255, 0.1) 10%, rgba(255, 255, 255, 0.25) 100%)",
+    borderRadius: "15px",
+    opacity: 0.85,
+    inset: 0,
+    overflow: "visible",
+    position: "absolute",
+    zIndex: 0,
+  };
+
   return (
     <div className="p-4 mx-auto w-full max-w-full space-y-6">
-      {/* Balance section */}
+      {/* Balance section - 3 cards in a row */}
       <div>
         <h2 className="text-xl font-semibold mb-3">Wallet</h2>
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-stretch">
-          <div className="lg:col-span-1">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Wallet Balance Card */}
+          <div>
             <WalletBalance balance={wallet?.balance ?? 0} />
           </div>
-          <div className="lg:col-span-3 rounded-[15px] border border-black/10 dark:border-white/10 bg-black/5 dark:bg-black/40 p-6 flex items-center justify-center text-center min-h-[140px]">
-            <div>
-              <div className="text-sm opacity-70">Wallet Number</div>
-              <div className="text-lg font-semibold tracking-tight">{wallet?.walletNumber || '-'}</div>
+          
+          {/* Wallet Number Card with Icon */}
+          <div className="rounded-[15px] border border-black/10 dark:border-white/10 bg-black/5 dark:bg-black/40 p-6 flex flex-col items-center justify-center text-center min-h-[140px]">
+            <div className="mb-3">
+              <Image
+                src={walletIcon}
+                alt="Wallet"
+                width={32}
+                height={32}
+                className="w-8 h-8 opacity-80"
+              />
             </div>
+            <div className="text-sm opacity-70 mb-1">Wallet Number</div>
+            <div className="text-lg font-semibold tracking-tight">{wallet?.walletNumber || '-'}</div>
+          </div>
+
+          {/* Graphics Card */}
+          <div className="rounded-[15px] border border-black/10 dark:border-white/10 bg-black/5 dark:bg-black/40 p-6 flex flex-col items-center justify-center text-center min-h-[140px] relative overflow-hidden">
+            <div className="absolute inset-0 flex items-center justify-center opacity-20">
+              <Image
+                alt="Crypto graphics"
+                src={bitcoinLoop}
+                className="slow-spin h-24 w-24"
+                width={96}
+                height={96}
+                unoptimized
+              />
+            </div>
+            <div className="relative z-10 text-sm opacity-70">Integrated</div>
+            <div className="relative z-10 text-lg font-semibold tracking-tight">Wallet System</div>
           </div>
         </div>
       </div>
 
+      {/* Marketing Banner */}
+      <div className="relative overflow-hidden w-full rounded-[15px] dark:bg-black bg-[#FBFAFC] p-6 md:p-[50px] text-black dark:text-white">
+        <h2 className="text-[18px] md:text-[24px] font-medium tracking-tighter leading-7 capitalize z-10 bg-gradient-to-t from-[rgba(0,0,0,0.15)] to-[rgba(98,66,165,1)] text-transparent bg-clip-text dark:text-[#a14da0]">
+          <span className="dark:text-white">
+            Powerful Integrated Wallet <br />
+            for Seamless Transfer Between Wallet and MT5
+          </span>
+        </h2>
+
+        <div className="absolute -top-10 -right-10 md:-top-16 md:-right-20 translate-y-1/4 pointer-events-none">
+          <Image
+            alt="Bitcoin loop"
+            src={bitcoinLoop}
+            className="slow-spin h-42 w-42 md:h-60 md:w-60"
+            width={240}
+            height={240}
+            unoptimized
+          />
+        </div>
+
+        <div
+          style={maskStyle as React.CSSProperties}
+          className="border border-black/50 dark:border-white/75 pointer-events-none"
+        />
+      </div>
+
       {/* Transfer chooser cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <button onClick={()=>setOpenIn(true)} className="rounded-xl p-6 text-left bg-gradient-to-br from-[#1b1426] to-[#221a30] border border-[#2a2139] hover:opacity-90">
-          <div className="text-sm text-white/70 mb-1">Transfer</div>
-          <div className="text-lg font-semibold text-white">MT5 to Wallet</div>
-          <div className="text-xs text-white/50 mt-2">Move funds into your wallet</div>
+        <button onClick={()=>setOpenIn(true)} className="rounded-xl p-6 text-left bg-gradient-to-br from-[#1b1426] to-[#221a30] border border-[#2a2139] hover:opacity-90 relative group">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="text-sm text-white/70 mb-1">Transfer</div>
+              <div className="text-lg font-semibold text-white">MT5 to Wallet</div>
+              <div className="text-xs text-white/50 mt-2">Move funds into your wallet</div>
+            </div>
+            <div className="ml-4 flex-shrink-0">
+              <ArrowLeft className="h-6 w-6 text-white/60 group-hover:text-white/90 transition-colors" />
+            </div>
+          </div>
         </button>
-        <button onClick={()=>setOpenOut(true)} className="rounded-xl p-6 text-left bg-gradient-to-br from-[#1b1426] to-[#221a30] border border-[#2a2139] hover:opacity-90">
-          <div className="text-sm text-white/70 mb-1">Transfer</div>
-          <div className="text-lg font-semibold text-white">Wallet to MT5</div>
-          <div className="text-xs text-white/50 mt-2">Move funds to your trading account</div>
+        <button onClick={()=>setOpenOut(true)} className="rounded-xl p-6 text-left bg-gradient-to-br from-[#1b1426] to-[#221a30] border border-[#2a2139] hover:opacity-90 relative group">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="text-sm text-white/70 mb-1">Transfer</div>
+              <div className="text-lg font-semibold text-white">Wallet to MT5</div>
+              <div className="text-xs text-white/50 mt-2">Move funds to your trading account</div>
+            </div>
+            <div className="ml-4 flex-shrink-0">
+              <ArrowRight className="h-6 w-6 text-white/60 group-hover:text-white/90 transition-colors" />
+            </div>
+          </div>
         </button>
       </div>
 

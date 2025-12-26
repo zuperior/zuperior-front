@@ -86,13 +86,17 @@ export function SidebarMenu({ items, collapsed, onLinkClick }: SidebarMenuProps)
           <div
             key={item.name}
             className={cn(
-              "mb-2 w-full flex items-center group rounded-[10px] transition-all duration-200 active:transform-none",
+              "mb-2 w-full flex items-center group rounded-[10px] transition-all duration-200 active:transform-none relative",
               isActive || isSubActive
-                ? "bg-gradient-to-tr from-[#6242A5] via-[#FAF7FF]/15 via-75% to-[#9F8BCF] dark:bg-gradient-to-r dark:from-[#1E1429] dark:via-[#110F17] dark:to-[#110F17]"
+                ? "bg-gradient-to-tr from-[#6242A5] via-[#FAF7FF]/20 via-75% to-[#9F8BCF] dark:bg-gradient-to-r dark:from-[#2A1F3A] dark:via-[#1A1520] dark:to-[#1A1520]"
                 : "bg-transparent",
               collapsed && "rounded-[10px] mx-auto"
             )}
           >
+            {/* White lighting effect on right side for active menu */}
+            {(isActive || isSubActive) && (
+              <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-white/80 dark:bg-white/60 rounded-r-[10px] shadow-[0_0_12px_rgba(255,255,255,0.8),0_0_6px_rgba(255,255,255,0.6)] dark:shadow-[0_0_12px_rgba(255,255,255,0.6),0_0_6px_rgba(255,255,255,0.4)]" />
+            )}
             {/* Tooltip only when collapsed */}
             {collapsed ? (
               <Tooltip.Provider delayDuration={100}>

@@ -1,6 +1,6 @@
 "use client";
 
-// import Image from "next/image";
+import Image from "next/image";
 import { MessageCircle, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -119,15 +119,29 @@ export default function SupportHub() {
       
 
       {/* Help Section */}
-      <section className="rounded-lg border-2 border-gray-300 dark:border-[#1D1825] dark:bg-gradient-to-r from-[#FFFFFF] to-[#f4e7f6] p-5 sm:p-7 dark:from-[#110F17] dark:to-[#1E1429]">
+      <section className="relative rounded-lg border-2 border-gray-300 dark:border-[#1D1825] dark:bg-gradient-to-r from-[#FFFFFF] to-[#f4e7f6] p-5 sm:p-7 dark:from-[#110F17] dark:to-[#1E1429] overflow-hidden">
+        {/* Support Image */}
+        <div className="absolute top-0 right-0 -mt-4 -mr-4 md:-mt-8 md:-mr-8 pointer-events-none opacity-20 dark:opacity-30">
+          <Image
+            src="/support.png"
+            alt="Support"
+            width={300}
+            height={300}
+            className="w-48 h-48 md:w-64 md:h-64"
+            unoptimized
+          />
+        </div>
+        
         {/* Header */}
-        <h3 className="mb-4 text-xl sm:text-2xl font-semibold dark:text-white/75">
-          Hello {userName}, how can we help you?
-        </h3>
-        <p className="text-sm sm:text-base dark:text-white/75">
-          Your one-stop solution for all your needs. Find answers, troubleshoot
-          issues, and explore guides.
-        </p>
+        <div className="relative z-10">
+          <h3 className="mb-4 text-xl sm:text-2xl font-semibold dark:text-white/75">
+            Hello {userName}, how can we help you?
+          </h3>
+          <p className="text-sm sm:text-base dark:text-white/75">
+            Your one-stop solution for all your needs. Find answers, troubleshoot
+            issues, and explore guides.
+          </p>
+        </div>
 
         {/* Search */}
         {/* <div className="relative max-w-4xl">

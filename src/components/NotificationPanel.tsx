@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useEffect } from "react";
+import Image from "next/image";
 
 import { Bell, X } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -64,7 +65,7 @@ export function NotificationPanel() {
       case "kyc_update":
         return "ℹ️";
       default:
-        return "🔔";
+        return "bell"; // Use Bell.svg for default
     }
   };
 
@@ -138,8 +139,19 @@ export function NotificationPanel() {
                   }`}
               >
                 <div className="flex items-start gap-3">
-                  <div className="text-2xl flex-shrink-0 mt-0.5">
-                    {getNotificationIcon(notification.type)}
+                  <div className="flex-shrink-0 mt-0.5 flex items-center justify-center w-8 h-8">
+                    {getNotificationIcon(notification.type) === "bell" ? (
+                      <Image
+                        src="/Bell.svg"
+                        alt="Notification"
+                        width={24}
+                        height={24}
+                        className="w-6 h-6"
+                        unoptimized
+                      />
+                    ) : (
+                      <span className="text-2xl">{getNotificationIcon(notification.type)}</span>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
