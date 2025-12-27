@@ -59,32 +59,36 @@ export default function TawkToChat() {
       // Function to make Tawk widget draggable
       let dragCleanup: (() => void) | null = null;
       const makeWidgetDraggable = () => {
-        // Find the Tawk.to widget container
-        const tawkWidget = document.querySelector('#tawkchat-container, [id*="tawk"], iframe[title*="chat"]') as HTMLElement;
+        // Find the Tawk.to widget container - look for the actual Tawk container div
+        const tawkContainer = document.querySelector('#tawkchat-container, [id*="tawkchat"], div[id*="tawk"]') as HTMLElement;
         
-        if (!tawkWidget) return;
+        if (!tawkContainer) return;
 
         // Check if already initialized
-        if (tawkWidget.hasAttribute('data-draggable-initialized')) return;
+        if (tawkContainer.hasAttribute('data-draggable-initialized')) return;
 
         // Find the parent container that holds the widget
-        let widgetContainer = tawkWidget.parentElement;
+        let widgetContainer = tawkContainer.parentElement;
         while (widgetContainer && !widgetContainer.id?.includes('tawk') && widgetContainer !== document.body) {
           widgetContainer = widgetContainer.parentElement;
         }
 
-        if (!widgetContainer || widgetContainer === document.body) {
+        // Use the Tawk container itself if it's already positioned fixed
+        if (tawkContainer && window.getComputedStyle(tawkContainer).position === 'fixed') {
+          widgetContainer = tawkContainer;
+        } else if (!widgetContainer || widgetContainer === document.body) {
           // If no parent found, wrap the widget
           const wrapper = document.createElement('div');
           wrapper.id = 'tawk-draggable-wrapper';
-          wrapper.style.cssText = 'position: fixed !important; z-index: 999999 !important; cursor: move !important;';
-          tawkWidget.parentNode?.insertBefore(wrapper, tawkWidget);
-          wrapper.appendChild(tawkWidget);
+          wrapper.style.cssText = 'position: fixed !important; z-index: 999999 !important; cursor: move !important; pointer-events: none !important;';
+          tawkContainer.parentNode?.insertBefore(wrapper, tawkContainer);
+          wrapper.appendChild(tawkContainer);
+          wrapper.style.pointerEvents = 'auto';
           widgetContainer = wrapper;
         }
 
         // Mark as initialized
-        tawkWidget.setAttribute('data-draggable-initialized', 'true');
+        tawkContainer.setAttribute('data-draggable-initialized', 'true');
 
         // Load saved position from localStorage
         const savedPosition = localStorage.getItem('tawk-widget-position');
@@ -123,6 +127,9 @@ export default function TawkToChat() {
           const target = e.target as HTMLElement;
           const iframe = target.closest('iframe');
           if (iframe && iframe.offsetWidth > 100) return; // Don't drag if chat is open
+          
+          // Don't drag if clicking on interactive elements inside the chat
+          if (target.closest('input, textarea, button, a, select')) return;
 
           isDragging = true;
           const rect = widgetContainer.getBoundingClientRect();

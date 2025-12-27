@@ -81,29 +81,55 @@ export default function SupportHub() {
   }
 
   const openTawkToChat = () => {
-    if (
-      typeof window !== "undefined" &&
-      window.Tawk_API &&
-      typeof window.Tawk_API.showWidget === "function" &&
-      typeof window.Tawk_API.maximize === "function"
-    ) {
-      // Show and maximize the chat widget
-      window.Tawk_API.showWidget();
-      window.Tawk_API.maximize();
+    if (typeof window === "undefined") return;
 
-      // Hide widget when chat is closed
-      if (typeof window.Tawk_API.hideWidget === "function") {
-        window.Tawk_API.onChatMinimized = function () {
-          if (window.Tawk_API && typeof window.Tawk_API.hideWidget === "function") {
-            window.Tawk_API.hideWidget();
-          }
-        };
+    // Function to check and open chat
+    const tryOpenChat = () => {
+      if (
+        window.Tawk_API &&
+        typeof window.Tawk_API.showWidget === "function" &&
+        typeof window.Tawk_API.maximize === "function"
+      ) {
+        // Show and maximize the chat widget
+        window.Tawk_API.showWidget();
+        window.Tawk_API.maximize();
+
+        // Hide widget when chat is closed
+        if (typeof window.Tawk_API.hideWidget === "function") {
+          window.Tawk_API.onChatMinimized = function () {
+            if (window.Tawk_API && typeof window.Tawk_API.hideWidget === "function") {
+              window.Tawk_API.hideWidget();
+            }
+          };
+        }
+        return true;
       }
-    } else {
-      console.error("Tawk.to chat is not loaded yet. Please wait a moment and try again.");
-      // Optionally show a toast notification to the user
-      toast.error("Chat is loading, please try again in a moment.");
+      return false;
+    };
+
+    // Try immediately
+    if (tryOpenChat()) {
+      return;
     }
+
+    // If not ready, wait for API with retries
+    let retries = 0;
+    const maxRetries = 10; // 5 seconds total (10 * 500ms)
+    
+    const checkInterval = setInterval(() => {
+      retries++;
+      
+      if (tryOpenChat()) {
+        clearInterval(checkInterval);
+        return;
+      }
+      
+      if (retries >= maxRetries) {
+        clearInterval(checkInterval);
+        console.error("Tawk.to chat is not loaded yet. Please wait a moment and try again.");
+        toast.error("Chat is loading, please try again in a moment.");
+      }
+    }, 500); // Check every 500ms
   };
 
   return (
