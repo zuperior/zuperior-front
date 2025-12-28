@@ -1,12 +1,41 @@
 import { KYCState } from "@/types/kyc";
 import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
-import { getKycStatus } from "@/services/kycService";
+import { getKycStatus, getLocalKycStatus } from "@/services/kycService";
 
-const initialState: KYCState = {
-  isDocumentVerified: false,
-  isAddressVerified: false,
-  verificationStatus: "unverified",
-};
+// Map database verification status to local state
+function mapDatabaseStatusToLocal(dbStatus: string): "unverified" | "partial" | "verified" {
+  if (!dbStatus) return "unverified";
+  const normalizedStatus = dbStatus.toLowerCase();
+  
+  if (normalizedStatus === "verified") return "verified";
+  if (normalizedStatus === "partially verified" || normalizedStatus === "partial") return "partial";
+  if (normalizedStatus === "pending" || normalizedStatus === "declined" || normalizedStatus === "unverified" || normalizedStatus === "rejected") return "unverified";
+  
+  return "unverified";
+}
+
+// Initialize state from cache if available
+function getInitialState(): KYCState {
+  try {
+    const cached = getLocalKycStatus();
+    if (cached?.data) {
+      return {
+        isDocumentVerified: cached.data.isDocumentVerified || false,
+        isAddressVerified: cached.data.isAddressVerified || false,
+        verificationStatus: mapDatabaseStatusToLocal(cached.data.verificationStatus || "unverified"),
+      };
+    }
+  } catch (error) {
+    // Ignore cache errors
+  }
+  return {
+    isDocumentVerified: false,
+    isAddressVerified: false,
+    verificationStatus: "unverified",
+  };
+}
+
+const initialState: KYCState = getInitialState();
 
 // Async thunk to fetch KYC status from database
 export const fetchKycStatus = createAsyncThunk(
@@ -79,17 +108,6 @@ const getVerificationStatus = (
 ): "unverified" | "partial" | "verified" => {
   if (isDocumentVerified && isAddressVerified) return "verified";
   if (isDocumentVerified || isAddressVerified) return "partial";
-  return "unverified";
-}
-
-// Map database verification status to local state
-const mapDatabaseStatusToLocal = (dbStatus: string): "unverified" | "partial" | "verified" => {
-  const normalizedStatus = dbStatus.toLowerCase();
-  
-  if (normalizedStatus === "verified") return "verified";
-  if (normalizedStatus === "partially verified" || normalizedStatus === "partial") return "partial";
-  if (normalizedStatus === "pending" || normalizedStatus === "declined") return "unverified";
-  
   return "unverified";
 }
 

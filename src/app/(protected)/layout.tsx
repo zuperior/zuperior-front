@@ -58,6 +58,7 @@ export default function ProtectedLayout({
       }
 
       // Fetch KYC status from database (non-blocking)
+      // Status should already be loaded during login, but refresh in background
       dispatch(fetchKycStatus()).catch((error) => {
         console.error("Failed to load KYC status:", error);
         // Continue even if KYC fetch fails - don't block the app

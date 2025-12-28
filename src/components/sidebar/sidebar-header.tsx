@@ -56,7 +56,7 @@ export function SidebarHeader({ collapsed }: SidebarHeaderProps) {
             >
               <Image
                 alt="Zuperior Logo"
-                src={collapsed ? "/logo_icon.png" : "/logo.webp"}
+                src={collapsed ? "/logo_icon.png" : "/logo.png"}
                 width={collapsed ? 48 : 224}
                 height={collapsed ? 48 : 48}
                 quality={100}

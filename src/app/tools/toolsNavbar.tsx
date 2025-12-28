@@ -7,7 +7,7 @@ const ToolNavbar = () => {
       <Link href={"/"} className="flex items-center cursor-pointer">
         <Image
           alt="Zuperior Logo"
-          src="/logo.webp"
+          src="/logo.png"
           width={48}
           height={48}
           className="h-12 w-12 object-contain"

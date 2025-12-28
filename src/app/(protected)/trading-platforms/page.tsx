@@ -2,8 +2,9 @@
 
 import type React from "react";
 import type { JSX } from "react";
+import { useState } from "react";
 
-import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image, { StaticImageData } from "next/image";
 
 import desktop from "@/assets/desktop.avif";
@@ -15,12 +16,13 @@ import Link from "next/link";
 import { TextAnimate } from "@/components/ui/text-animate";
 
 export default function TradingPlatformsPage() {
-  // const [activeTab, setActiveTab] = useState();
+  const [activeTab, setActiveTab] = useState("all");
 
   const Description = [
     {
       name: "Meta Traders Desktop App",
       image: desktop,
+      category: "metatraders",
       links: [
         {
           label: "Download",
@@ -32,6 +34,7 @@ export default function TradingPlatformsPage() {
     {
       name: "Meta Trader Mobile App ios/Android",
       image: mobile,
+      category: "metatraders",
       links: [
         {
           label: "IOS",
@@ -48,12 +51,14 @@ export default function TradingPlatformsPage() {
     {
       name: "Zuperior Web Terminal",
       image: mobile2,
+      category: "zuperior",
       // Remove links, add a flag for web terminal
       isWebTerminal: true,
     },
     {
       name: "Zuperior Mobile App",
       image: mobile,
+      category: "zuperior",
       links: [
         {
           label: "Ios",
@@ -137,6 +142,7 @@ export default function TradingPlatformsPage() {
     item: {
       image: string | StaticImageData;
       name: string;
+      category?: string;
       links?: Array<{
         label: string;
         url: string;
@@ -169,7 +175,7 @@ export default function TradingPlatformsPage() {
 
   // Platform Card (reused)
   const PlatformCard = memo(({ item, index }: PlatformCardProps) => (
-    <div className="flex-shrink-0 w-[85vw] sm:w-[75vw] md:w-[340px] lg:w-[360px] flex flex-col gap-5 px-1 md:px-0">
+    <div className="flex flex-col gap-5">
       <div className="relative w-full h-[280px] sm:h-[300px] md:h-[325px] rounded-[15px] shadow-md overflow-hidden flex items-center justify-center">
         <div className="relative z-[2] w-full h-full p-px">
           {(index === 1 || index === 3) && <SpinningBorder />}
@@ -180,14 +186,14 @@ export default function TradingPlatformsPage() {
             height={325}
             className="w-full h-full object-cover rounded-xl relative z-[2]"
             loading={index === 0 ? "eager" : "lazy"}
-            sizes="(max-width: 768px) 85vw, (max-width: 1024px) 340px, 360px"
+            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
             quality={85}
           />
         </div>
       </div>
 
       {/* Name + Buttons or Web Terminal Info */}
-      <div className="flex flex-col gap-3 px-1">
+      <div className="flex flex-col gap-3">
         <h3 className="text-lg sm:text-xl font-semibold dark:text-white/75 text-black/75 leading-[1.3em]">
           {item.name}
         </h3>
@@ -242,18 +248,164 @@ export default function TradingPlatformsPage() {
             Platforms
           </TextAnimate>
 
-          {/* 🔹 Show filtered cards */}
-          <Tabs>
-            <TabsContent value="" className="pt-7">
-              <div className="w-full overflow-x-auto no-scrollbar">
-                <div className="flex md:flex-nowrap gap-6 sm:gap-8 px-1 md:px-0 max-w-6xl scroll-smooth whitespace-nowrap md:whitespace-normal">
+          {/* Tabs and Content */}
+          <div className="pt-7 space-y-4 px-4 md:px-6">
+            <div>
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList 
+                  className="relative bg-[rgba(20,20,26,0.25)] border-0 rounded-[15px] p-1.5 inline-flex h-auto gap-2"
+                  style={{
+                    backgroundColor: "rgba(20, 20, 26, 0.25)",
+                    borderRadius: "15px",
+                  }}
+                >
+                  <TabsTrigger 
+                    value="all" 
+                    className="relative rounded-[10px] px-4 py-2 text-sm font-semibold data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#311B47] data-[state=active]:to-[#1C061C] data-[state=inactive]:bg-transparent data-[state=active]:text-white data-[state=inactive]:text-white/75 transition-colors overflow-hidden"
+                    style={{
+                      borderRadius: "10px",
+                      position: "relative",
+                    }}
+                  >
+                    {activeTab === "all" && (
+                      <div
+                        data-border="true"
+                        style={{
+                          "--border-bottom-width": "1px",
+                          "--border-color": "rgba(255, 255, 255, 0.75)",
+                          "--border-left-width": "1px",
+                          "--border-right-width": "1px",
+                          "--border-style": "solid",
+                          "--border-top-width": "1px",
+                          mask: "linear-gradient(100deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.25) 100%)",
+                          WebkitMask: "linear-gradient(100deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.25) 100%)",
+                          borderBottomWidth: "var(--border-bottom-width)",
+                          borderColor: "var(--border-color)",
+                          borderLeftWidth: "var(--border-left-width)",
+                          borderRightWidth: "var(--border-right-width)",
+                          borderStyle: "var(--border-style)",
+                          borderTopWidth: "var(--border-top-width)",
+                          borderRadius: "15px",
+                          opacity: 0.25,
+                          zIndex: 1,
+                          position: "absolute",
+                          inset: 0,
+                          overflow: "visible",
+                          flex: "none",
+                          pointerEvents: "none",
+                        } as React.CSSProperties}
+                      />
+                    )}
+                    <span className="relative z-10">All</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="metatraders" 
+                    className="relative rounded-[10px] px-4 py-2 text-sm font-semibold data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#311B47] data-[state=active]:to-[#1C061C] data-[state=inactive]:bg-transparent data-[state=active]:text-white data-[state=inactive]:text-white/75 transition-colors overflow-hidden"
+                    style={{
+                      borderRadius: "10px",
+                      position: "relative",
+                    }}
+                  >
+                    {activeTab === "metatraders" && (
+                      <div
+                        data-border="true"
+                        style={{
+                          "--border-bottom-width": "1px",
+                          "--border-color": "rgba(255, 255, 255, 0.75)",
+                          "--border-left-width": "1px",
+                          "--border-right-width": "1px",
+                          "--border-style": "solid",
+                          "--border-top-width": "1px",
+                          mask: "linear-gradient(100deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.25) 100%)",
+                          WebkitMask: "linear-gradient(100deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.25) 100%)",
+                          borderBottomWidth: "var(--border-bottom-width)",
+                          borderColor: "var(--border-color)",
+                          borderLeftWidth: "var(--border-left-width)",
+                          borderRightWidth: "var(--border-right-width)",
+                          borderStyle: "var(--border-style)",
+                          borderTopWidth: "var(--border-top-width)",
+                          borderRadius: "15px",
+                          opacity: 0.25,
+                          zIndex: 1,
+                          position: "absolute",
+                          inset: 0,
+                          overflow: "visible",
+                          flex: "none",
+                          pointerEvents: "none",
+                        } as React.CSSProperties}
+                      />
+                    )}
+                    <span className="relative z-10">MT5</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="zuperior" 
+                    className="relative rounded-[10px] px-4 py-2 text-sm font-semibold data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#311B47] data-[state=active]:to-[#1C061C] data-[state=inactive]:bg-transparent data-[state=active]:text-white data-[state=inactive]:text-white/75 transition-colors overflow-hidden"
+                    style={{
+                      borderRadius: "10px",
+                      position: "relative",
+                    }}
+                  >
+                    {activeTab === "zuperior" && (
+                      <div
+                        data-border="true"
+                        style={{
+                          "--border-bottom-width": "1px",
+                          "--border-color": "rgba(255, 255, 255, 0.75)",
+                          "--border-left-width": "1px",
+                          "--border-right-width": "1px",
+                          "--border-style": "solid",
+                          "--border-top-width": "1px",
+                          mask: "linear-gradient(100deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.25) 100%)",
+                          WebkitMask: "linear-gradient(100deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.25) 100%)",
+                          borderBottomWidth: "var(--border-bottom-width)",
+                          borderColor: "var(--border-color)",
+                          borderLeftWidth: "var(--border-left-width)",
+                          borderRightWidth: "var(--border-right-width)",
+                          borderStyle: "var(--border-style)",
+                          borderTopWidth: "var(--border-top-width)",
+                          borderRadius: "15px",
+                          opacity: 0.25,
+                          zIndex: 1,
+                          position: "absolute",
+                          inset: 0,
+                          overflow: "visible",
+                          flex: "none",
+                          pointerEvents: "none",
+                        } as React.CSSProperties}
+                      />
+                    )}
+                    <span className="relative z-10">Zuperior</span>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsContent value="all" className="mt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
                   {Description.map((item, index) => (
                     <PlatformCard key={item.name} item={item} index={index} />
                   ))}
                 </div>
-              </div>
-            </TabsContent>
-          </Tabs>
+              </TabsContent>
+
+              <TabsContent value="metatraders" className="mt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+                  {Description.filter((item) => item.category === "metatraders").map((item, index) => (
+                    <PlatformCard key={item.name} item={item} index={index} />
+                  ))}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="zuperior" className="mt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+                  {Description.filter((item) => item.category === "zuperior").map((item, index) => (
+                    <PlatformCard key={item.name} item={item} index={index} />
+                  ))}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
         </main>
       </div>
     </div>

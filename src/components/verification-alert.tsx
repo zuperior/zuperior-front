@@ -1,8 +1,23 @@
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Warning from "@/assets/icons/warning.png";
 import LearnMoreDialogBox from "@/components/learnmore-dialogbox";
+import { getLocalKycStatus } from "@/services/kycService";
+
+// Check cache synchronously before component renders
+function getCachedKycStatus(): string | null {
+  try {
+    const cached = getLocalKycStatus();
+    if (cached?.data?.verificationStatus) {
+      const status = cached.data.verificationStatus.toLowerCase();
+      return status;
+    }
+  } catch (error) {
+    // Ignore cache errors
+  }
+  return null;
+}
 
 export default function VerificationAlert({
   name,
@@ -11,8 +26,24 @@ export default function VerificationAlert({
   name?: string;
   verificationStatus?: "unverified" | "partial" | "verified";
 }) {
+  // Check cached KYC status synchronously BEFORE any state or hooks
+  const cachedStatus = getCachedKycStatus();
+  
+  // If cached status is verified, don't render at all (prevents flash)
+  if (cachedStatus === "verified") {
+    return null;
+  }
+  
   const [isVisible] = useState(true);
   const [learnMoreOpen, setLearnMoreOpen] = useState(false);
+  
+  // Use cached status if available, otherwise use prop
+  const actualStatus = useMemo(() => {
+    // If cached status exists, use it
+    if (cachedStatus) return cachedStatus as "unverified" | "partial" | "verified";
+    // Otherwise use prop
+    return verificationStatus;
+  }, [cachedStatus, verificationStatus]);
 
   const maskStyle = {
     WebkitMaskImage:
@@ -27,7 +58,13 @@ export default function VerificationAlert({
     zIndex: 0,
   };
 
-  if (!isVisible || verificationStatus === "verified") {
+  // Don't show if verified (check both cached and prop status)
+  // Also check if status is undefined/null and we have cached verified status
+  if (
+    !isVisible || 
+    actualStatus === "verified" ||
+    (!verificationStatus && cachedStatus === "verified")
+  ) {
     return null;
   }
 
@@ -45,7 +82,7 @@ export default function VerificationAlert({
     },
   };
 
-  const { title, message, cta } = messages[verificationStatus || "unverified"];
+  const { title, message, cta } = messages[(actualStatus as "unverified" | "partial") || "unverified"];
 
   return (
     <div className="px-2.5 md:px-0">

@@ -120,7 +120,7 @@ export const useNotifications = () => {
               
               new Notification(notificationTitle, {
                 body: notificationBody,
-                icon: '/logo.webp',
+                icon: '/logo.png',
                 tag: payload.data?.notificationId || 'notification',
               });
             }

@@ -18,9 +18,12 @@ import ForgotPasswordNewPasswordForm from "./ForgotPasswordNewPasswordForm";
 import { TwoFactorVerification } from "@/components/auth/TwoFactorVerification";
 import { attachReferral, getActiveReferralCode, getStoredReferralCode, resolveReferral, registerReferral } from "@/utils/referrals";
 import { initializeFCM } from "@/services/fcm.service";
+import { useAppDispatch } from "@/store/hooks";
+import { fetchKycStatus } from "@/store/slices/kycSlice";
 
 const AuthForm = () => {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const { loading: globalLoading, setLoading: setGlobalLoading } = useLoading();
 
   // State
@@ -57,6 +60,10 @@ const AuthForm = () => {
   const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
   const [twoFactorOtpKey, setTwoFactorOtpKey] = useState<string>("");
   const [twoFactorEmail, setTwoFactorEmail] = useState<string>("");
+  
+  // Login loading state
+  const [showLoginLoader, setShowLoginLoader] = useState(false);
+  const [loginUserName, setLoginUserName] = useState<string>("");
 
   // Load referral code and resolve IB name for banner
   useEffect(() => {
@@ -410,6 +417,12 @@ const AuthForm = () => {
   const handleLogin = async () => {
     try {
       setIsLoading(true);
+      
+      // Extract name from email (before @) and capitalize first letter
+      const emailName = loginEmail.trim().split('@')[0];
+      const capitalizedName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
+      setLoginUserName(capitalizedName);
+      setShowLoginLoader(true);
 
       const loginData = {
         // Normalize email to lowercase to match registration/storage
@@ -421,6 +434,7 @@ const AuthForm = () => {
 
       // Check if 2FA is required
       if (response.requiresTwoFactor && response.otpKey) {
+        setShowLoginLoader(false);
         setRequiresTwoFactor(true);
         setTwoFactorOtpKey(response.otpKey);
         setTwoFactorEmail(loginData.email);
@@ -458,6 +472,7 @@ const AuthForm = () => {
       toast.success("Welcome back! You've successfully logged in.");
       router.push("/");
     } catch (error: any) {
+      setShowLoginLoader(false);
       const errorMessage = error.response?.data?.message || "Login failed. Please check your credentials.";
       toast.error(errorMessage);
       console.error("Login error:", error);
@@ -469,6 +484,11 @@ const AuthForm = () => {
   const handleVerifyTwoFactor = async (otp: string) => {
     try {
       setIsLoading(true);
+      setShowLoginLoader(true);
+      // Extract name from email
+      const emailName = twoFactorEmail.trim().split('@')[0];
+      const capitalizedName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
+      setLoginUserName(capitalizedName);
 
       const response = await fetch("/api/auth/verify-two-factor-login", {
         method: "POST",
@@ -485,6 +505,7 @@ const AuthForm = () => {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
+        setShowLoginLoader(false);
         throw new Error(data.message || "Invalid verification code");
       }
 
@@ -511,6 +532,15 @@ const AuthForm = () => {
       setTwoFactorOtpKey("");
       setTwoFactorEmail("");
 
+      // Fetch KYC status immediately after 2FA verification (before redirect)
+      try {
+        await dispatch(fetchKycStatus(true)).unwrap();
+        console.log('✅ KYC status fetched and stored during 2FA login');
+      } catch (error) {
+        console.warn('Failed to fetch KYC status during 2FA login:', error);
+        // Non-blocking - continue even if KYC fetch fails
+      }
+
       // Initialize FCM for push notifications (non-blocking)
       try {
         await initializeFCM();
@@ -522,6 +552,7 @@ const AuthForm = () => {
       toast.success("Welcome back! You've successfully logged in.");
       router.push("/");
     } catch (error: any) {
+      setShowLoginLoader(false);
       const errorMessage = error.message || "Verification failed. Please try again.";
       toast.error(errorMessage);
       throw error; // Re-throw to let TwoFactorVerification handle it
@@ -579,7 +610,48 @@ const AuthForm = () => {
       <h2 className="text-xl font-semibold mb-6 text-center text-gray-400">
         Let&apos;s become a Zuperior...
       </h2>
-      <AuthToggleTabs
+      
+      {/* Login Loader with Video - Only show when logging in (not creating account) */}
+      {showLoginLoader && !isCreateAccount && !requiresTwoFactor && (
+        <div className="flex flex-col items-center justify-center space-y-4 mb-6">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-32 h-32 object-contain"
+          >
+            <source src="/logo.mp4" type="video/mp4" />
+          </video>
+          <p className="text-white text-sm font-medium">
+            Logging you in MR {loginUserName}...
+          </p>
+        </div>
+      )}
+      
+      {/* Forgot Password Loader with Video */}
+      {isLoading && forgotMode && (
+        <div className="flex flex-col items-center justify-center space-y-4 mb-6">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-32 h-32 object-contain"
+          >
+            <source src="/logo.mp4" type="video/mp4" />
+          </video>
+          <p className="text-white text-sm font-medium">
+            {forgotPasswordStep === "email" && "Sending OTP please hold on..."}
+            {forgotPasswordStep === "otp" && "Verifying OTP please hold on..."}
+            {forgotPasswordStep === "newPassword" && "Resetting password please hold on..."}
+          </p>
+        </div>
+      )}
+      
+      {(!showLoginLoader || isCreateAccount) && !(isLoading && forgotMode) && (
+        <>
+          <AuthToggleTabs
         isCreateAccount={isCreateAccount}
         setIsCreateAccount={(val) => {
           setIsCreateAccount(val);
@@ -754,6 +826,8 @@ const AuthForm = () => {
           />
         </motion.form>
       </AnimatePresence>
+        </>
+      )}
     </div>
   );
 };
