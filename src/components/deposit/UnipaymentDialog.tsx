@@ -261,6 +261,15 @@ export function UnipaymentDialog({
         throw new Error(result.error || "Failed to create invoice");
       }
 
+      console.log('📥 [Unipayment] Invoice created:', {
+        invoiceId: invoiceData.invoiceId,
+        invoiceUrl: invoiceData.invoiceUrl,
+        paymentMethod: paymentMethod,
+        hasInvoiceUrl: !!invoiceData.invoiceUrl,
+        hasCryptoAddress: !!invoiceData.cryptoAddress,
+        hasQrCode: !!invoiceData.qrCode,
+      });
+
       setInvoiceData({
         invoiceId: invoiceData.invoiceId,
         invoiceUrl: invoiceData.invoiceUrl,
@@ -274,19 +283,30 @@ export function UnipaymentDialog({
       // For redirect-based payments (card, binance_pay, google_apple_pay, upi), redirect to Unipayment checkout page
       // Only crypto payments with host_to_host_mode=true show payment details in the dialog
       const redirectBasedMethods = ['card', 'binance_pay', 'google_apple_pay', 'upi'];
-      if (redirectBasedMethods.includes(paymentMethod) && invoiceData.invoiceUrl) {
-        console.log('🔄 Redirecting to Unipayment checkout:', invoiceData.invoiceUrl);
-        // Redirect immediately to Unipayment's hosted checkout page
-        window.location.href = invoiceData.invoiceUrl;
-        return; // Don't proceed to step 3
+      
+      if (redirectBasedMethods.includes(paymentMethod)) {
+        if (invoiceData.invoiceUrl) {
+          console.log('🔄 Redirecting to Unipayment checkout:', invoiceData.invoiceUrl);
+          // Redirect immediately to Unipayment's hosted checkout page
+          window.location.href = invoiceData.invoiceUrl;
+          return; // Don't proceed to step 3
+        } else {
+          console.error('❌ [Unipayment] No invoiceUrl returned for redirect-based payment method:', paymentMethod);
+          throw new Error('Payment redirect URL not received from Unipayment. Please try again.');
+        }
       }
 
       // For crypto payments, show payment details (QR code, address) in the dialog
       if (paymentMethod === 'crypto') {
+        if (!invoiceData.cryptoAddress && !invoiceData.qrCode) {
+          console.error('❌ [Unipayment] No crypto address or QR code returned for crypto payment');
+          throw new Error('Payment details not received from Unipayment. Please try again.');
+        }
         setStep(3);
       } else {
-        // If we somehow get here without redirecting, show error
-        throw new Error('Payment method not properly configured for redirect');
+        // Unknown payment method
+        console.error('❌ [Unipayment] Unknown payment method:', paymentMethod);
+        throw new Error(`Payment method "${paymentMethod}" is not supported`);
       }
     } catch (err) {
       console.error('❌ Payment initiation error:', err);
