@@ -65,6 +65,7 @@ export interface Step2ConfirmationProps {
   exchangeRate?: number;
   prevStep: () => void;
   handleContinueToPayment: () => void;
+  requiresNetwork?: boolean; // Whether network selection is required for this payment method
 }
 
 export interface Step3PaymentProps {

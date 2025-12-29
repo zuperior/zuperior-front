@@ -82,7 +82,12 @@ export default function VerificationAlert({
     },
   };
 
-  const { title, message, cta } = messages[(actualStatus as "unverified" | "partial") || "unverified"];
+  // Ensure we have a valid status that exists in messages object
+  const statusKey = (actualStatus === "unverified" || actualStatus === "partial") 
+    ? actualStatus 
+    : "unverified";
+  
+  const { title, message, cta } = messages[statusKey];
 
   return (
     <div className="px-2.5 md:px-0">

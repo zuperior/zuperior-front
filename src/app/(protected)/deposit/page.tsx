@@ -5,6 +5,7 @@ import Image from "next/image";
 import { TextAnimate } from "@/components/ui/text-animate";
 import { DepositDialog } from "@/components/deposit/DepositDialog";
 import { BankDepositDialog } from "@/components/deposit/BankDepositDialog";
+import { UnipaymentDialog } from "@/components/deposit/UnipaymentDialog";
 import { store } from "@/store";
 import { useAppDispatch } from "@/store/hooks";
 import { fetchAccessToken } from "@/store/slices/accessCodeSlice";
@@ -32,6 +33,11 @@ export default function DepositPage() {
   const [depositDialogOpen, setDepositDialogOpen] = useState(false);
   const [bankDialogOpen, setBankDialogOpen] = useState(false);
   const [wireAvailable, setWireAvailable] = useState(false);
+  const [unipaymentCryptoOpen, setUnipaymentCryptoOpen] = useState(false);
+  const [unipaymentCardOpen, setUnipaymentCardOpen] = useState(false);
+  const [unipaymentBinanceOpen, setUnipaymentBinanceOpen] = useState(false);
+  const [unipaymentGoogleAppleOpen, setUnipaymentGoogleAppleOpen] = useState(false);
+  const [unipaymentUpiOpen, setUnipaymentUpiOpen] = useState(false);
   const dispatch = useAppDispatch();
   const [lifetimeDeposit, setLifetimeDeposit] = useState<number>(0);
   const [isLoadingCrypto, setIsLoadingCrypto] = useState(true);
@@ -120,10 +126,29 @@ export default function DepositPage() {
     setDepositDialogOpen(true);
   }, []);
 
-  // Filter items - show USDT TRC20 and BEP20 crypto options
+  // Filter items - show USDT TRC20 and BEP20 crypto options, Wire, and Unipayment methods
   const filteredItems = useMemo(() => {
-    const items: any[] = cryptocurrencies.map((crypto) => ({ type: "crypto", data: crypto }));
-    if (wireAvailable) items.unshift({ type: 'wire', data: { id: 'WIRE', name: 'Wire Transfer', icon: '/bank.png' } });
+    const items: any[] = [];
+    
+    // Add Unipayment methods first with actual image paths
+    items.push(
+      { type: 'unipayment', method: 'crypto', data: { id: 'UNIPAYMENT_CRYPTO', name: 'Crypto', icon: '/crypto.png' } },
+      { type: 'unipayment', method: 'card', data: { id: 'UNIPAYMENT_CARD', name: 'Credit/Debit Cards', icon: '/pm_card.png' } },
+      { type: 'unipayment', method: 'binance_pay', data: { id: 'UNIPAYMENT_BINANCE', name: 'Binance Pay', icon: '/pm_binancepay.png' } },
+      { type: 'unipayment', method: 'google_apple_pay', data: { id: 'UNIPAYMENT_GOOGLE_APPLE', name: 'Google/Apple Pay', icon: '/pm_googleapple.png' } },
+      { type: 'unipayment', method: 'upi', data: { id: 'UNIPAYMENT_UPI', name: 'UPI', icon: '/pm_upi.png' } }
+    );
+    
+    // Add wire transfer if available
+    if (wireAvailable) {
+      items.push({ type: 'wire', data: { id: 'WIRE', name: 'Wire Transfer', icon: '/bank.png' } });
+    }
+    
+    // Add Cregis crypto options
+    cryptocurrencies.forEach((crypto) => {
+      items.push({ type: "crypto", data: crypto });
+    });
+    
     return items;
   }, [cryptocurrencies, wireAvailable]);
 
@@ -158,7 +183,7 @@ export default function DepositPage() {
           </TextAnimate> */}
         </div>
 
-        {/* Payment Cards - USDT TRC20 and BEP20 */}
+        {/* Payment Cards - Unipayment, Wire, and Cregis */}
         <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredItems.map((item) => {
             if (item.type === 'wire') {
@@ -166,6 +191,24 @@ export default function DepositPage() {
                 <MemoizedPaymentMethodCard
                   key="WIRE"
                   onOpenNewAccount={() => setBankDialogOpen(true)}
+                  icon={item.data.icon}
+                  name={item.data.name}
+                />
+              );
+            }
+            if (item.type === 'unipayment') {
+              const method = item.method;
+              const handlers: Record<string, () => void> = {
+                'crypto': () => setUnipaymentCryptoOpen(true),
+                'card': () => setUnipaymentCardOpen(true),
+                'binance_pay': () => setUnipaymentBinanceOpen(true),
+                'google_apple_pay': () => setUnipaymentGoogleAppleOpen(true),
+                'upi': () => setUnipaymentUpiOpen(true),
+              };
+              return (
+                <MemoizedPaymentMethodCard
+                  key={item.data.id}
+                  onOpenNewAccount={handlers[method] || (() => {})}
                   icon={item.data.icon}
                   name={item.data.name}
                 />
@@ -192,6 +235,38 @@ export default function DepositPage() {
         />
         {/* Wire Transfer Dialog */}
         <BankDepositDialog open={bankDialogOpen} onOpenChange={setBankDialogOpen} lifetimeDeposit={lifetimeDeposit} />
+        
+        {/* Unipayment Dialogs */}
+        <UnipaymentDialog
+          open={unipaymentCryptoOpen}
+          onOpenChange={setUnipaymentCryptoOpen}
+          paymentMethod="crypto"
+          lifetimeDeposit={lifetimeDeposit}
+        />
+        <UnipaymentDialog
+          open={unipaymentCardOpen}
+          onOpenChange={setUnipaymentCardOpen}
+          paymentMethod="card"
+          lifetimeDeposit={lifetimeDeposit}
+        />
+        <UnipaymentDialog
+          open={unipaymentBinanceOpen}
+          onOpenChange={setUnipaymentBinanceOpen}
+          paymentMethod="binance_pay"
+          lifetimeDeposit={lifetimeDeposit}
+        />
+        <UnipaymentDialog
+          open={unipaymentGoogleAppleOpen}
+          onOpenChange={setUnipaymentGoogleAppleOpen}
+          paymentMethod="google_apple_pay"
+          lifetimeDeposit={lifetimeDeposit}
+        />
+        <UnipaymentDialog
+          open={unipaymentUpiOpen}
+          onOpenChange={setUnipaymentUpiOpen}
+          paymentMethod="upi"
+          lifetimeDeposit={lifetimeDeposit}
+        />
       </main>
     </div>
   );

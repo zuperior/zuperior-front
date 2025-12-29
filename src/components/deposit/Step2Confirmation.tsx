@@ -19,6 +19,7 @@ export function Step2Confirmation({
   prevStep,
   handleContinueToPayment,
   selectedAccount,
+  requiresNetwork = false,
 }: Step2ConfirmationProps & { selectedAccount: string }) {
   const hasShownConfirmationToast = useRef(false);
 
@@ -62,7 +63,9 @@ export function Step2Confirmation({
       });
       return;
     }
-    if (!selectedNetwork) {
+    // Only require network for crypto payments (either requiresNetwork prop or selectedCrypto indicates crypto)
+    const isCryptoPayment = requiresNetwork || !!selectedCrypto;
+    if (isCryptoPayment && !selectedNetwork) {
       toast.error("Network Required", {
         description: "Please select a network to continue.",
       });
@@ -110,7 +113,7 @@ export function Step2Confirmation({
         Pay {amount} {selectedCrypto?.name || "USD"}
       </h2>
 
-      {selectedCrypto && (
+      {(selectedCrypto || requiresNetwork) && selectedNetwork && (
         <div className="mt-3 rounded-lg ">
           <div className="flex justify-between items-center mb-2">
             <span className="dark:text-white/75 text-black">Network:</span>
