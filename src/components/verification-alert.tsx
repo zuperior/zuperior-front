@@ -40,9 +40,19 @@ export default function VerificationAlert({
   // Use cached status if available, otherwise use prop
   const actualStatus = useMemo(() => {
     // If cached status exists, use it
-    if (cachedStatus) return cachedStatus as "unverified" | "partial" | "verified";
-    // Otherwise use prop
-    return verificationStatus;
+    if (cachedStatus) {
+      const status = cachedStatus.toLowerCase();
+      // Only return valid statuses
+      if (status === "unverified" || status === "partial" || status === "verified") {
+        return status as "unverified" | "partial" | "verified";
+      }
+    }
+    // Otherwise use prop if it's valid
+    if (verificationStatus && (verificationStatus === "unverified" || verificationStatus === "partial" || verificationStatus === "verified")) {
+      return verificationStatus;
+    }
+    // Default to unverified if nothing is valid
+    return "unverified";
   }, [cachedStatus, verificationStatus]);
 
   const maskStyle = {
@@ -87,7 +97,9 @@ export default function VerificationAlert({
     ? actualStatus 
     : "unverified";
   
-  const { title, message, cta } = messages[statusKey];
+  // Safely get message data with fallback
+  const messageData = messages[statusKey] || messages["unverified"];
+  const { title, message, cta } = messageData;
 
   return (
     <div className="px-2.5 md:px-0">
