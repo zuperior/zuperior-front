@@ -271,13 +271,23 @@ export function UnipaymentDialog({
         expiresAt: invoiceData.expiresAt,
       });
 
-      // For redirect-based payments, redirect immediately
-      if (paymentMethod !== 'crypto' && paymentMethod !== 'upi' && invoiceData.invoiceUrl) {
+      // For redirect-based payments (card, binance_pay, google_apple_pay, upi), redirect to Unipayment checkout page
+      // Only crypto payments with host_to_host_mode=true show payment details in the dialog
+      const redirectBasedMethods = ['card', 'binance_pay', 'google_apple_pay', 'upi'];
+      if (redirectBasedMethods.includes(paymentMethod) && invoiceData.invoiceUrl) {
+        console.log('🔄 Redirecting to Unipayment checkout:', invoiceData.invoiceUrl);
+        // Redirect immediately to Unipayment's hosted checkout page
         window.location.href = invoiceData.invoiceUrl;
-        return;
+        return; // Don't proceed to step 3
       }
 
-      setStep(3);
+      // For crypto payments, show payment details (QR code, address) in the dialog
+      if (paymentMethod === 'crypto') {
+        setStep(3);
+      } else {
+        // If we somehow get here without redirecting, show error
+        throw new Error('Payment method not properly configured for redirect');
+      }
     } catch (err) {
       console.error('❌ Payment initiation error:', err);
       const errorMessage = err instanceof Error ? err.message : "Payment initiation failed";
@@ -442,12 +452,21 @@ export function UnipaymentDialog({
                 </div>
               )}
 
-              {(paymentMethod === 'card' || paymentMethod === 'binance_pay' || paymentMethod === 'google_apple_pay') && invoiceData.invoiceUrl && (
+              {/* This section should rarely be reached for card/APM payments as they redirect immediately */}
+              {/* But kept as fallback in case redirect fails */}
+              {(paymentMethod === 'card' || paymentMethod === 'binance_pay' || paymentMethod === 'google_apple_pay' || paymentMethod === 'upi') && invoiceData.invoiceUrl && (
                 <div className="space-y-4">
                   <div className="text-center">
-                    <p className="text-sm text-gray-400 mb-4">Redirecting to payment page...</p>
+                    <p className="text-sm text-gray-400 mb-4">
+                      {paymentMethod === 'upi' 
+                        ? 'Scan QR code or click to complete payment via UPI'
+                        : 'Click below to complete your payment on Unipayment checkout page'
+                      }
+                    </p>
                     <Button
-                      onClick={() => window.location.href = invoiceData.invoiceUrl!}
+                      onClick={() => {
+                        window.location.href = invoiceData.invoiceUrl!;
+                      }}
                       className="w-full"
                     >
                       Continue to Payment
