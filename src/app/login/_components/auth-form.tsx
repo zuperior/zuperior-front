@@ -27,7 +27,7 @@ const AuthForm = () => {
   const { loading: globalLoading, setLoading: setGlobalLoading } = useLoading();
 
   // State
-  const [isCreateAccount, setIsCreateAccount] = useState(true);
+  const [isCreateAccount, setIsCreateAccount] = useState(false);
   const [forgotMode, setForgotMode] = useState(false);
   const [forgotPasswordStep, setForgotPasswordStep] = useState<"email" | "otp" | "newPassword">("email");
   const [step, setStep] = useState(1);
@@ -125,12 +125,25 @@ const AuthForm = () => {
 
       const response = await authService.register(registerData);
 
-      // Store auth data
+      // Validate response has required fields
+      if (!response?.token || !response?.clientId) {
+        throw new Error("Registration response missing token or clientId");
+      }
+
+      // Store auth data immediately
       authService.setAuthData(response.token, response.clientId);
 
       // Store user data for navbar display
       if (response.user) {
         localStorage.setItem('user', JSON.stringify(response.user));
+      }
+
+      // Verify auth data was stored before proceeding
+      const storedToken = localStorage.getItem('userToken');
+      const storedClientId = localStorage.getItem('clientId');
+      
+      if (!storedToken || !storedClientId) {
+        throw new Error("Failed to store authentication data");
       }
 
       // Attempt IB referral register/attach after successful registration
@@ -151,15 +164,39 @@ const AuthForm = () => {
       }
 
       // Initialize FCM for push notifications (non-blocking)
-      try {
-        await initializeFCM();
-      } catch (error) {
-        console.warn('Failed to initialize FCM:', error);
-        // Non-blocking - continue even if FCM fails
-      }
+      // Delay slightly to ensure token is fully propagated and API interceptors are ready
+      setTimeout(async () => {
+        try {
+          await initializeFCM();
+        } catch (error: any) {
+          // Handle 401 errors gracefully - token might not be ready yet
+          if (error?.response?.status === 401) {
+            console.warn('FCM registration failed with 401 - will retry after redirect');
+            // Retry after a longer delay
+            setTimeout(async () => {
+              try {
+                await initializeFCM();
+              } catch (retryError) {
+                console.warn('FCM initialization failed on retry:', retryError);
+              }
+            }, 2000);
+          } else {
+            console.warn('Failed to initialize FCM:', error);
+          }
+          // Non-blocking - continue even if FCM fails
+        }
+      }, 500);
 
       toast.success("Account created! Welcome aboard.");
-      router.push("/");
+      
+      // Store a flag to indicate fresh registration (for session check delay)
+      localStorage.setItem('_freshRegistration', Date.now().toString());
+      
+      // Use replace instead of push to avoid back button issues
+      // Add small delay to ensure localStorage is fully written and token is ready
+      setTimeout(() => {
+        router.replace("/");
+      }, 200);
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || "Registration failed. Please try again.";
       toast.error(errorMessage);

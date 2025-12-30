@@ -184,6 +184,11 @@ export async function getKycStatus(forceRefresh: boolean = false): Promise<KycSt
 
 // Get local cached KYC status (synchronous)
 export function getLocalKycStatus(): KycStatusResponse | null {
+  // Check if we're in the browser environment
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+    return null;
+  }
+  
   try {
     const cached = localStorage.getItem(KYC_CACHE_KEY);
     if (cached) {

@@ -109,6 +109,7 @@ export const useNotifications = () => {
         // Listen for foreground push notifications
         const unsubscribe = onForegroundMessage((payload) => {
           if (mounted) {
+            console.log('🔔 FCM push notification received, refreshing notifications...');
             // Refresh notifications when push is received
             fetchNotifications();
             fetchUnreadCount();
@@ -147,17 +148,34 @@ export const useNotifications = () => {
         fcmUnsubscribeRef.current();
       }
     };
-  }, []);
+  }, [fetchNotifications, fetchUnreadCount]);
+
+  // Track previous unread count to detect changes
+  const prevUnreadCountRef = useRef(0);
 
   useEffect(() => {
     fetchNotifications();
-    // Poll for new notifications every 30 seconds
+    // Poll for new notifications every 10 seconds (reduced from 30)
     const interval = setInterval(() => {
-      fetchUnreadCount();
-    }, 30000);
+      // Fetch both unread count and full notifications
+      fetchUnreadCount().then(() => {
+        // If unread count changed, refresh notifications
+        fetchNotifications();
+      });
+    }, 10000); // Reduced to 10 seconds for faster updates
 
     return () => clearInterval(interval);
   }, [fetchNotifications, fetchUnreadCount]);
+
+  // When unread count increases, refresh notifications immediately
+  useEffect(() => {
+    if (unreadCount > prevUnreadCountRef.current && prevUnreadCountRef.current > 0) {
+      // Unread count increased - fetch notifications immediately
+      console.log('🔔 Unread count increased, refreshing notifications...');
+      fetchNotifications();
+    }
+    prevUnreadCountRef.current = unreadCount;
+  }, [unreadCount, fetchNotifications]);
 
   return {
     notifications,

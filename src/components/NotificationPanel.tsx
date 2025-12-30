@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import Image from "next/image";
 
 import { Bell, X } from "lucide-react";
@@ -24,9 +24,19 @@ export function NotificationPanel() {
     markAsRead,
     markAllAsRead,
     deleteNotification,
+    fetchNotifications,
   } = useNotifications();
+  const [isOpen, setIsOpen] = useState(false);
 
   const prevUnreadCountRef = useRef(unreadCount);
+
+  // Refresh notifications when dropdown opens
+  useEffect(() => {
+    if (isOpen) {
+      console.log('🔔 Notification panel opened, refreshing notifications...');
+      fetchNotifications();
+    }
+  }, [isOpen, fetchNotifications]);
 
   // Sound effect for new notifications
   useEffect(() => {
@@ -40,9 +50,14 @@ export function NotificationPanel() {
       const beep = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
       beep.volume = 0.5;
       beep.play().catch(e => console.log("Audio play failed (user interaction needed first):", e));
+      
+      // If panel is open, refresh notifications immediately
+      if (isOpen) {
+        fetchNotifications();
+      }
     }
     prevUnreadCountRef.current = unreadCount;
-  }, [unreadCount]);
+  }, [unreadCount, isOpen, fetchNotifications]);
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -78,7 +93,7 @@ export function NotificationPanel() {
   };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"

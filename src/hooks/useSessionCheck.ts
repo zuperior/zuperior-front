@@ -186,6 +186,26 @@ export function useSessionCheck() {
     let timer: any;
     const poll = async () => {
       try {
+        // Check if this is a fresh registration (within last 10 seconds)
+        // Skip session check for fresh registrations to avoid premature logout
+        const freshRegistrationTime = localStorage.getItem('_freshRegistration');
+        if (freshRegistrationTime) {
+          const registrationTime = parseInt(freshRegistrationTime, 10);
+          const timeSinceRegistration = Date.now() - registrationTime;
+          if (timeSinceRegistration < 10000) { // 10 seconds grace period
+            // Clear the flag after grace period
+            if (timeSinceRegistration >= 5000) {
+              localStorage.removeItem('_freshRegistration');
+            }
+            // Schedule next check after grace period
+            timer = setTimeout(poll, 10000 - timeSinceRegistration);
+            return;
+          } else {
+            // Grace period passed, clear flag
+            localStorage.removeItem('_freshRegistration');
+          }
+        }
+        
         const res = await fetch(`${backendApiUrl}/session/check-valid`, {
           credentials: 'include',
           headers: { 
@@ -206,8 +226,10 @@ export function useSessionCheck() {
       }
     };
     
-    // Start polling after a short delay
-    timer = setTimeout(poll, 5000);
+    // Start polling after a short delay (longer for fresh registrations)
+    const freshRegistrationTime = localStorage.getItem('_freshRegistration');
+    const initialDelay = freshRegistrationTime ? 10000 : 5000; // 10s for fresh reg, 5s otherwise
+    timer = setTimeout(poll, initialDelay);
     
     // Cleanup
     return () => {

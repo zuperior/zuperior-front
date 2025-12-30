@@ -107,6 +107,13 @@ export const getFCMToken = async (): Promise<string | null> => {
 export const registerFCMToken = async (token: string, deviceInfo?: any, platform?: string): Promise<boolean> => {
   console.log('🔵 [FCM] registerFCMToken called with token:', token.substring(0, 20) + '...');
   try {
+    // Verify we have an auth token before attempting registration
+    const authToken = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+    if (!authToken) {
+      console.warn('⚠️ [FCM] No auth token available, skipping FCM registration');
+      return false;
+    }
+
     console.log('🔵 [FCM] Calling API service to register token...');
     const response = await apiFcmService.registerToken(token, deviceInfo, platform);
     console.log('🔵 [FCM] API response:', response);
@@ -119,6 +126,11 @@ export const registerFCMToken = async (token: string, deviceInfo?: any, platform
       return false;
     }
   } catch (error: any) {
+    // Handle 401 errors gracefully - might be called before auth is fully ready
+    if (error?.response?.status === 401) {
+      console.warn('⚠️ [FCM] Registration failed with 401 - authentication not ready yet');
+      return false;
+    }
     console.error('❌ [FCM] Error registering FCM token:', error);
     console.error('❌ [FCM] Error response:', error.response?.data);
     console.error('❌ [FCM] Error status:', error.response?.status);
