@@ -49,7 +49,7 @@ export default function VerificationAlert({
     }
     // Otherwise use prop if it's valid
     if (verificationStatus && (verificationStatus === "unverified" || verificationStatus === "partial" || verificationStatus === "verified")) {
-      return verificationStatus;
+    return verificationStatus;
     }
     // Default to unverified if nothing is valid
     return "unverified";

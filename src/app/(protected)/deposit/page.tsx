@@ -43,8 +43,32 @@ export default function DepositPage() {
   const [isLoadingCrypto, setIsLoadingCrypto] = useState(true);
 
   useEffect(() => {
-    // Hardcoded USDT crypto options with TRC20 and BEP20 networks
+    // Comprehensive list of Unipayment-supported cryptocurrencies
     const cryptoList: Cryptocurrency[] = [
+      {
+        id: "BTC",
+        name: "Bitcoin",
+        symbol: "BTC",
+        icon: "/crypto/btc.png",
+        networks: [
+          {
+            blockchain: "BTC",
+            logoUrl: "/crypto/btc.png",
+          },
+        ],
+      },
+      {
+        id: "ETH",
+        name: "Ethereum",
+        symbol: "ETH",
+        icon: "/crypto/eth.png",
+        networks: [
+          {
+            blockchain: "ETH",
+            logoUrl: "/crypto/eth.png",
+          },
+        ],
+      },
       {
         id: "USDT-TRC20",
         name: "USDT-TRC20",
@@ -66,6 +90,66 @@ export default function DepositPage() {
           {
             blockchain: "BEP20",
             logoUrl: "/bep20.png",
+          },
+        ],
+      },
+      {
+        id: "USDT-ERC20",
+        name: "USDT-ERC20",
+        symbol: "USDT",
+        icon: "/crypto/usdt-erc20.png",
+        networks: [
+          {
+            blockchain: "ERC20",
+            logoUrl: "/crypto/usdt-erc20.png",
+          },
+        ],
+      },
+      {
+        id: "BNB",
+        name: "BNB",
+        symbol: "BNB",
+        icon: "/crypto/bnb.png",
+        networks: [
+          {
+            blockchain: "BEP20",
+            logoUrl: "/crypto/bnb.png",
+          },
+        ],
+      },
+      {
+        id: "SOL",
+        name: "Solana",
+        symbol: "SOL",
+        icon: "/crypto/sol.png",
+        networks: [
+          {
+            blockchain: "SOL",
+            logoUrl: "/crypto/sol.png",
+          },
+        ],
+      },
+      {
+        id: "USDC",
+        name: "USD Coin",
+        symbol: "USDC",
+        icon: "/crypto/usdc.png",
+        networks: [
+          {
+            blockchain: "ERC20",
+            logoUrl: "/crypto/usdc.png",
+          },
+        ],
+      },
+      {
+        id: "EURC",
+        name: "EUR Coin",
+        symbol: "EURC",
+        icon: "/crypto/eurc.png",
+        networks: [
+          {
+            blockchain: "ERC20",
+            logoUrl: "/crypto/eurc.png",
           },
         ],
       },
@@ -122,15 +206,15 @@ export default function DepositPage() {
 
   const handleCryptoSelect = useCallback((crypto: Cryptocurrency) => {
     setSelectedCrypto(crypto);
-    // Always open the regular deposit dialog (QR option removed)
+    // Open Cregis deposit dialog for legacy Cregis cryptos
     setDepositDialogOpen(true);
   }, []);
 
-  // Filter items - show USDT TRC20 and BEP20 crypto options, Wire, and Unipayment methods
+  // Filter items - show Unipayment methods, Wire, and Cregis options
   const filteredItems = useMemo(() => {
     const items: any[] = [];
     
-    // Add Unipayment methods first with actual image paths
+    // Add Unipayment methods (single crypto option, then other payment methods)
     items.push(
       { type: 'unipayment', method: 'crypto', data: { id: 'UNIPAYMENT_CRYPTO', name: 'Crypto', icon: '/crypto.png' } },
       { type: 'unipayment', method: 'card', data: { id: 'UNIPAYMENT_CARD', name: 'Credit/Debit Cards', icon: '/pm_card.png' } },
@@ -144,9 +228,12 @@ export default function DepositPage() {
       items.push({ type: 'wire', data: { id: 'WIRE', name: 'Wire Transfer', icon: '/bank.png' } });
     }
     
-    // Add Cregis crypto options
+    // Add Cregis crypto options (USDT-TRC20 and USDT-BEP20) as separate cards
     cryptocurrencies.forEach((crypto) => {
-      items.push({ type: "crypto", data: crypto });
+      // Only show USDT-TRC20 and USDT-BEP20 as separate Cregis cards
+      if (crypto.id === 'USDT-TRC20' || crypto.id === 'USDT-BEP20') {
+        items.push({ type: "crypto", data: crypto });
+      }
     });
     
     return items;
@@ -241,6 +328,7 @@ export default function DepositPage() {
           open={unipaymentCryptoOpen}
           onOpenChange={setUnipaymentCryptoOpen}
           paymentMethod="crypto"
+          availableCryptos={cryptocurrencies.filter(c => c.id !== 'USDT-TRC20' && c.id !== 'USDT-BEP20')}
           lifetimeDeposit={lifetimeDeposit}
         />
         <UnipaymentDialog

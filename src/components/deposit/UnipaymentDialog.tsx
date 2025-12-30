@@ -25,13 +25,14 @@ import { toast } from "sonner";
 import { useSelector, useDispatch } from "react-redux";
 import type { RootState, AppDispatch } from "../../store";
 import { fetchUserAccountsFromDb, fetchMt5Groups } from "../../store/slices/mt5AccountSlice";
-import { NewAccountDialogProps } from "./types";
+import { NewAccountDialogProps, Cryptocurrency } from "./types";
 import { DialogDescription } from "@radix-ui/react-dialog";
 import { TpAccountSnapshot } from "@/types/user-details";
 import { MT5Account } from "@/store/slices/mt5AccountSlice";
 import * as unipaymentService from "@/lib/unipayment.service";
 import Image from "next/image";
 import QRCode from "react-qr-code";
+import { CopyIcon } from "lucide-react";
 
 // Helper function to map MT5Account to TpAccountSnapshot
 const mapMT5AccountToTpAccount = (mt5Account: MT5Account): TpAccountSnapshot => {
@@ -72,17 +73,29 @@ interface InvoiceData {
   qrCode?: string;
   cryptoAddress?: string;
   expiresAt?: string;
+  payCurrency?: string;
+  network?: string;
 }
 
 export function UnipaymentDialog({
   open,
   onOpenChange,
   paymentMethod,
+  selectedCrypto,
+  availableCryptos,
   lifetimeDeposit,
-}: NewAccountDialogProps & { paymentMethod: PaymentMethod; lifetimeDeposit: number }) {
+}: NewAccountDialogProps & { 
+  paymentMethod: PaymentMethod; 
+  selectedCrypto?: Cryptocurrency | null;
+  availableCryptos?: Cryptocurrency[];
+  lifetimeDeposit: number;
+}) {
   const [step, setStep] = useState(1);
   const [amount, setAmount] = useState("");
-  const [selectedNetwork, setSelectedNetwork] = useState<string>("");
+  // For crypto payments, allow selection from availableCryptos or use selectedCrypto if provided
+  const [currentSelectedCrypto, setCurrentSelectedCrypto] = useState<Cryptocurrency | null>(selectedCrypto || null);
+  const defaultNetwork = currentSelectedCrypto?.networks[0]?.blockchain || "";
+  const [selectedNetwork, setSelectedNetwork] = useState<string>(defaultNetwork);
   const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -91,6 +104,57 @@ export function UnipaymentDialog({
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<string>("");
   const [confirmCloseOpen, setConfirmCloseOpen] = useState(false);
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
+  const [cryptoAmount, setCryptoAmount] = useState<string>("");
+  const [isLoadingRate, setIsLoadingRate] = useState(false);
+  
+  // Update network when currentSelectedCrypto changes
+  useEffect(() => {
+    if (currentSelectedCrypto && currentSelectedCrypto.networks.length > 0) {
+      setSelectedNetwork(currentSelectedCrypto.networks[0].blockchain);
+    }
+  }, [currentSelectedCrypto]);
+  
+  // Reset selected crypto when dialog opens/closes
+  useEffect(() => {
+    if (!open) {
+      setCurrentSelectedCrypto(selectedCrypto || null);
+      setExchangeRate(null);
+      setCryptoAmount("");
+    }
+  }, [open, selectedCrypto]);
+  
+  // Fetch exchange rate and convert USD to crypto when amount or crypto changes
+  useEffect(() => {
+    if (paymentMethod === 'crypto' && currentSelectedCrypto && amount && parseFloat(amount) > 0) {
+      const fetchRate = async () => {
+        setIsLoadingRate(true);
+        try {
+          const result = await unipaymentService.getExchangeRate('USD', currentSelectedCrypto.symbol);
+          if (result.success && result.rate) {
+            setExchangeRate(result.rate);
+            const usdAmount = parseFloat(amount);
+            const convertedAmount = usdAmount / result.rate;
+            setCryptoAmount(convertedAmount.toFixed(8));
+          } else {
+            setExchangeRate(null);
+            setCryptoAmount("");
+          }
+        } catch (error) {
+          console.error('Error fetching exchange rate:', error);
+          setExchangeRate(null);
+          setCryptoAmount("");
+        } finally {
+          setIsLoadingRate(false);
+        }
+      };
+      
+      fetchRate();
+    } else {
+      setExchangeRate(null);
+      setCryptoAmount("");
+    }
+  }, [amount, currentSelectedCrypto, paymentMethod]);
 
   const dispatch = useDispatch<AppDispatch>();
   const mt5Accounts = useSelector((state: RootState) => state.mt5.accounts);
@@ -240,13 +304,18 @@ export function UnipaymentDialog({
       const successUrl = `${baseUrl}/deposit/success`;
       const cancelUrl = `${baseUrl}/deposit/cancel`;
 
+      // Determine crypto symbol and network for crypto payments
+      const cryptoSymbol = paymentMethod === 'crypto' && currentSelectedCrypto ? currentSelectedCrypto.symbol : undefined;
+      const network = paymentMethod === 'crypto' ? selectedNetwork : undefined;
+
       const result = await unipaymentService.createInvoice({
         amount,
         currency: 'USD',
         paymentMethod,
         mt5AccountId: accountNumber,
         accountType,
-        network: paymentMethod === 'crypto' ? selectedNetwork : undefined,
+        network,
+        cryptoSymbol, // Pass crypto symbol to backend
         successUrl,
         cancelUrl,
       });
@@ -346,9 +415,13 @@ export function UnipaymentDialog({
   }, [open, resetAllStates]);
 
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    if (hours > 0) {
+      return `${hours} hr ${mins} min ${secs} sec`;
+    }
+    return `${mins} min ${secs} sec`;
   };
 
   const getPaymentMethodName = () => {
@@ -416,6 +489,12 @@ export function UnipaymentDialog({
               selectedNetwork={selectedNetwork}
               setSelectedNetwork={setSelectedNetwork}
               paymentMethod={paymentMethod}
+              selectedCrypto={currentSelectedCrypto}
+              setSelectedCrypto={setCurrentSelectedCrypto}
+              availableCryptos={availableCryptos}
+              cryptoAmount={cryptoAmount}
+              exchangeRate={exchangeRate}
+              isLoadingRate={isLoadingRate}
               nextStep={nextStep}
               accounts={filteredAccounts.map(mapMT5AccountToTpAccount)}
               selectedAccount={selectedAccount}
@@ -426,36 +505,173 @@ export function UnipaymentDialog({
 
           {step === 2 && (
             <Step2Confirmation
-              amount={amount}
+              amount={paymentMethod === 'crypto' && cryptoAmount && currentSelectedCrypto ? cryptoAmount : amount}
+              usdAmount={amount}
               selectedNetwork={selectedNetwork}
-              selectedCrypto={null}
+              selectedCrypto={currentSelectedCrypto}
               paymentMethod={getPaymentMethodName()}
-              paymentImages={{}}
+              paymentImages={currentSelectedCrypto ? { [currentSelectedCrypto.symbol]: currentSelectedCrypto.icon } : {}}
               error={error}
               isProcessing={isProcessing}
               selectedAccount={selectedAccount}
               prevStep={prevStep}
               handleContinueToPayment={handleContinueToPayment}
-              exchangeRate={1}
+              exchangeRate={exchangeRate || 1}
               requiresNetwork={paymentMethod === 'crypto'}
             />
           )}
 
           {step === 3 && invoiceData && (
             <div className="w-full space-y-6">
-              <h3 className="text-xl font-bold text-center">Complete Payment</h3>
+              {/* Header */}
+              <h3 className="text-xl font-bold text-center dark:text-white text-black">
+                {paymentMethod === 'crypto' && cryptoAmount && currentSelectedCrypto 
+                  ? `Pay ${cryptoAmount} ${currentSelectedCrypto.symbol}-${selectedNetwork}` 
+                  : `Pay ${amount} ${currentSelectedCrypto ? `${currentSelectedCrypto.symbol}-${selectedNetwork}` : 'USD'}`}
+              </h3>
               
+              {/* Payment Summary */}
               {paymentMethod === 'crypto' && invoiceData.cryptoAddress && (
                 <div className="space-y-4">
-                  <div className="text-center">
-                    <p className="text-sm text-gray-400 mb-2">Send {amount} USD worth of crypto to:</p>
-                    {invoiceData.qrCode && (
-                      <div className="flex justify-center mb-4">
-                        <QRCode value={invoiceData.cryptoAddress} size={200} />
-                      </div>
+                  <div className="bg-gray-800 dark:bg-[#1a1a1a] rounded-lg p-4 space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-400">Amount to Send:</span>
+                      <span className="text-sm font-semibold dark:text-white text-black">
+                        {cryptoAmount && currentSelectedCrypto 
+                          ? `${cryptoAmount} ${currentSelectedCrypto.symbol} (${amount} USD)` 
+                          : `${amount} ${currentSelectedCrypto ? currentSelectedCrypto.symbol : 'USD'}`}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-400">Expires At:</span>
+                      <span className="text-sm font-semibold dark:text-white text-black">
+                        {formatTime(countdown)}
+                      </span>
+                    </div>
+                    {selectedAccount && (
+                      <>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-400">Account Number:</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold dark:text-white text-black">
+                              {selectedAccount.split("|")[0]}
+                            </span>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(selectedAccount.split("|")[0]);
+                                toast.success("Account number copied!");
+                              }}
+                              className="text-gray-400 hover:text-white"
+                            >
+                              <CopyIcon className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-400">Account Type:</span>
+                          <span className="text-sm font-semibold dark:text-white text-black">
+                            {selectedAccount.split("|")[1]?.charAt(0).toUpperCase() + selectedAccount.split("|")[1]?.slice(1) || 'Not specified'}
+                          </span>
+                        </div>
+                      </>
                     )}
-                    <div className="bg-gray-800 p-4 rounded-lg break-all">
-                      <p className="text-sm font-mono">{invoiceData.cryptoAddress}</p>
+                  </div>
+
+                  {/* Warning Box */}
+                  <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4 flex items-start gap-3">
+                    <div className="text-purple-400 mt-0.5">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <p className="text-sm text-red-400 flex-1">
+                      Please complete your payment before the timer expires to avoid cancellation.
+                    </p>
+                  </div>
+
+                  {/* Pay with Crypto Section */}
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-semibold dark:text-white text-black">
+                      Pay with {currentSelectedCrypto ? currentSelectedCrypto.name : 'Crypto'}
+                    </h4>
+                    
+                    <div className="flex flex-col md:flex-row gap-6 items-start">
+                      {/* QR Code */}
+                      <div className="flex-1 flex flex-col items-center">
+                        {invoiceData.cryptoAddress && (
+                          <>
+                            <div className="bg-white p-4 rounded-lg mb-2">
+                              <QRCode 
+                                value={invoiceData.cryptoAddress} 
+                                size={250}
+                              />
+                            </div>
+                            <p className="text-sm text-gray-400 mt-2">Scan to send {currentSelectedCrypto?.symbol || 'crypto'}</p>
+                          </>
+                        )}
+                        {invoiceData.qrCode && !invoiceData.cryptoAddress && (
+                          <div className="flex justify-center mb-2">
+                            <img src={invoiceData.qrCode} alt="Payment QR Code" className="max-w-[250px]" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Address and Network Info */}
+                      <div className="flex-1 space-y-4">
+                        <div>
+                          <p className="text-sm text-gray-400 mb-1">Network</p>
+                          <p className="text-sm font-semibold dark:text-white text-black">
+                            {selectedNetwork === 'BEP20' ? 'BNB Smart Chain' :
+                             selectedNetwork === 'TRC20' ? 'TRON' :
+                             selectedNetwork === 'ERC20' ? 'Ethereum' :
+                             selectedNetwork === 'BTC' ? 'Bitcoin' :
+                             selectedNetwork === 'SOL' ? 'Solana' :
+                             selectedNetwork}
+                          </p>
+                        </div>
+                        
+                        <div>
+                          <p className="text-sm text-gray-400 mb-2">Payment Address</p>
+                          <div className="bg-gray-800 dark:bg-[#1a1a1a] p-3 rounded-lg break-all">
+                            <p className="text-xs font-mono dark:text-white text-black">{invoiceData.cryptoAddress}</p>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-2 w-full"
+                            onClick={() => {
+                              navigator.clipboard.writeText(invoiceData.cryptoAddress!);
+                              toast.success("Address copied!");
+                            }}
+                          >
+                            Copy Address
+                          </Button>
+                        </div>
+
+                        {/* Critical Network Warning */}
+                        <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-3">
+                          <p className="text-xs text-red-400">
+                            Please make sure the transfer network is {
+                              selectedNetwork === 'BEP20' ? 'BNB Smart Chain' :
+                              selectedNetwork === 'TRC20' ? 'TRON' :
+                              selectedNetwork === 'ERC20' ? 'Ethereum' :
+                              selectedNetwork === 'BTC' ? 'Bitcoin' :
+                              selectedNetwork === 'SOL' ? 'Solana' :
+                              selectedNetwork
+                            }, otherwise the assets will be permanently lost.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Instructions */}
+                    <div className="mt-6">
+                      <h5 className="text-md font-semibold dark:text-white text-black mb-3">Instructions</h5>
+                      <ol className="list-decimal list-inside space-y-2 text-sm text-gray-400">
+                        <li>Send exactly {cryptoAmount && currentSelectedCrypto ? `${cryptoAmount} ${currentSelectedCrypto.symbol}` : `${amount} ${currentSelectedCrypto ? currentSelectedCrypto.symbol : 'USD'}`} to the address above</li>
+                        <li>Wait for network confirmation (usually takes 2-5 minutes)</li>
+                        <li>Do not close this window until payment is confirmed</li>
+                      </ol>
                     </div>
                   </div>
                 </div>
@@ -562,6 +778,12 @@ function UnipaymentStep1Form({
   selectedNetwork,
   setSelectedNetwork,
   paymentMethod,
+  selectedCrypto,
+  setSelectedCrypto,
+  availableCryptos,
+  cryptoAmount,
+  exchangeRate,
+  isLoadingRate,
   nextStep,
   accounts,
   selectedAccount,
@@ -573,13 +795,27 @@ function UnipaymentStep1Form({
   selectedNetwork: string;
   setSelectedNetwork: (value: string) => void;
   paymentMethod: PaymentMethod;
+  selectedCrypto?: Cryptocurrency | null;
+  setSelectedCrypto?: (crypto: Cryptocurrency | null) => void;
+  availableCryptos?: Cryptocurrency[];
+  cryptoAmount?: string;
+  exchangeRate?: number | null;
+  isLoadingRate?: boolean;
   nextStep: () => void;
   accounts: TpAccountSnapshot[];
   selectedAccount: string;
   setSelectedAccount: (account: string) => void;
   lifetimeDeposit: number;
 }) {
-  const availableNetworks = ['TRC20', 'ERC20', 'BEP20'];
+  // Update network when crypto changes
+  useEffect(() => {
+    if (selectedCrypto && selectedCrypto.networks.length > 0) {
+      setSelectedNetwork(selectedCrypto.networks[0].blockchain);
+    }
+  }, [selectedCrypto, setSelectedNetwork]);
+  
+  // If crypto is selected, use its networks; otherwise show common networks
+  const availableNetworks = selectedCrypto?.networks.map(n => n.blockchain) || ['TRC20', 'ERC20', 'BEP20', 'BTC', 'ETH', 'SOL'];
 
   const handleContinue = () => {
     if (!selectedAccount) {
@@ -594,12 +830,20 @@ function UnipaymentStep1Form({
       });
       return;
     }
-    // Require network selection only for crypto payments
-    if (paymentMethod === 'crypto' && !selectedNetwork) {
-      toast.error("Network selection required", {
-        description: "Please select a network to continue.",
-      });
-      return;
+    // Require crypto and network selection for crypto payments
+    if (paymentMethod === 'crypto') {
+      if (!selectedCrypto) {
+        toast.error("Cryptocurrency selection required", {
+          description: "Please select a cryptocurrency to continue.",
+        });
+        return;
+      }
+      if (!selectedNetwork) {
+        toast.error("Network selection required", {
+          description: "Please select a network to continue.",
+        });
+        return;
+      }
     }
     const amountNum = parseFloat(amount);
     if (isNaN(amountNum) || amountNum <= 0 || amountNum < 1) {
@@ -617,7 +861,14 @@ function UnipaymentStep1Form({
   return (
     <div className="w-full px-6">
       <h2 className="text-2xl text-center font-bold dark:text-white/75 text-black">
-        Pay {amount || '0'} USD
+        {paymentMethod === 'crypto' && selectedCrypto && cryptoAmount ? (
+          <>
+            Pay {cryptoAmount} {selectedCrypto.symbol}
+            {amount && <span className="text-sm text-gray-400 ml-2">({amount} USD)</span>}
+          </>
+        ) : (
+          `Pay ${amount || '0'} ${selectedCrypto ? selectedCrypto.symbol : 'USD'}`
+        )}
       </h2>
       <div className="-mt-4 w-full">
         <div className="rounded-lg">
@@ -692,30 +943,98 @@ function UnipaymentStep1Form({
         </div>
       </div>
       {paymentMethod === 'crypto' && (
-        <div className="mt-4 w-full">
+        <div className="mt-4 w-full space-y-4">
           <div className="rounded-lg">
             <div className="mt-4">
-              <Label className="text-sm dark:text-white/75 text-black mb-1">Network</Label>
+              <Label className="text-sm dark:text-white/75 text-black mb-1">Select Cryptocurrency</Label>
               <Select
-                onValueChange={setSelectedNetwork}
-                value={selectedNetwork}
+                onValueChange={(value) => {
+                  const crypto = availableCryptos?.find(c => c.id === value);
+                  if (setSelectedCrypto) {
+                    setSelectedCrypto(crypto || null);
+                  }
+                }}
+                value={selectedCrypto?.id || ""}
               >
                 <SelectTrigger className="border-[#362e36] p-5 flex items-center w-full dark:text-white/75 text-black focus:ring-[#8046c9]">
-                  <SelectValue placeholder="Select Network" />
+                  <SelectValue placeholder="Select Cryptocurrency">
+                    {selectedCrypto ? (
+                      <div className="flex items-center gap-2">
+                        {selectedCrypto.icon && (
+                          <Image
+                            src={selectedCrypto.icon}
+                            alt={selectedCrypto.name}
+                            width={24}
+                            height={24}
+                            className="rounded"
+                          />
+                        )}
+                        <span>{selectedCrypto.name}</span>
+                      </div>
+                    ) : (
+                      "Select Cryptocurrency"
+                    )}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="border-[#1e171e] dark:bg-[#060207] dark:text-white/75 text-black">
-                  {availableNetworks.map((network) => (
+                  {availableCryptos?.map((crypto) => (
                     <SelectItem
-                      key={network}
-                      value={network}
+                      key={crypto.id}
+                      value={crypto.id}
                     >
-                      {network}
+                      <div className="flex items-center gap-2">
+                        {crypto.icon && (
+                          <Image
+                            src={crypto.icon}
+                            alt={crypto.name}
+                            width={24}
+                            height={24}
+                            className="rounded"
+                          />
+                        )}
+                        <span>{crypto.name}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
+          
+          {selectedCrypto && (
+            <div className="rounded-lg">
+              <div className="mt-4">
+                <Label className="text-sm dark:text-white/75 text-black mb-1">Network</Label>
+                <Select
+                  onValueChange={setSelectedNetwork}
+                  value={selectedNetwork}
+                  disabled={selectedCrypto.networks.length === 1}
+                >
+                  <SelectTrigger className="border-[#362e36] p-5 flex items-center w-full dark:text-white/75 text-black focus:ring-[#8046c9]">
+                    <SelectValue placeholder="Select Network">
+                      {selectedNetwork || "Select Network"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="border-[#1e171e] dark:bg-[#060207] dark:text-white/75 text-black">
+                    {availableNetworks.map((network) => (
+                      <SelectItem
+                        key={network}
+                        value={network}
+                      >
+                        {network === 'BEP20' ? 'BNB Smart Chain (BEP20)' :
+                         network === 'TRC20' ? 'TRON (TRC20)' :
+                         network === 'ERC20' ? 'Ethereum (ERC20)' :
+                         network === 'BTC' ? 'Bitcoin' :
+                         network === 'ETH' ? 'Ethereum' :
+                         network === 'SOL' ? 'Solana' :
+                         network}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
         </div>
       )}
       <div className="mt-4">

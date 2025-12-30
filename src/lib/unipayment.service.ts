@@ -76,6 +76,7 @@ export async function createInvoice({
   mt5AccountId,
   accountType,
   network,
+  cryptoSymbol,
   successUrl,
   cancelUrl,
 }: {
@@ -85,6 +86,7 @@ export async function createInvoice({
   mt5AccountId: string;
   accountType?: string;
   network?: string;
+  cryptoSymbol?: string;
   successUrl?: string;
   cancelUrl?: string;
 }) {
@@ -119,6 +121,7 @@ export async function createInvoice({
         currency,
         paymentMethod,
         network,
+        cryptoSymbol,
         successUrl,
         cancelUrl,
       }),

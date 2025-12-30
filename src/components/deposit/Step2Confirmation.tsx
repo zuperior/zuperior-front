@@ -10,6 +10,7 @@ import { CopyIcon } from "lucide-react";
 
 export function Step2Confirmation({
   amount,
+  usdAmount,
   selectedNetwork,
   selectedCrypto,
   paymentMethod,
@@ -20,7 +21,7 @@ export function Step2Confirmation({
   handleContinueToPayment,
   selectedAccount,
   requiresNetwork = false,
-}: Step2ConfirmationProps & { selectedAccount: string }) {
+}: Step2ConfirmationProps & { selectedAccount: string; usdAmount?: string }) {
   const hasShownConfirmationToast = useRef(false);
 
   const [accountNumber, accountType] = selectedAccount.split("|") || ["", ""];
@@ -110,7 +111,9 @@ export function Step2Confirmation({
   return (
     <div className="w-full">
       <h2 className="text-2xl text-center font-bold dark:text-white/75 text-black">
-        Pay {amount} {selectedCrypto?.name || "USD"}
+        {selectedCrypto && usdAmount 
+          ? `Pay ${amount} ${selectedCrypto.symbol}-${selectedNetwork} (${usdAmount} USD)`
+          : `Pay ${amount} ${selectedCrypto ? `${selectedCrypto.symbol}-${selectedNetwork}` : "USD"}`}
       </h2>
 
       {(selectedCrypto || requiresNetwork) && selectedNetwork && (
@@ -195,7 +198,9 @@ export function Step2Confirmation({
         <div className="md:p-3 pt-4 flex justify-between items-center text-sm dark:bg-[#221D22] rounded-lg ">
           <p className="dark:text-white/75 text-black  text-xs font-semibold">To be Deposited</p>
           <p className="text-[#945393] text-lg font-bold">
-            {amount} {selectedCrypto?.name || "USD"}
+            {selectedCrypto && usdAmount 
+              ? `${amount} ${selectedCrypto.symbol} (${usdAmount} USD)`
+              : `${amount} ${selectedCrypto?.name || "USD"}`}
           </p>
         </div>
 
