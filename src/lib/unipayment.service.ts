@@ -153,6 +153,59 @@ export async function createInvoice({
 }
 
 /**
+ * Get exchange rate (via backend)
+ * Uses Get Quote API for accurate real-time rates
+ */
+export async function getExchangeRate(fromCurrency: string = 'USD', toCurrency: string = 'BTC', amount: number = 1) {
+  try {
+    console.log(`💱 [Unipayment] Getting exchange rate: ${amount} ${fromCurrency} -> ${toCurrency}`);
+
+    // Get auth token from localStorage (same as other services)
+    const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+
+    if (!token) {
+      console.error('❌ [Unipayment] No authentication token found');
+      return {
+        success: false,
+        error: 'Authentication required. Please log in again.',
+      };
+    }
+
+    // Call backend API route
+    const response = await fetch(`${BACKEND_API_URL}/unipayment/exchange-rate?fiat=${fromCurrency}&crypto=${toCurrency}&amount=${amount}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to get exchange rate');
+    }
+
+    const data = await response.json();
+
+    if (!data.success || data.rate === undefined) {
+      throw new Error(data.error || 'Failed to get exchange rate');
+    }
+
+    console.log(`✅ [Unipayment] Exchange rate obtained: ${data.rate}`);
+    return {
+      success: true,
+      rate: data.rate,
+    };
+  } catch (error) {
+    console.error('❌ [Unipayment] Error getting exchange rate:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+/**
  * Get invoice status (via backend)
  */
 export async function getInvoiceStatus(invoiceId: string) {

@@ -49,11 +49,11 @@ export default function DepositPage() {
         id: "BTC",
         name: "Bitcoin",
         symbol: "BTC",
-        icon: "/crypto/btc.png",
+        icon: "/crypto_icon/btc.webp",
         networks: [
           {
             blockchain: "BTC",
-            logoUrl: "/crypto/btc.png",
+            logoUrl: "/crypto_icon/btc.webp",
           },
         ],
       },
@@ -61,11 +61,11 @@ export default function DepositPage() {
         id: "ETH",
         name: "Ethereum",
         symbol: "ETH",
-        icon: "/crypto/eth.png",
+        icon: "/crypto_icon/ethereum.webp",
         networks: [
           {
             blockchain: "ETH",
-            logoUrl: "/crypto/eth.png",
+            logoUrl: "/crypto_icon/ethereum.webp",
           },
         ],
       },
@@ -97,11 +97,11 @@ export default function DepositPage() {
         id: "USDT-ERC20",
         name: "USDT-ERC20",
         symbol: "USDT",
-        icon: "/crypto/usdt-erc20.png",
+        icon: "/crypto_icon/USDT-ERC20.webp",
         networks: [
           {
             blockchain: "ERC20",
-            logoUrl: "/crypto/usdt-erc20.png",
+            logoUrl: "/crypto_icon/USDT-ERC20.webp",
           },
         ],
       },
@@ -109,11 +109,11 @@ export default function DepositPage() {
         id: "BNB",
         name: "BNB",
         symbol: "BNB",
-        icon: "/crypto/bnb.png",
+        icon: "/crypto_icon/bnb.webp",
         networks: [
           {
             blockchain: "BEP20",
-            logoUrl: "/crypto/bnb.png",
+            logoUrl: "/crypto_icon/bnb.webp",
           },
         ],
       },
@@ -121,11 +121,11 @@ export default function DepositPage() {
         id: "SOL",
         name: "Solana",
         symbol: "SOL",
-        icon: "/crypto/sol.png",
+        icon: "/crypto_icon/solana.webp",
         networks: [
           {
             blockchain: "SOL",
-            logoUrl: "/crypto/sol.png",
+            logoUrl: "/crypto_icon/solana.webp",
           },
         ],
       },
@@ -133,11 +133,11 @@ export default function DepositPage() {
         id: "USDC",
         name: "USD Coin",
         symbol: "USDC",
-        icon: "/crypto/usdc.png",
+        icon: "/crypto_icon/usdc.webp",
         networks: [
           {
             blockchain: "ERC20",
-            logoUrl: "/crypto/usdc.png",
+            logoUrl: "/crypto_icon/usdc.webp",
           },
         ],
       },
@@ -145,11 +145,11 @@ export default function DepositPage() {
         id: "EURC",
         name: "EUR Coin",
         symbol: "EURC",
-        icon: "/crypto/eurc.png",
+        icon: "/crypto_icon/eurc.webp",
         networks: [
           {
             blockchain: "ERC20",
-            logoUrl: "/crypto/eurc.png",
+            logoUrl: "/crypto_icon/eurc.webp",
           },
         ],
       },
@@ -328,7 +328,7 @@ export default function DepositPage() {
           open={unipaymentCryptoOpen}
           onOpenChange={setUnipaymentCryptoOpen}
           paymentMethod="crypto"
-          availableCryptos={cryptocurrencies.filter(c => c.id !== 'USDT-TRC20' && c.id !== 'USDT-BEP20')}
+          availableCryptos={cryptocurrencies}
           lifetimeDeposit={lifetimeDeposit}
         />
         <UnipaymentDialog

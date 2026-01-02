@@ -74,6 +74,9 @@ interface InvoiceData {
   cryptoAddress?: string;
   expiresAt?: string;
   payCurrency?: string;
+  payAmount?: string;
+  priceAmount?: string;
+  priceCurrency?: string;
   network?: string;
 }
 
@@ -127,13 +130,23 @@ export function UnipaymentDialog({
   // Fetch exchange rate and convert USD to crypto when amount or crypto changes
   useEffect(() => {
     if (paymentMethod === 'crypto' && currentSelectedCrypto && amount && parseFloat(amount) > 0) {
+      // Skip rate calculation for USDT since USD and USDT have 1:1 ratio
+      if (currentSelectedCrypto.symbol.toUpperCase() === 'USDT') {
+        const usdAmount = parseFloat(amount);
+        setExchangeRate(1);
+        setCryptoAmount(usdAmount.toFixed(8));
+        setIsLoadingRate(false);
+        return;
+      }
+
       const fetchRate = async () => {
         setIsLoadingRate(true);
         try {
-          const result = await unipaymentService.getExchangeRate('USD', currentSelectedCrypto.symbol);
+          const usdAmount = parseFloat(amount);
+          // Pass the amount to getQuote API for accurate rate based on the actual amount
+          const result = await unipaymentService.getExchangeRate('USD', currentSelectedCrypto.symbol, usdAmount);
           if (result.success && result.rate) {
             setExchangeRate(result.rate);
-            const usdAmount = parseFloat(amount);
             const convertedAmount = usdAmount / result.rate;
             setCryptoAmount(convertedAmount.toFixed(8));
           } else {
@@ -339,6 +352,19 @@ export function UnipaymentDialog({
         hasQrCode: !!invoiceData.qrCode,
       });
 
+      // Use the converted crypto amount from Unipayment invoice response (payAmount)
+      // This is the authoritative amount that matches what Unipayment dashboard shows
+      const invoicePayAmount = invoiceData.payAmount || (cryptoAmount && paymentMethod === 'crypto' ? cryptoAmount : undefined);
+      const invoicePayCurrency = invoiceData.payCurrency || (currentSelectedCrypto?.symbol && paymentMethod === 'crypto' ? currentSelectedCrypto.symbol : undefined);
+      
+      console.log('📊 [Unipayment] Invoice created with amounts:', {
+        priceAmount: invoiceData.priceAmount,
+        priceCurrency: invoiceData.priceCurrency,
+        payAmount: invoicePayAmount,
+        payCurrency: invoicePayCurrency,
+        calculatedCryptoAmount: cryptoAmount,
+      });
+
       setInvoiceData({
         invoiceId: invoiceData.invoiceId,
         invoiceUrl: invoiceData.invoiceUrl,
@@ -347,7 +373,16 @@ export function UnipaymentDialog({
         qrCode: invoiceData.qrCode,
         cryptoAddress: invoiceData.cryptoAddress,
         expiresAt: invoiceData.expiresAt,
+        payAmount: invoicePayAmount,
+        payCurrency: invoicePayCurrency,
+        priceAmount: invoiceData.priceAmount || amount,
+        priceCurrency: invoiceData.priceCurrency || 'USD',
       });
+      
+      // Update cryptoAmount to use the invoice's payAmount if available
+      if (paymentMethod === 'crypto' && invoicePayAmount) {
+        setCryptoAmount(invoicePayAmount);
+      }
 
       // For redirect-based payments (card, binance_pay, google_apple_pay, upi), redirect to Unipayment checkout page
       // Only crypto payments with host_to_host_mode=true show payment details in the dialog
@@ -525,8 +560,10 @@ export function UnipaymentDialog({
             <div className="w-full space-y-6">
               {/* Header */}
               <h3 className="text-xl font-bold text-center dark:text-white text-black">
-                {paymentMethod === 'crypto' && cryptoAmount && currentSelectedCrypto 
-                  ? `Pay ${cryptoAmount} ${currentSelectedCrypto.symbol}-${selectedNetwork}` 
+                {paymentMethod === 'crypto' && invoiceData.payAmount && invoiceData.payCurrency
+                  ? `Pay ${invoiceData.payAmount} ${invoiceData.payCurrency}-${selectedNetwork}` 
+                  : paymentMethod === 'crypto' && cryptoAmount && currentSelectedCrypto
+                  ? `Pay ${cryptoAmount} ${currentSelectedCrypto.symbol}-${selectedNetwork}`
                   : `Pay ${amount} ${currentSelectedCrypto ? `${currentSelectedCrypto.symbol}-${selectedNetwork}` : 'USD'}`}
               </h3>
               
@@ -537,7 +574,9 @@ export function UnipaymentDialog({
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-400">Amount to Send:</span>
                       <span className="text-sm font-semibold dark:text-white text-black">
-                        {cryptoAmount && currentSelectedCrypto 
+                        {invoiceData.payAmount && invoiceData.payCurrency
+                          ? `${invoiceData.payAmount} ${invoiceData.payCurrency} (${invoiceData.priceAmount || amount} ${invoiceData.priceCurrency || 'USD'})`
+                          : cryptoAmount && currentSelectedCrypto 
                           ? `${cryptoAmount} ${currentSelectedCrypto.symbol} (${amount} USD)` 
                           : `${amount} ${currentSelectedCrypto ? currentSelectedCrypto.symbol : 'USD'}`}
                       </span>
@@ -668,7 +707,7 @@ export function UnipaymentDialog({
                     <div className="mt-6">
                       <h5 className="text-md font-semibold dark:text-white text-black mb-3">Instructions</h5>
                       <ol className="list-decimal list-inside space-y-2 text-sm text-gray-400">
-                        <li>Send exactly {cryptoAmount && currentSelectedCrypto ? `${cryptoAmount} ${currentSelectedCrypto.symbol}` : `${amount} ${currentSelectedCrypto ? currentSelectedCrypto.symbol : 'USD'}`} to the address above</li>
+                        <li>Send exactly {invoiceData.payAmount && invoiceData.payCurrency ? `${invoiceData.payAmount} ${invoiceData.payCurrency}` : cryptoAmount && currentSelectedCrypto ? `${cryptoAmount} ${currentSelectedCrypto.symbol}` : `${amount} ${currentSelectedCrypto ? currentSelectedCrypto.symbol : 'USD'}`} to the address above</li>
                         <li>Wait for network confirmation (usually takes 2-5 minutes)</li>
                         <li>Do not close this window until payment is confirmed</li>
                       </ol>
@@ -861,11 +900,17 @@ function UnipaymentStep1Form({
   return (
     <div className="w-full px-6">
       <h2 className="text-2xl text-center font-bold dark:text-white/75 text-black">
-        {paymentMethod === 'crypto' && selectedCrypto && cryptoAmount ? (
+        {paymentMethod === 'crypto' && selectedCrypto && cryptoAmount && cryptoAmount !== "" ? (
           <>
             Pay {cryptoAmount} {selectedCrypto.symbol}
             {amount && <span className="text-sm text-gray-400 ml-2">({amount} USD)</span>}
           </>
+        ) : paymentMethod === 'crypto' && selectedCrypto ? (
+          isLoadingRate ? (
+            `Pay ${amount || '0'} USD (calculating...)`
+          ) : (
+            `Pay ${amount || '0'} USD`
+          )
         ) : (
           `Pay ${amount || '0'} ${selectedCrypto ? selectedCrypto.symbol : 'USD'}`
         )}
