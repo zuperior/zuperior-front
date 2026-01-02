@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
 import {
   Dialog,
   DialogContent,
@@ -114,7 +115,7 @@ export function UnipaymentDialog({
   const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [countdown, setCountdown] = useState(1800); // 30 minutes default
+  const [countdown, setCountdown] = useState(3600); // 1 hour default
   const [paymentStatus, setPaymentStatus] = useState<any>(null);
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<string>("");
@@ -282,7 +283,7 @@ export function UnipaymentDialog({
     }
   }, [step, invoiceData, paymentStatus, checkPaymentStatus]);
 
-  // Countdown timer - 30 minutes from invoice creation
+  // Countdown timer - 1 hour from invoice creation
   useEffect(() => {
     if (step === 3 && invoiceData) {
       let intervalId: NodeJS.Timeout;
@@ -295,8 +296,8 @@ export function UnipaymentDialog({
           const remaining = Math.max(0, Math.floor((expireAt - now) / 1000));
           return remaining;
         } else {
-          // Fallback: 30 minutes from now if no expiration time
-          return 1800;
+          // Fallback: 1 hour from now if no expiration time
+          return 3600;
         }
       };
 
@@ -419,12 +420,12 @@ export function UnipaymentDialog({
         if (expirationDate.getTime() > now) {
           expiresAtTime = expirationDate.toISOString();
         } else {
-          console.warn('⚠️ [Unipayment] Expiration time from API is in the past, using 30 minutes from now');
-          expiresAtTime = new Date(now + 30 * 60 * 1000).toISOString();
+          console.warn('⚠️ [Unipayment] Expiration time from API is in the past, using 1 hour from now');
+          expiresAtTime = new Date(now + 60 * 60 * 1000).toISOString();
         }
       } else {
-        // Fallback: 30 minutes from now if no expiration time from API
-        expiresAtTime = new Date(now + 30 * 60 * 1000).toISOString();
+        // Fallback: 1 hour from now if no expiration time from API
+        expiresAtTime = new Date(now + 60 * 60 * 1000).toISOString();
       }
 
       console.log('⏰ [Unipayment] Setting expiration time:', {
@@ -455,16 +456,18 @@ export function UnipaymentDialog({
         setCryptoAmount(invoicePayAmount);
       }
 
-      // For redirect-based payments (card, binance_pay, google_apple_pay, upi), redirect to Unipayment checkout page
+      // For redirect-based payments (card, binance_pay, google_apple_pay, upi), open in new tab
       // Only crypto payments with host_to_host_mode=true show payment details in the dialog
       const redirectBasedMethods = ['card', 'binance_pay', 'google_apple_pay', 'upi'];
       
       if (redirectBasedMethods.includes(paymentMethod)) {
         if (invoiceData.invoiceUrl) {
-          console.log('🔄 Redirecting to Unipayment checkout:', invoiceData.invoiceUrl);
-          // Redirect immediately to Unipayment's hosted checkout page
-          window.location.href = invoiceData.invoiceUrl;
-          return; // Don't proceed to step 3
+          console.log('🔄 Opening Unipayment checkout in new tab:', invoiceData.invoiceUrl);
+          // Open Unipayment checkout page in new tab
+          window.open(invoiceData.invoiceUrl, '_blank');
+          // Proceed to step 3 to show redirect message
+          setStep(3);
+          return;
         } else {
           console.error('❌ [Unipayment] No invoiceUrl returned for redirect-based payment method:', paymentMethod);
           throw new Error('Payment redirect URL not received from Unipayment. Please try again.');
@@ -643,6 +646,34 @@ export function UnipaymentDialog({
                   ? `Pay ${cryptoAmount} ${currentSelectedCrypto.symbol}-${selectedNetwork}`
                   : `Pay ${amount} ${currentSelectedCrypto ? `${currentSelectedCrypto.symbol}-${selectedNetwork}` : 'USD'}`}
               </h3>
+              
+              {/* Redirect Message for Card/APM Payments */}
+              {['card', 'binance_pay', 'google_apple_pay', 'upi'].includes(paymentMethod) && (
+                <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-6 space-y-4 text-center">
+                  <div className="flex justify-center">
+                    <svg className="w-12 h-12 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold dark:text-white text-black mb-2">
+                      You have been redirected to a new tab
+                    </h4>
+                    <p className="text-sm text-gray-400 dark:text-white/75 text-black/75 mb-4">
+                      Please complete your payment in the new tab. Once payment is completed, you can check your transaction status here.
+                    </p>
+                    <Link
+                      href="/transactions"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white rounded-lg hover:opacity-90 transition text-sm font-medium"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      Click here to view transaction status
+                    </Link>
+                  </div>
+                </div>
+              )}
               
               {/* Payment Summary */}
               {paymentMethod === 'crypto' && invoiceData.cryptoAddress && (

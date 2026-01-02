@@ -35,19 +35,26 @@ export async function GET(req: NextRequest) {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
+      // Try to parse error response, but don't fail if it fails
+      let errorText = '';
+      try {
+        errorText = await response.text();
+      } catch (e) {
+        errorText = 'Unknown error';
+      }
       console.error('❌ [Unread Count API] Backend error:', {
         status: response.status,
         error: errorText,
       });
       
+      // Return success with 0 count instead of error to prevent UI issues
       return NextResponse.json(
         { 
-          success: false, 
-          message: `Backend error: ${response.status}`,
-          error: errorText 
+          success: true,
+          unreadCount: 0,
+          message: 'Backend error, returning 0',
         },
-        { status: response.status }
+        { status: 200 }
       );
     }
 
