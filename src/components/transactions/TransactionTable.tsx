@@ -14,6 +14,7 @@ interface Tx {
   type: string;
   status?: string;
   account_id?: string;
+  inrAmount?: string | number;
 }
 
 interface Props {
@@ -202,7 +203,13 @@ export const TransactionsTable: React.FC<Props> = ({
                 <td className="px-2 py-[15px]">
                   {(() => {
                     const val = Number(tx.profit ?? tx.amount ?? 0);
-                    return `$ ${Math.abs(val).toFixed(2)}`;
+                    const usdDisplay = `$ ${Math.abs(val).toFixed(2)}`;
+                    // For UPI payments, show USD and INR amounts
+                    if (tx.comment === 'UPI' && tx.inrAmount) {
+                      const inrVal = Number(tx.inrAmount);
+                      return `${usdDisplay} (₹${inrVal.toLocaleString('en-IN')} INR)`;
+                    }
+                    return usdDisplay;
                   })()}
                 </td>
                 <td className="px-2 py-[15px]">{renderPaymentMethod(tx.comment)}</td>
@@ -263,7 +270,15 @@ export const TransactionsTable: React.FC<Props> = ({
               </div>
               <div className="text-right">
                 <p className="font-semibold text-lg">
-                  ${Math.abs(val).toFixed(2)}
+                  {(() => {
+                    const usdDisplay = `$${Math.abs(val).toFixed(2)}`;
+                    // For UPI payments, show USD and INR amounts
+                    if (tx.comment === 'UPI' && tx.inrAmount) {
+                      const inrVal = Number(tx.inrAmount);
+                      return `${usdDisplay} (₹${inrVal.toLocaleString('en-IN')} INR)`;
+                    }
+                    return usdDisplay;
+                  })()}
                 </p>
                 <p className="flex items-center gap-1 text-green-400 text-sm">
                   {getArrowIcon(tx.type)} {tx.type}

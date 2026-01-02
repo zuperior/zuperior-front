@@ -79,6 +79,7 @@ export async function createInvoice({
   cryptoSymbol,
   successUrl,
   cancelUrl,
+  inrAmount,
 }: {
   amount: string;
   currency?: string;
@@ -89,6 +90,7 @@ export async function createInvoice({
   cryptoSymbol?: string;
   successUrl?: string;
   cancelUrl?: string;
+  inrAmount?: string;
 }) {
   try {
     console.log('📤 [Unipayment] Creating invoice via backend:', {
@@ -126,6 +128,7 @@ export async function createInvoice({
         accountType,
         successUrl,
         cancelUrl,
+        inrAmount,
       }),
     });
 

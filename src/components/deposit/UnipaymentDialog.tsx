@@ -76,7 +76,7 @@ const mapMT5AccountToTpAccount = (mt5Account: MT5Account): TpAccountSnapshot => 
   };
 };
 
-type PaymentMethod = 'crypto' | 'card' | 'binance_pay' | 'google_apple_pay' | 'upi';
+type PaymentMethod = 'crypto' | 'card' | 'google_apple_pay' | 'upi';
 
 interface InvoiceData {
   invoiceId: string;
@@ -123,6 +123,10 @@ export function UnipaymentDialog({
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [cryptoAmount, setCryptoAmount] = useState<string>("");
   const [isLoadingRate, setIsLoadingRate] = useState(false);
+  // For UPI: INR amount and USD conversion
+  const [inrAmount, setInrAmount] = useState<string>("");
+  const [usdAmountFromInr, setUsdAmountFromInr] = useState<string>("");
+  const USD_INR_RATE = 83; // Default USD/INR exchange rate (can be made dynamic later)
   
   // Update network when currentSelectedCrypto changes
   useEffect(() => {
@@ -137,8 +141,28 @@ export function UnipaymentDialog({
       setCurrentSelectedCrypto(selectedCrypto || null);
       setExchangeRate(null);
       setCryptoAmount("");
+      setInrAmount("");
+      setUsdAmountFromInr("");
     }
   }, [open, selectedCrypto]);
+
+  // Convert INR to USD for UPI payments
+  useEffect(() => {
+    if (paymentMethod === 'upi' && inrAmount) {
+      const inrValue = parseFloat(inrAmount);
+      if (!isNaN(inrValue) && inrValue > 0) {
+        const usdValue = inrValue / USD_INR_RATE;
+        setUsdAmountFromInr(usdValue.toFixed(2));
+        setAmount(usdValue.toFixed(2)); // Set USD amount for processing
+      } else {
+        setUsdAmountFromInr("");
+        setAmount("");
+      }
+    } else if (paymentMethod !== 'upi') {
+      setInrAmount("");
+      setUsdAmountFromInr("");
+    }
+  }, [inrAmount, paymentMethod]);
   
   // Fetch exchange rate and convert USD to crypto when amount or crypto changes
   useEffect(() => {
@@ -283,7 +307,8 @@ export function UnipaymentDialog({
     }
   }, [step, invoiceData, paymentStatus, checkPaymentStatus]);
 
-  // Countdown timer - 1 hour from invoice creation
+  // Countdown timer - varies by payment method
+  // UPI: 5 minutes, Others: 1 hour (or from invoiceData.expiresAt)
   useEffect(() => {
     if (step === 3 && invoiceData) {
       let intervalId: NodeJS.Timeout;
@@ -296,8 +321,11 @@ export function UnipaymentDialog({
           const remaining = Math.max(0, Math.floor((expireAt - now) / 1000));
           return remaining;
         } else {
-          // Fallback: 1 hour from now if no expiration time
-          return 3600;
+          // Fallback based on payment method
+          if (paymentMethod === 'upi') {
+            return 5 * 60; // 5 minutes for UPI
+          }
+          return 3600; // 1 hour for others
         }
       };
 
@@ -340,6 +368,19 @@ export function UnipaymentDialog({
       return;
     }
 
+    // Validate minimum deposit for UPI (2000 INR / ~25 USD as per gateway)
+    if (paymentMethod === 'upi') {
+      const inrValue = parseFloat(inrAmount);
+      if (isNaN(inrValue) || inrValue < 2000) {
+        setError("Minimum deposit amount for UPI is ₹2,000 INR");
+        return;
+      }
+      if (inrValue > 100000) {
+        setError("Maximum deposit amount for UPI is ₹1,00,000 INR");
+        return;
+      }
+    }
+
     if (!selectedAccount) {
       setError("Please select an account");
       return;
@@ -365,6 +406,7 @@ export function UnipaymentDialog({
       const cryptoSymbol = paymentMethod === 'crypto' && currentSelectedCrypto ? currentSelectedCrypto.symbol : undefined;
       const network = paymentMethod === 'crypto' ? selectedNetwork : undefined;
 
+      // For UPI, pass INR amount in metadata
       const result = await unipaymentService.createInvoice({
         amount,
         currency: 'USD',
@@ -375,6 +417,7 @@ export function UnipaymentDialog({
         cryptoSymbol, // Pass crypto symbol to backend
         successUrl,
         cancelUrl,
+        inrAmount: paymentMethod === 'upi' ? inrAmount : undefined, // Pass INR amount for UPI
       });
 
       if (!result.success || !result.data) {
@@ -410,22 +453,30 @@ export function UnipaymentDialog({
       });
 
       // Calculate expiration time - use expirationTime from API, validate it's in the future
+      // For UPI: Use 5 minutes expiration time (as per gateway requirements)
+      // For other methods: Use expirationTime from API or 1 hour fallback
       let expiresAtTime: string;
       const now = Date.now();
       
-      // Use expirationTime first (this is the correct field from Unipayment API)
-      if (invoiceData.expirationTime) {
-        const expirationDate = new Date(invoiceData.expirationTime);
-        // Validate that expiration time is in the future, if not use 30 minutes from now
-        if (expirationDate.getTime() > now) {
-          expiresAtTime = expirationDate.toISOString();
+      if (paymentMethod === 'upi') {
+        // UPI uses 5-minute expiration time
+        expiresAtTime = new Date(now + 5 * 60 * 1000).toISOString(); // 5 minutes
+        console.log('⏰ [Unipayment] UPI payment - using 5-minute expiration time');
+      } else {
+        // Use expirationTime first (this is the correct field from Unipayment API)
+        if (invoiceData.expirationTime) {
+          const expirationDate = new Date(invoiceData.expirationTime);
+          // Validate that expiration time is in the future, if not use 1 hour from now
+          if (expirationDate.getTime() > now) {
+            expiresAtTime = expirationDate.toISOString();
+          } else {
+            console.warn('⚠️ [Unipayment] Expiration time from API is in the past, using 1 hour from now');
+            expiresAtTime = new Date(now + 60 * 60 * 1000).toISOString();
+          }
         } else {
-          console.warn('⚠️ [Unipayment] Expiration time from API is in the past, using 1 hour from now');
+          // Fallback: 1 hour from now if no expiration time from API
           expiresAtTime = new Date(now + 60 * 60 * 1000).toISOString();
         }
-      } else {
-        // Fallback: 1 hour from now if no expiration time from API
-        expiresAtTime = new Date(now + 60 * 60 * 1000).toISOString();
       }
 
       console.log('⏰ [Unipayment] Setting expiration time:', {
@@ -456,9 +507,9 @@ export function UnipaymentDialog({
         setCryptoAmount(invoicePayAmount);
       }
 
-      // For redirect-based payments (card, binance_pay, google_apple_pay, upi), open in new tab
+      // For redirect-based payments (card, google_apple_pay, upi), open in new tab
       // Only crypto payments with host_to_host_mode=true show payment details in the dialog
-      const redirectBasedMethods = ['card', 'binance_pay', 'google_apple_pay', 'upi'];
+      const redirectBasedMethods = ['card', 'google_apple_pay', 'upi'];
       
       if (redirectBasedMethods.includes(paymentMethod)) {
         if (invoiceData.invoiceUrl) {
@@ -543,7 +594,6 @@ export function UnipaymentDialog({
     const names: Record<PaymentMethod, string> = {
       crypto: 'Crypto',
       card: 'Credit/Debit Cards',
-      binance_pay: 'Binance Pay',
       google_apple_pay: 'Google/Apple Pay',
       upi: 'UPI',
     };
@@ -599,8 +649,8 @@ export function UnipaymentDialog({
 
           {step === 1 && (
             <UnipaymentStep1Form
-              amount={amount}
-              setAmount={setAmount}
+              amount={paymentMethod === 'upi' ? inrAmount : amount}
+              setAmount={paymentMethod === 'upi' ? setInrAmount : setAmount}
               selectedNetwork={selectedNetwork}
               setSelectedNetwork={setSelectedNetwork}
               paymentMethod={paymentMethod}
@@ -615,6 +665,7 @@ export function UnipaymentDialog({
               selectedAccount={selectedAccount}
               setSelectedAccount={setSelectedAccount}
               lifetimeDeposit={lifetimeDeposit}
+              usdAmountFromInr={usdAmountFromInr}
             />
           )}
 
@@ -648,7 +699,7 @@ export function UnipaymentDialog({
               </h3>
               
               {/* Redirect Message for Card/APM Payments */}
-              {['card', 'binance_pay', 'google_apple_pay', 'upi'].includes(paymentMethod) && (
+              {['card', 'google_apple_pay', 'upi'].includes(paymentMethod) && (
                 <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-6 space-y-4 text-center">
                   <div className="flex justify-center">
                     <svg className="w-12 h-12 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -837,7 +888,7 @@ export function UnipaymentDialog({
 
               {/* This section should rarely be reached for card/APM payments as they redirect immediately */}
               {/* But kept as fallback in case redirect fails */}
-              {(paymentMethod === 'card' || paymentMethod === 'binance_pay' || paymentMethod === 'google_apple_pay' || paymentMethod === 'upi') && invoiceData.invoiceUrl && (
+              {(paymentMethod === 'card' || paymentMethod === 'google_apple_pay' || paymentMethod === 'upi') && invoiceData.invoiceUrl && (
                 <div className="space-y-4">
                   <div className="text-center">
                     <p className="text-sm text-gray-400 mb-4">
@@ -936,6 +987,7 @@ function UnipaymentStep1Form({
   selectedAccount,
   setSelectedAccount,
   lifetimeDeposit,
+  usdAmountFromInr,
 }: {
   amount: string;
   setAmount: (value: string) => void;
@@ -953,6 +1005,7 @@ function UnipaymentStep1Form({
   selectedAccount: string;
   setSelectedAccount: (account: string) => void;
   lifetimeDeposit: number;
+  usdAmountFromInr?: string;
 }) {
   // Update network when crypto changes
   useEffect(() => {
@@ -993,10 +1046,34 @@ function UnipaymentStep1Form({
       }
     }
     const amountNum = parseFloat(amount);
-    if (isNaN(amountNum) || amountNum <= 0 || amountNum < 1) {
-      toast.error("Please enter a valid amount (minimum $1)");
+    if (isNaN(amountNum) || amountNum <= 0) {
+      toast.error("Please enter a valid amount");
       return;
     }
+    
+    // Validate minimum and maximum limits
+    if (paymentMethod === 'upi') {
+      // UPI limits: ₹2,000 - ₹1,00,000 INR
+      if (amountNum < 2000) {
+        toast.error("Minimum deposit amount for UPI is ₹2,000 INR");
+        return;
+      }
+      if (amountNum > 100000) {
+        toast.error("Maximum deposit amount for UPI is ₹1,00,000 INR");
+        return;
+      }
+    } else {
+      // Other payment methods: $1 - $5,000 USD
+      if (amountNum < 1) {
+        toast.error("Minimum deposit amount is $1 USD");
+        return;
+      }
+      if (amountNum > 5000) {
+        toast.error("Maximum deposit amount is $5,000 USD. Please enter $5,000 or less.");
+        return;
+      }
+    }
+    
     nextStep();
   };
 
@@ -1008,7 +1085,12 @@ function UnipaymentStep1Form({
   return (
     <div className="w-full px-6">
       <h2 className="text-2xl text-center font-bold dark:text-white/75 text-black">
-        {paymentMethod === 'crypto' && selectedCrypto && cryptoAmount && cryptoAmount !== "" ? (
+        {paymentMethod === 'upi' && amount ? (
+          <>
+            Pay ₹{parseFloat(amount).toLocaleString('en-IN')} INR
+            {usdAmountFromInr && <span className="text-sm text-gray-400 ml-2">(~${usdAmountFromInr} USD)</span>}
+          </>
+        ) : paymentMethod === 'crypto' && selectedCrypto && cryptoAmount && cryptoAmount !== "" ? (
           <>
             Pay {formatCryptoAmount(cryptoAmount, selectedCrypto.symbol)} {selectedCrypto.symbol}
             {amount && <span className="text-sm text-gray-400 ml-2">({amount} USD)</span>}
@@ -1198,19 +1280,67 @@ function UnipaymentStep1Form({
               <Input
                 value={amount}
                 onChange={(e) => {
-                  if (!/^\d*\.?\d*$/.test(e.target.value)) return;
-                  setAmount(e.target.value);
+                  if (paymentMethod === 'upi') {
+                    // For INR, only allow integers (no decimals)
+                    if (!/^\d*$/.test(e.target.value)) return;
+                  } else {
+                    if (!/^\d*\.?\d*$/.test(e.target.value)) return;
+                  }
+                  const value = e.target.value;
+                  setAmount(value);
+                  
+                  // Real-time validation
+                  toast.dismiss(); // Dismiss previous toasts
+                  const amountNum = parseFloat(value);
+                  if (!isNaN(amountNum) && amountNum > 0) {
+                    if (paymentMethod === 'upi') {
+                      if (amountNum > 100000) {
+                        toast.error("Maximum deposit amount for UPI is ₹1,00,000 INR");
+                      }
+                    } else {
+                      if (amountNum > 5000) {
+                        toast.error("Maximum deposit amount is $5,000 USD. Please enter $5,000 or less.");
+                      }
+                    }
+                  }
                 }}
-                placeholder="Enter amount"
+                placeholder={paymentMethod === 'upi' ? "Enter amount in INR" : "Enter amount"}
                 className="dark:text-white/75 text-black pr-12 border-[#362e36] p-5 focus-visible:ring-blue-600 w-full"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 dark:text-white/75 text-black text-sm">
-                USD
+                {paymentMethod === 'upi' ? 'INR' : 'USD'}
               </span>
             </div>
-            <p className="text-xs mt-2 text-[#945393] font-medium">
-              $1 - $5000.00
-            </p>
+            {paymentMethod === 'upi' ? (
+              <>
+                <p 
+                  className="text-xs mt-2 text-[#945393] font-medium cursor-pointer hover:text-[#b366b3] transition-colors"
+                  onClick={() => {
+                    setAmount("100000");
+                    toast.dismiss();
+                  }}
+                  title="Click to set maximum amount (₹1,00,000)"
+                >
+                  ₹2,000 - ₹1,00,000 INR
+                </p>
+                {usdAmountFromInr && parseFloat(amount) > 0 && (
+                  <p className="text-xs mt-1 text-gray-400">
+                    ≈ ${usdAmountFromInr} USD
+                  </p>
+                )}
+              </>
+            ) : (
+              <p 
+                className="text-xs mt-2 text-[#945393] font-medium cursor-pointer hover:text-[#b366b3] transition-colors"
+                onClick={() => {
+                  setAmount("5000");
+                  toast.dismiss();
+                }}
+                title="Click to set maximum amount ($5,000)"
+              >
+                $1 - $5000.00
+              </p>
+            )}
           </div>
           <Button
             className="flex-1 cursor-pointer bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:bg-[#9d6ad9] w-full mt-3"

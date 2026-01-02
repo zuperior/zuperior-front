@@ -35,7 +35,6 @@ export default function DepositPage() {
   const [wireAvailable, setWireAvailable] = useState(false);
   const [unipaymentCryptoOpen, setUnipaymentCryptoOpen] = useState(false);
   const [unipaymentCardOpen, setUnipaymentCardOpen] = useState(false);
-  const [unipaymentBinanceOpen, setUnipaymentBinanceOpen] = useState(false);
   const [unipaymentGoogleAppleOpen, setUnipaymentGoogleAppleOpen] = useState(false);
   const [unipaymentUpiOpen, setUnipaymentUpiOpen] = useState(false);
   const dispatch = useAppDispatch();
@@ -206,7 +205,6 @@ export default function DepositPage() {
     items.push(
       { type: 'unipayment', method: 'crypto', data: { id: 'UNIPAYMENT_CRYPTO', name: 'Crypto', icon: '/crypto.png' } },
       { type: 'unipayment', method: 'card', data: { id: 'UNIPAYMENT_CARD', name: 'Credit/Debit Cards', icon: '/pm_card.png' } },
-      { type: 'unipayment', method: 'binance_pay', data: { id: 'UNIPAYMENT_BINANCE', name: 'Binance Pay', icon: '/pm_binancepay.png' } },
       { type: 'unipayment', method: 'google_apple_pay', data: { id: 'UNIPAYMENT_GOOGLE_APPLE', name: 'Google/Apple Pay', icon: '/pm_googleapple.png' } },
       { type: 'unipayment', method: 'upi', data: { id: 'UNIPAYMENT_UPI', name: 'UPI', icon: '/pm_upi.png' } }
     );
@@ -276,7 +274,6 @@ export default function DepositPage() {
               const handlers: Record<string, () => void> = {
                 'crypto': () => setUnipaymentCryptoOpen(true),
                 'card': () => setUnipaymentCardOpen(true),
-                'binance_pay': () => setUnipaymentBinanceOpen(true),
                 'google_apple_pay': () => setUnipaymentGoogleAppleOpen(true),
                 'upi': () => setUnipaymentUpiOpen(true),
               };
@@ -326,12 +323,6 @@ export default function DepositPage() {
           lifetimeDeposit={lifetimeDeposit}
         />
         <UnipaymentDialog
-          open={unipaymentBinanceOpen}
-          onOpenChange={setUnipaymentBinanceOpen}
-          paymentMethod="binance_pay"
-          lifetimeDeposit={lifetimeDeposit}
-        />
-        <UnipaymentDialog
           open={unipaymentGoogleAppleOpen}
           onOpenChange={setUnipaymentGoogleAppleOpen}
           paymentMethod="google_apple_pay"
@@ -365,14 +356,14 @@ function PaymentMethodCard({
     >
       <div className="flex flex-col items-center mt-2 mb-4 text-center">
         <Image
-          className="h-16 w-16 md:h-20 md:w-20"
+          className="h-20 w-20 md:h-24 md:w-24 object-contain"
           src={icon}
           alt={name}
-          width={80}
-          height={80}
+          width={126}
+          height={126}
           quality={100}
           unoptimized
-          style={{ imageRendering: 'crisp-edges' }}
+          style={{ imageRendering: 'auto' }}
         />
         <h3 className="mt-4 text-[18px] font-bold text-black dark:text-white">
           {name}

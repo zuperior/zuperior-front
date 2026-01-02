@@ -169,16 +169,32 @@ export function Step2Confirmation({
               </>
             ) : (
               <>
-                {paymentMethod && (
-                  <Image
-                    src={paymentImages[paymentMethod] || fallbackImg}
-                    alt="Payment Method"
-                    className="h-6 w-6 mr-2"
-                    width={24}
-                    height={24}
-                  />
-                )}
-                <p className="dark:text-white/75 text-black">{paymentMethod}</p>
+                {paymentMethod && (() => {
+                  // Map payment method names to their icon paths
+                  const getPaymentMethodIcon = (method: string): string => {
+                    const methodLower = method.toLowerCase();
+                    if (methodLower.includes('upi')) return '/pm_upi.png';
+                    if (methodLower.includes('card') || methodLower.includes('credit') || methodLower.includes('debit')) return '/pm_card.png';
+                    if (methodLower.includes('google') || methodLower.includes('apple') || methodLower.includes('tokenized')) return '/pm_googleapple.png';
+                    // Fallback to paymentImages if available, otherwise use fallback
+                    return paymentImages[paymentMethod] || fallbackImg;
+                  };
+                  
+                  const iconSrc = getPaymentMethodIcon(paymentMethod);
+                  
+                  return (
+                    <>
+                      <Image
+                        src={iconSrc}
+                        alt="Payment Method"
+                        className="h-6 w-6 mr-2"
+                        width={24}
+                        height={24}
+                      />
+                      <p className="dark:text-white/75 text-black">{paymentMethod}</p>
+                    </>
+                  );
+                })()}
               </>
             )}
           </div>
