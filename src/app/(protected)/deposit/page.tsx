@@ -156,13 +156,17 @@ export default function DepositPage() {
         setIsLoadingPaymentMethods(true);
         const r = await fetch('/api/deposit-payment-methods', { cache: 'no-store' });
         const j = await r.json();
+        console.log('[Deposit Page] Payment methods API response:', j);
         if (j.ok && Array.isArray(j.methods)) {
+          console.log(`[Deposit Page] Setting ${j.methods.length} enabled payment methods:`, 
+            j.methods.map((m: any) => m.method_key).join(', '));
           setEnabledPaymentMethods(j.methods);
         } else {
+          console.warn('[Deposit Page] Invalid API response format:', j);
           setEnabledPaymentMethods([]);
         }
       } catch (err) {
-        console.error('Failed to fetch payment methods:', err);
+        console.error('[Deposit Page] Failed to fetch payment methods:', err);
         setEnabledPaymentMethods([]);
       } finally {
         setIsLoadingPaymentMethods(false);
@@ -175,8 +179,13 @@ export default function DepositPage() {
         const token = localStorage.getItem('userToken');
         const r = await fetch('/api/manual-gateway?type=wire', { cache: 'no-store', headers: token ? { 'Authorization': `Bearer ${token}` } : undefined });
         const j = await r.json();
-        setWireAvailable(Boolean(j?.success));
-      } catch (_) { setWireAvailable(false); }
+        const isAvailable = Boolean(j?.success);
+        console.log('[Deposit Page] Wire gateway check:', { response: j, isAvailable });
+        setWireAvailable(isAvailable);
+      } catch (err) { 
+        console.error('[Deposit Page] Wire gateway check failed:', err);
+        setWireAvailable(false); 
+      }
     })();
   }, []);
 
@@ -224,8 +233,9 @@ export default function DepositPage() {
     const items: any[] = [];
     
     // Helper to check if a method is enabled
+    // Note: The API already returns only enabled methods, so we just check if the method_key exists
     const isMethodEnabled = (methodKey: string) => {
-      return enabledPaymentMethods.some(m => m.method_key === methodKey && m.is_enabled);
+      return enabledPaymentMethods.some(m => m.method_key === methodKey);
     };
 
     // Add Unipayment methods only if enabled
@@ -242,8 +252,17 @@ export default function DepositPage() {
       items.push({ type: 'unipayment', method: 'upi', data: { id: 'UNIPAYMENT_UPI', name: 'UPI', icon: '/pm_upi.png' } });
     }
     
-    // Add wire transfer if enabled and available
-    if (isMethodEnabled('wire_transfer') && wireAvailable) {
+    // Add wire transfer if enabled in deposit_payment_methods
+    // Note: We show it if enabled, even if manual gateway isn't configured yet
+    // The BankDepositDialog will handle the case where no gateway is available
+    const wireMethodEnabled = isMethodEnabled('wire_transfer');
+    console.log('[Deposit Page] Wire transfer check:', { 
+      wireMethodEnabled, 
+      wireAvailable, 
+      willShow: wireMethodEnabled, // Show if enabled, regardless of gateway availability
+      enabledMethods: enabledPaymentMethods.map(m => m.method_key)
+    });
+    if (wireMethodEnabled) {
       items.push({ type: 'wire', data: { id: 'WIRE', name: 'Wire Transfer', icon: '/bank.png' } });
     }
     
