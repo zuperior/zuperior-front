@@ -118,18 +118,6 @@ export default function DepositPage() {
         ],
       },
       {
-        id: "SOL",
-        name: "Solana",
-        symbol: "SOL",
-        icon: "/crypto_icon/solana.webp",
-        networks: [
-          {
-            blockchain: "SOL",
-            logoUrl: "/crypto_icon/solana.webp",
-          },
-        ],
-      },
-      {
         id: "USDC",
         name: "USD Coin",
         symbol: "USDC",

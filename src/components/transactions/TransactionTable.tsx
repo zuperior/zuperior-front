@@ -2,6 +2,7 @@ import React from "react";
 import TradingLoader from "./TradingLoader";
 import { formatDate, getStatusColor } from "@/utils/formDate";
 import { ArrowDown, ArrowUpRight, ArrowLeftRight } from "lucide-react";
+import Image from "next/image";
 
 interface Tx {
   depositID?: string;
@@ -29,6 +30,124 @@ const getArrowIcon = (type: string) => {
   } else {
     return <ArrowUpRight className="h-3 w-3 text-black bg-[#D97777] rounded-full p-0.5 rotate-[-10deg]" />;
   }
+};
+
+// Helper function to extract crypto symbol from payment method
+const extractCryptoSymbol = (paymentMethod: string | undefined | null): string | null => {
+  if (!paymentMethod) return null;
+  
+  // Match pattern like "crypto-BTC", "crypto-USDT-BEP20", "crypto-ETH", etc.
+  const newFormatMatch = paymentMethod.match(/^crypto-([A-Z]+)(?:-([A-Z0-9]+))?/i);
+  if (newFormatMatch) {
+    return newFormatMatch[1].toUpperCase(); // Return the crypto symbol (BTC, USDT, ETH, etc.)
+  }
+  
+  // Match pattern like "unipayment_crypto_btc (BTC)" - extract from parentheses
+  const parenMatch = paymentMethod.match(/\(([A-Z]+)\)/);
+  if (parenMatch) {
+    return parenMatch[1];
+  }
+  
+  // Match pattern like "unipayment_crypto_btc", "unipayment_crypto_eth", etc.
+  const underscoreMatch = paymentMethod.match(/unipayment_crypto_([a-z]+)/i);
+  if (underscoreMatch) {
+    const symbol = underscoreMatch[1].toUpperCase();
+    // Handle special cases: btc -> BTC, eth -> ETH, trc20/bep20/erc20 -> USDT
+    if (symbol === 'TRC20' || symbol === 'BEP20' || symbol === 'ERC20') {
+      return 'USDT';
+    }
+    return symbol;
+  }
+  
+  // Match Cregis format: cregis_usdt_trc20, cregis_usdt_bep20, etc.
+  const cregisMatch = paymentMethod.match(/^cregis_([a-z]+)_([a-z0-9]+)$/i);
+  if (cregisMatch) {
+    const currency = cregisMatch[1].toUpperCase(); // USDT
+    const network = cregisMatch[2].toUpperCase(); // TRC20, BEP20
+    return currency; // Return the currency symbol
+  }
+  
+  return null;
+};
+
+// Helper function to get crypto icon path
+const getCryptoIcon = (symbol: string, paymentMethod?: string): string => {
+  const upperSymbol = symbol.toUpperCase();
+  
+  // Special handling for USDT based on network in payment method
+  if (upperSymbol === 'USDT' && paymentMethod) {
+    const lowerMethod = paymentMethod.toLowerCase();
+    if (lowerMethod.includes('trc20')) {
+      return '/trc20.png';
+    } else if (lowerMethod.includes('bep20')) {
+      return '/bep20.png';
+    } else if (lowerMethod.includes('erc20')) {
+      return '/crypto_icon/USDT-ERC20.webp';
+    }
+  }
+  
+  const iconMap: Record<string, string> = {
+    'BTC': '/crypto_icon/btc.webp',
+    'ETH': '/crypto_icon/ethereum.webp',
+    'USDT': '/crypto_icon/USDT-ERC20.webp', // Default USDT icon
+    'BNB': '/crypto_icon/bnb.webp',
+    'USDC': '/crypto_icon/usdc.webp',
+    'EURC': '/crypto_icon/eurc.webp',
+  };
+  
+  return iconMap[upperSymbol] || '/crypto_icon/btc.webp'; // Fallback icon
+};
+
+// Helper function to render payment method with crypto logo if applicable
+const renderPaymentMethod = (comment: string | undefined | null) => {
+  if (!comment) return "-";
+  
+  // Handle Cregis format: cregis_usdt_trc20 -> USDT TRC20
+  const cregisMatch = comment.match(/^cregis_([a-z]+)_([a-z0-9]+)$/i);
+  if (cregisMatch) {
+    const currency = cregisMatch[1].toUpperCase(); // USDT
+    const network = cregisMatch[2].toUpperCase(); // TRC20, BEP20
+    const displayText = `${currency} ${network}`; // USDT TRC20, USDT BEP20
+    const cryptoSymbol = currency;
+    const iconPath = getCryptoIcon(cryptoSymbol, comment);
+    
+    return (
+      <div className="flex items-center gap-2">
+        <Image
+          src={iconPath}
+          alt={cryptoSymbol}
+          width={20}
+          height={20}
+          className="rounded-full"
+        />
+        <span>{displayText}</span>
+      </div>
+    );
+  }
+  
+  const cryptoSymbol = extractCryptoSymbol(comment);
+  
+  if (cryptoSymbol) {
+    const iconPath = getCryptoIcon(cryptoSymbol, comment);
+    // Always display as "crypto (SYMBOL)" format for clarity, all uppercase
+    const displayText = `CRYPTO (${cryptoSymbol})`;
+    
+    return (
+      <div className="flex items-center gap-2">
+        <Image
+          src={iconPath}
+          alt={cryptoSymbol}
+          width={20}
+          height={20}
+          className="rounded-full"
+        />
+        <span>{displayText}</span>
+      </div>
+    );
+  }
+  
+  // If no crypto symbol found, return as-is (for non-crypto payments)
+  return comment.toUpperCase();
 };
 
 export const TransactionsTable: React.FC<Props> = ({
@@ -86,7 +205,7 @@ export const TransactionsTable: React.FC<Props> = ({
                     return `$ ${Math.abs(val).toFixed(2)}`;
                   })()}
                 </td>
-                <td className="px-2 py-[15px]">{tx.comment || "-"}</td>
+                <td className="px-2 py-[15px]">{renderPaymentMethod(tx.comment)}</td>
                 <td className="px-2 py-[15px] whitespace-nowrap flex items-center gap-2">
                   {getArrowIcon(tx.type)} {tx.type}
                 </td>
@@ -132,9 +251,9 @@ export const TransactionsTable: React.FC<Props> = ({
               className="flex justify-between items-center border-b border-white/10 py-3 last:border-none"
             >
               <div>
-                <p className="font-medium">
-                  {tx.comment || "Binance to Zuperior"}
-                </p>
+                <div className="font-medium">
+                  {renderPaymentMethod(tx.comment)}
+                </div>
                 <p className="text-sm text-gray-400 dark:text-white/75">
                   Sr. No: {i + 1}
                 </p>

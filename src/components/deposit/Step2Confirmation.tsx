@@ -156,7 +156,7 @@ export function Step2Confirmation({
         <div className="flex justify-between items-center text-sm space-y-2">
           <p className="dark:text-white/75 text-black">Payment Method</p>
           <div className="flex items-center">
-            {!paymentMethod && selectedCrypto ? (
+            {selectedCrypto ? (
               <>
                 <Image
                   src={selectedCrypto.icon}
@@ -165,7 +165,7 @@ export function Step2Confirmation({
                   width={24}
                   height={24}
                 />
-                <p className="dark:text-white/75 text-black">{selectedCrypto.name}</p>
+                <p className="dark:text-white/75 text-black">{paymentMethod || `crypto-${selectedCrypto.symbol.toUpperCase()}${selectedNetwork ? `-${selectedNetwork.toUpperCase()}` : ''}`}</p>
               </>
             ) : (
               <>

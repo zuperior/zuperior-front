@@ -122,6 +122,8 @@ export async function createInvoice({
         paymentMethod,
         network,
         cryptoSymbol,
+        mt5AccountId,
+        accountType,
         successUrl,
         cancelUrl,
       }),
@@ -153,8 +155,8 @@ export async function createInvoice({
 }
 
 /**
- * Get exchange rate (via backend)
- * Uses Get Quote API for accurate real-time rates
+ * Get exchange rate and converted amount (via backend)
+ * Uses Get Quote API for accurate real-time conversion
  */
 export async function getExchangeRate(fromCurrency: string = 'USD', toCurrency: string = 'BTC', amount: number = 1) {
   try {
@@ -181,20 +183,34 @@ export async function getExchangeRate(fromCurrency: string = 'USD', toCurrency: 
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to get exchange rate');
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.error || 'Failed to get exchange rate';
+      
+      // Handle minimum amount error gracefully (don't show error if amount is too low)
+      if (errorMessage.includes('minimum amount') || errorMessage.includes('below the minimum')) {
+        console.log('⚠️ [Unipayment] Amount below minimum, will retry when amount is sufficient');
+        return {
+          success: false,
+          error: errorMessage,
+          isMinimumAmountError: true,
+        };
+      }
+      
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
 
-    if (!data.success || data.rate === undefined) {
+    if (!data.success || data.netAmount === undefined) {
       throw new Error(data.error || 'Failed to get exchange rate');
     }
 
-    console.log(`✅ [Unipayment] Exchange rate obtained: ${data.rate}`);
+    console.log(`✅ [Unipayment] Exchange rate obtained: rate=${data.rate}, netAmount=${data.netAmount}`);
     return {
       success: true,
       rate: data.rate,
+      netAmount: data.netAmount,
+      quoteId: data.quoteId,
     };
   } catch (error) {
     console.error('❌ [Unipayment] Error getting exchange rate:', error);

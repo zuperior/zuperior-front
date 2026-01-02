@@ -34,6 +34,18 @@ import Image from "next/image";
 import QRCode from "react-qr-code";
 import { CopyIcon } from "lucide-react";
 
+// Helper function to format crypto amounts: BTC/ETH show 5 decimals, others show 2 decimals
+const formatCryptoAmount = (amount: string | number, symbol?: string): string => {
+  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  if (isNaN(numAmount)) return '0';
+  
+  const upperSymbol = symbol?.toUpperCase();
+  if (upperSymbol === 'BTC' || upperSymbol === 'ETH') {
+    return numAmount.toFixed(5);
+  }
+  return numAmount.toFixed(2);
+};
+
 // Helper function to map MT5Account to TpAccountSnapshot
 const mapMT5AccountToTpAccount = (mt5Account: MT5Account): TpAccountSnapshot => {
   return {
@@ -102,7 +114,7 @@ export function UnipaymentDialog({
   const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [countdown, setCountdown] = useState(600); // 10 minutes default
+  const [countdown, setCountdown] = useState(1800); // 30 minutes default
   const [paymentStatus, setPaymentStatus] = useState<any>(null);
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<string>("");
@@ -134,7 +146,7 @@ export function UnipaymentDialog({
       if (currentSelectedCrypto.symbol.toUpperCase() === 'USDT') {
         const usdAmount = parseFloat(amount);
         setExchangeRate(1);
-        setCryptoAmount(usdAmount.toFixed(8));
+        setCryptoAmount(formatCryptoAmount(usdAmount, currentSelectedCrypto.symbol));
         setIsLoadingRate(false);
         return;
       }
@@ -143,18 +155,31 @@ export function UnipaymentDialog({
         setIsLoadingRate(true);
         try {
           const usdAmount = parseFloat(amount);
-          // Pass the amount to getQuote API for accurate rate based on the actual amount
+          
+          // Skip if amount is too low (less than $10)
+          if (usdAmount < 10) {
+            setExchangeRate(null);
+            setCryptoAmount("");
+            setIsLoadingRate(false);
+            return;
+          }
+          
+          // Use Get Quote API - returns netAmount directly from Unipayment
           const result = await unipaymentService.getExchangeRate('USD', currentSelectedCrypto.symbol, usdAmount);
-          if (result.success && result.rate) {
-            setExchangeRate(result.rate);
-            const convertedAmount = usdAmount / result.rate;
-            setCryptoAmount(convertedAmount.toFixed(8));
+          if (result.success && result.netAmount !== undefined) {
+            setExchangeRate(result.rate || 1);
+            // Use netAmount directly from the quote response and format it
+            setCryptoAmount(formatCryptoAmount(result.netAmount, currentSelectedCrypto.symbol));
           } else {
             setExchangeRate(null);
             setCryptoAmount("");
           }
         } catch (error) {
-          console.error('Error fetching exchange rate:', error);
+          // Don't log error if it's a minimum amount error (expected behavior)
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          if (!errorMessage.includes('minimum amount') && !errorMessage.includes('below the minimum')) {
+            console.error('Error fetching exchange rate:', error);
+          }
           setExchangeRate(null);
           setCryptoAmount("");
         } finally {
@@ -257,25 +282,43 @@ export function UnipaymentDialog({
     }
   }, [step, invoiceData, paymentStatus, checkPaymentStatus]);
 
-  // Countdown timer
+  // Countdown timer - 30 minutes from invoice creation
   useEffect(() => {
-    if (step === 3 && invoiceData?.expiresAt) {
-      const expireAt = new Date(invoiceData.expiresAt).getTime();
-      const now = Date.now();
-      const initialCountdown = Math.max(0, Math.floor((expireAt - now) / 1000));
+    if (step === 3 && invoiceData) {
+      let intervalId: NodeJS.Timeout;
+      
+      // Calculate initial countdown
+      const calculateCountdown = () => {
+        if (invoiceData?.expiresAt) {
+          const expireAt = new Date(invoiceData.expiresAt).getTime();
+          const now = Date.now();
+          const remaining = Math.max(0, Math.floor((expireAt - now) / 1000));
+          return remaining;
+        } else {
+          // Fallback: 30 minutes from now if no expiration time
+          return 1800;
+        }
+      };
+
+      // Set initial countdown
+      const initialCountdown = calculateCountdown();
       setCountdown(initialCountdown);
 
-      const interval = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            return 0;
-          }
-          return prev - 1;
-        });
+      // Start interval to update countdown every second
+      intervalId = setInterval(() => {
+        const remaining = calculateCountdown();
+        setCountdown(remaining);
+        
+        if (remaining <= 0) {
+          clearInterval(intervalId);
+        }
       }, 1000);
 
-      return () => clearInterval(interval);
+      return () => {
+        if (intervalId) {
+          clearInterval(intervalId);
+        }
+      };
     }
   }, [step, invoiceData]);
 
@@ -365,6 +408,34 @@ export function UnipaymentDialog({
         calculatedCryptoAmount: cryptoAmount,
       });
 
+      // Calculate expiration time - use expirationTime from API, validate it's in the future
+      let expiresAtTime: string;
+      const now = Date.now();
+      
+      // Use expirationTime first (this is the correct field from Unipayment API)
+      if (invoiceData.expirationTime) {
+        const expirationDate = new Date(invoiceData.expirationTime);
+        // Validate that expiration time is in the future, if not use 30 minutes from now
+        if (expirationDate.getTime() > now) {
+          expiresAtTime = expirationDate.toISOString();
+        } else {
+          console.warn('⚠️ [Unipayment] Expiration time from API is in the past, using 30 minutes from now');
+          expiresAtTime = new Date(now + 30 * 60 * 1000).toISOString();
+        }
+      } else {
+        // Fallback: 30 minutes from now if no expiration time from API
+        expiresAtTime = new Date(now + 30 * 60 * 1000).toISOString();
+      }
+
+      console.log('⏰ [Unipayment] Setting expiration time:', {
+        expiresAt: expiresAtTime,
+        originalExpiresAt: invoiceData.expiresAt,
+        expirationTime: invoiceData.expirationTime,
+        expiresAtTime,
+        now: new Date(now).toISOString(),
+        remainingSeconds: Math.floor((new Date(expiresAtTime).getTime() - now) / 1000),
+      });
+
       setInvoiceData({
         invoiceId: invoiceData.invoiceId,
         invoiceUrl: invoiceData.invoiceUrl,
@@ -372,7 +443,7 @@ export function UnipaymentDialog({
         paymentMethod: invoiceData.paymentMethod,
         qrCode: invoiceData.qrCode,
         cryptoAddress: invoiceData.cryptoAddress,
-        expiresAt: invoiceData.expiresAt,
+        expiresAt: expiresAtTime,
         payAmount: invoicePayAmount,
         payCurrency: invoicePayCurrency,
         priceAmount: invoiceData.priceAmount || amount,
@@ -460,6 +531,12 @@ export function UnipaymentDialog({
   };
 
   const getPaymentMethodName = () => {
+    // For crypto payments, format as crypto-BTC, crypto-USDT-BEP20, etc.
+    if (paymentMethod === 'crypto' && currentSelectedCrypto && selectedNetwork) {
+      const networkPart = selectedNetwork ? `-${selectedNetwork.toUpperCase()}` : '';
+      return `crypto-${currentSelectedCrypto.symbol.toUpperCase()}${networkPart}`;
+    }
+    
     const names: Record<PaymentMethod, string> = {
       crypto: 'Crypto',
       card: 'Credit/Debit Cards',
@@ -488,7 +565,7 @@ export function UnipaymentDialog({
         }}
       >
         <DialogContent
-          className="border-2 border-transparent p-6 text-white rounded-[18px] flex flex-col items-center w-full
+          className="border-2 border-transparent p-4 sm:p-6 text-white rounded-[18px] flex flex-col items-center w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto
             [background:linear-gradient(#fff,#fff)_padding-box,conic-gradient(from_var(--border-angle),#ddd,#f6e6fc,theme(colors.purple.400/48%))_border-box] dark:[background:linear-gradient(#070206,#030103)_padding-box,conic-gradient(from_var(--border-angle),#030103,#030103,theme(colors.purple.400/48%))_border-box] animate-border"
           disableOutsideClick={step === 3}
         >
@@ -561,7 +638,7 @@ export function UnipaymentDialog({
               {/* Header */}
               <h3 className="text-xl font-bold text-center dark:text-white text-black">
                 {paymentMethod === 'crypto' && invoiceData.payAmount && invoiceData.payCurrency
-                  ? `Pay ${invoiceData.payAmount} ${invoiceData.payCurrency}-${selectedNetwork}` 
+                  ? `Pay ${formatCryptoAmount(invoiceData.payAmount, invoiceData.payCurrency)} ${invoiceData.payCurrency}-${selectedNetwork}` 
                   : paymentMethod === 'crypto' && cryptoAmount && currentSelectedCrypto
                   ? `Pay ${cryptoAmount} ${currentSelectedCrypto.symbol}-${selectedNetwork}`
                   : `Pay ${amount} ${currentSelectedCrypto ? `${currentSelectedCrypto.symbol}-${selectedNetwork}` : 'USD'}`}
@@ -575,7 +652,7 @@ export function UnipaymentDialog({
                       <span className="text-sm text-gray-400">Amount to Send:</span>
                       <span className="text-sm font-semibold dark:text-white text-black">
                         {invoiceData.payAmount && invoiceData.payCurrency
-                          ? `${invoiceData.payAmount} ${invoiceData.payCurrency} (${invoiceData.priceAmount || amount} ${invoiceData.priceCurrency || 'USD'})`
+                          ? `${formatCryptoAmount(invoiceData.payAmount, invoiceData.payCurrency)} ${invoiceData.payCurrency} (${invoiceData.priceAmount || amount} ${invoiceData.priceCurrency || 'USD'})`
                           : cryptoAmount && currentSelectedCrypto 
                           ? `${cryptoAmount} ${currentSelectedCrypto.symbol} (${amount} USD)` 
                           : `${amount} ${currentSelectedCrypto ? currentSelectedCrypto.symbol : 'USD'}`}
@@ -707,7 +784,7 @@ export function UnipaymentDialog({
                     <div className="mt-6">
                       <h5 className="text-md font-semibold dark:text-white text-black mb-3">Instructions</h5>
                       <ol className="list-decimal list-inside space-y-2 text-sm text-gray-400">
-                        <li>Send exactly {invoiceData.payAmount && invoiceData.payCurrency ? `${invoiceData.payAmount} ${invoiceData.payCurrency}` : cryptoAmount && currentSelectedCrypto ? `${cryptoAmount} ${currentSelectedCrypto.symbol}` : `${amount} ${currentSelectedCrypto ? currentSelectedCrypto.symbol : 'USD'}`} to the address above</li>
+                        <li>Send exactly {invoiceData.payAmount && invoiceData.payCurrency ? `${formatCryptoAmount(invoiceData.payAmount, invoiceData.payCurrency)} ${invoiceData.payCurrency}` : cryptoAmount && currentSelectedCrypto ? `${cryptoAmount} ${currentSelectedCrypto.symbol}` : `${amount} ${currentSelectedCrypto ? currentSelectedCrypto.symbol : 'USD'}`} to the address above</li>
                         <li>Wait for network confirmation (usually takes 2-5 minutes)</li>
                         <li>Do not close this window until payment is confirmed</li>
                       </ol>
@@ -902,7 +979,7 @@ function UnipaymentStep1Form({
       <h2 className="text-2xl text-center font-bold dark:text-white/75 text-black">
         {paymentMethod === 'crypto' && selectedCrypto && cryptoAmount && cryptoAmount !== "" ? (
           <>
-            Pay {cryptoAmount} {selectedCrypto.symbol}
+            Pay {formatCryptoAmount(cryptoAmount, selectedCrypto.symbol)} {selectedCrypto.symbol}
             {amount && <span className="text-sm text-gray-400 ml-2">({amount} USD)</span>}
           </>
         ) : paymentMethod === 'crypto' && selectedCrypto ? (
