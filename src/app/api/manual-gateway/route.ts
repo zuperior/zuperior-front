@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
     const headers: Record<string, string> = {};
     if (token) headers['Authorization'] = token;
 
+    // Note: Backend filters by is_active=true, so only active gateways are returned
     const res = await fetch(`${API_URL}/manual-gateway?type=${encodeURIComponent(type)}`, {
       headers,
       cache: 'no-store',

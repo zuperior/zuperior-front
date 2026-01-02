@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState, useMemo } from "react";
 import Image from "next/image";
+import { CreditCard } from "lucide-react";
 import { TextAnimate } from "@/components/ui/text-animate";
 import { DepositDialog } from "@/components/deposit/DepositDialog";
 import { BankDepositDialog } from "@/components/deposit/BankDepositDialog";
@@ -40,6 +41,8 @@ export default function DepositPage() {
   const dispatch = useAppDispatch();
   const [lifetimeDeposit, setLifetimeDeposit] = useState<number>(0);
   const [isLoadingCrypto, setIsLoadingCrypto] = useState(true);
+  const [enabledPaymentMethods, setEnabledPaymentMethods] = useState<any[]>([]);
+  const [isLoadingPaymentMethods, setIsLoadingPaymentMethods] = useState(true);
 
   useEffect(() => {
     // Comprehensive list of Unipayment-supported cryptocurrencies
@@ -147,6 +150,25 @@ export default function DepositPage() {
   }, []);
 
   useEffect(() => {
+    // Fetch enabled payment methods from API
+    (async () => {
+      try {
+        setIsLoadingPaymentMethods(true);
+        const r = await fetch('/api/deposit-payment-methods', { cache: 'no-store' });
+        const j = await r.json();
+        if (j.ok && Array.isArray(j.methods)) {
+          setEnabledPaymentMethods(j.methods);
+        } else {
+          setEnabledPaymentMethods([]);
+        }
+      } catch (err) {
+        console.error('Failed to fetch payment methods:', err);
+        setEnabledPaymentMethods([]);
+      } finally {
+        setIsLoadingPaymentMethods(false);
+      }
+    })();
+
     // determine if wire gateway exists
     (async () => {
       try {
@@ -197,36 +219,49 @@ export default function DepositPage() {
     setDepositDialogOpen(true);
   }, []);
 
-  // Filter items - show Unipayment methods, Wire, and Cregis options
+  // Filter items - show only enabled payment methods
   const filteredItems = useMemo(() => {
     const items: any[] = [];
     
-    // Add Unipayment methods (single crypto option, then other payment methods)
-    items.push(
-      { type: 'unipayment', method: 'crypto', data: { id: 'UNIPAYMENT_CRYPTO', name: 'Crypto', icon: '/crypto.png' } },
-      { type: 'unipayment', method: 'card', data: { id: 'UNIPAYMENT_CARD', name: 'Credit/Debit Cards', icon: '/pm_card.png' } },
-      { type: 'unipayment', method: 'google_apple_pay', data: { id: 'UNIPAYMENT_GOOGLE_APPLE', name: 'Google/Apple Pay', icon: '/pm_googleapple.png' } },
-      { type: 'unipayment', method: 'upi', data: { id: 'UNIPAYMENT_UPI', name: 'UPI', icon: '/pm_upi.png' } }
-    );
+    // Helper to check if a method is enabled
+    const isMethodEnabled = (methodKey: string) => {
+      return enabledPaymentMethods.some(m => m.method_key === methodKey && m.is_enabled);
+    };
+
+    // Add Unipayment methods only if enabled
+    if (isMethodEnabled('unipayment_crypto')) {
+      items.push({ type: 'unipayment', method: 'crypto', data: { id: 'UNIPAYMENT_CRYPTO', name: 'Crypto', icon: '/crypto.png' } });
+    }
+    if (isMethodEnabled('unipayment_card')) {
+      items.push({ type: 'unipayment', method: 'card', data: { id: 'UNIPAYMENT_CARD', name: 'Credit/Debit Cards', icon: '/pm_card.png' } });
+    }
+    if (isMethodEnabled('unipayment_google_apple_pay')) {
+      items.push({ type: 'unipayment', method: 'google_apple_pay', data: { id: 'UNIPAYMENT_GOOGLE_APPLE', name: 'Google/Apple Pay', icon: '/pm_googleapple.png' } });
+    }
+    if (isMethodEnabled('unipayment_upi')) {
+      items.push({ type: 'unipayment', method: 'upi', data: { id: 'UNIPAYMENT_UPI', name: 'UPI', icon: '/pm_upi.png' } });
+    }
     
-    // Add wire transfer if available
-    if (wireAvailable) {
+    // Add wire transfer if enabled and available
+    if (isMethodEnabled('wire_transfer') && wireAvailable) {
       items.push({ type: 'wire', data: { id: 'WIRE', name: 'Wire Transfer', icon: '/bank.png' } });
     }
     
-    // Add Cregis crypto options (USDT-TRC20 and USDT-BEP20) as separate cards
+    // Add Cregis crypto options only if enabled
     cryptocurrencies.forEach((crypto) => {
-      // Only show USDT-TRC20 and USDT-BEP20 as separate Cregis cards
-      if (crypto.id === 'USDT-TRC20' || crypto.id === 'USDT-BEP20') {
+      if (crypto.id === 'USDT-TRC20' && isMethodEnabled('cregis_usdt_trc20')) {
+        items.push({ type: "crypto", data: crypto });
+      }
+      if (crypto.id === 'USDT-BEP20' && isMethodEnabled('cregis_usdt_bep20')) {
         items.push({ type: "crypto", data: crypto });
       }
     });
     
     return items;
-  }, [cryptocurrencies, wireAvailable]);
+  }, [cryptocurrencies, wireAvailable, enabledPaymentMethods]);
 
-  // Show loading state while fetching crypto data
-  if (isLoadingCrypto) {
+  // Show loading state while fetching crypto data and payment methods
+  if (isLoadingCrypto || isLoadingPaymentMethods) {
     return <CardLoader message="Loading deposit options..." />;
   }
 
@@ -257,8 +292,15 @@ export default function DepositPage() {
         </div>
 
         {/* Payment Cards - Unipayment, Wire, and Cregis */}
-        <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredItems.map((item) => {
+        {filteredItems.length === 0 ? (
+          <div className="mt-4 p-8 text-center bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
+            <CreditCard className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Payment Methods Available</h3>
+            <p className="text-gray-500 dark:text-gray-400">Please contact support if you need assistance with deposits.</p>
+          </div>
+        ) : (
+          <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filteredItems.map((item) => {
             if (item.type === 'wire') {
               return (
                 <MemoizedPaymentMethodCard
@@ -296,7 +338,8 @@ export default function DepositPage() {
               />
             );
           })}
-        </div>
+          </div>
+        )}
 
         {/* Dialogs - USDT TRC20 and BEP20 */}
         <DepositDialog
