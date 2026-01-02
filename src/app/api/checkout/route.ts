@@ -140,74 +140,101 @@ export async function POST(req: NextRequest) {
       hasPaymentInfo: !!cregisResult.data.payment_info,
     });
 
-    // Try to call backend to create crypto deposit record (optional for now)
-    // If backend fails, we'll still return the address so user can deposit
+    // STEP 2: Create deposit record in database (REQUIRED - must succeed before proceeding)
+    // This creates the Deposit and CregisDeposit records with 'pending' status
+    if (!account_number) {
+      console.error('❌ [CHECKOUT] Missing account_number - cannot create deposit record');
+      return NextResponse.json(
+        {
+          code: "10000",
+          msg: "Payment initiation failed",
+          error: "Missing account_number - cannot create deposit record"
+        },
+        { status: 400 }
+      );
+    }
+
+    const cookieStore = await cookies();
+    let token = cookieStore.get('token')?.value;
+
+    // Fallback: try 'userToken' or other common names if 'token' is missing
+    if (!token) {
+      token = cookieStore.get('userToken')?.value || cookieStore.get('auth_token')?.value;
+    }
+
+    // Fallback: try Authorization header
+    if (!token) {
+      const authHeader = req.headers.get('authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+        console.log('🔑 [CHECKOUT] Token found in Authorization header');
+      }
+    }
+
+    if (!token) {
+      console.error('❌ [CHECKOUT] No auth token found - cannot create deposit record');
+      return NextResponse.json(
+        {
+          code: "10000",
+          msg: "Payment initiation failed",
+          error: "Authentication required - please log in again"
+        },
+        { status: 401 }
+      );
+    }
+
+    console.log('📞 [CHECKOUT] Creating deposit record in database (STEP 2)...');
+    const backendEndpoint = `${BACKEND_API_URL}/deposit/cregis-crypto`;
+    console.log('🔗 [CHECKOUT] Target Endpoint:', backendEndpoint);
+
     try {
-      const cookieStore = await cookies();
-      const allCookies = cookieStore.getAll();
-      console.log('🍪 [CHECKOUT] Available cookies:', allCookies.map(c => c.name));
+      const backendResponse = await fetch(backendEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          mt5AccountId: account_number,
+          amount: order_amount,
+          currency: order_currency,
+          network: network || 'TRC20',
+          cregisOrderId: thirdPartyId, // order_id (for reference)
+          cregisId: cregisResult.data.cregis_id, // CRITICAL: This is what the callback uses to find the deposit
+          paymentUrl: cregisResult.data.checkout_url || cregisResult.data.paymentUrl,
+        }),
+      });
 
-      let token = cookieStore.get('token')?.value;
+      console.log('📡 [CHECKOUT] Backend Response Status:', backendResponse.status);
 
-      // Fallback: try 'userToken' or other common names if 'token' is missing
-      if (!token) {
-        token = cookieStore.get('userToken')?.value || cookieStore.get('auth_token')?.value;
+      if (!backendResponse.ok) {
+        const errorText = await backendResponse.text();
+        console.error('❌ [CHECKOUT] Backend call failed with status:', backendResponse.status);
+        console.error('❌ [CHECKOUT] Backend response body:', errorText);
+        return NextResponse.json(
+          {
+            code: "10000",
+            msg: "Failed to create deposit record",
+            error: "Database error: Could not save deposit record. Please try again."
+          },
+          { status: 500 }
+        );
       }
 
-      // Fallback: try Authorization header
-      if (!token) {
-        const authHeader = req.headers.get('authorization');
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-          token = authHeader.substring(7);
-          console.log('🔑 [CHECKOUT] Token found in Authorization header');
-        }
-      }
-
-      console.log('🔑 [CHECKOUT] Token found:', !!token ? 'Yes (length: ' + token.length + ')' : 'No');
-      console.log('🌐 [CHECKOUT] Backend URL:', BACKEND_API_URL);
-
-      if (token && account_number) {
-        console.log('📞 [CHECKOUT] Calling Backend Endpoint (V1 path -> V2 logic)...');
-        const backendEndpoint = `${BACKEND_API_URL}/deposit/cregis-crypto`;
-        console.log('🔗 [CHECKOUT] Target Endpoint:', backendEndpoint);
-
-        try {
-          const backendResponse = await fetch(backendEndpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              mt5AccountId: account_number,
-              amount: order_amount,
-              currency: order_currency,
-              network: network || 'TRC20',
-              cregisOrderId: thirdPartyId, // order_id (for reference)
-              cregisId: cregisResult.data.cregis_id, // CRITICAL: This is what the callback uses to find the deposit
-              paymentUrl: cregisResult.data.checkout_url || cregisResult.data.paymentUrl,
-            }),
-          });
-
-          console.log('📡 [CHECKOUT] Backend Response Status:', backendResponse.status);
-
-          if (backendResponse.ok) {
-            const backendData = await backendResponse.json();
-            console.log('✅ [CHECKOUT] Deposit record created in backend:', backendData);
-          } else {
-            const errorText = await backendResponse.text();
-            console.error('❌ [CHECKOUT] Backend call failed with status:', backendResponse.status);
-            console.error('❌ [CHECKOUT] Backend response body:', errorText);
-          }
-        } catch (fetchError) {
-          console.error('❌ [CHECKOUT] Fetch failed entirely:', fetchError);
-        }
-      } else {
-        console.warn('⚠️ [CHECKOUT] No auth token or account - skipping backend call');
-      }
-    } catch (backendError) {
-      console.warn('⚠️ [CHECKOUT] Backend error (continuing anyway):', backendError);
-      console.warn('💡 [CHECKOUT] User can still deposit - address will be shown');
+      const backendData = await backendResponse.json();
+      console.log('✅ [CHECKOUT] Deposit record created in database (pending status):', backendData);
+      console.log('✅ [CHECKOUT] Deposit ID:', backendData.data?.depositId);
+      console.log('✅ [CHECKOUT] Transaction ID:', backendData.data?.transactionId);
+    } catch (fetchError) {
+      console.error('❌ [CHECKOUT] Failed to create deposit record:', fetchError);
+      return NextResponse.json(
+        {
+          code: "10000",
+          msg: "Failed to create deposit record",
+          error: "Network error: Could not connect to database. Please try again."
+        },
+        { status: 500 }
+      );
     }
 
     // Return Cregis checkout data to frontend
