@@ -154,22 +154,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const cookieStore = await cookies();
-    let token = cookieStore.get('token')?.value;
+      const cookieStore = await cookies();
+      let token = cookieStore.get('token')?.value;
 
-    // Fallback: try 'userToken' or other common names if 'token' is missing
-    if (!token) {
-      token = cookieStore.get('userToken')?.value || cookieStore.get('auth_token')?.value;
-    }
-
-    // Fallback: try Authorization header
-    if (!token) {
-      const authHeader = req.headers.get('authorization');
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        token = authHeader.substring(7);
-        console.log('🔑 [CHECKOUT] Token found in Authorization header');
+      // Fallback: try 'userToken' or other common names if 'token' is missing
+      if (!token) {
+        token = cookieStore.get('userToken')?.value || cookieStore.get('auth_token')?.value;
       }
-    }
+
+      // Fallback: try Authorization header
+      if (!token) {
+        const authHeader = req.headers.get('authorization');
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          token = authHeader.substring(7);
+          console.log('🔑 [CHECKOUT] Token found in Authorization header');
+        }
+      }
 
     if (!token) {
       console.error('❌ [CHECKOUT] No auth token found - cannot create deposit record');
@@ -184,33 +184,33 @@ export async function POST(req: NextRequest) {
     }
 
     console.log('📞 [CHECKOUT] Creating deposit record in database (STEP 2)...');
-    const backendEndpoint = `${BACKEND_API_URL}/deposit/cregis-crypto`;
-    console.log('🔗 [CHECKOUT] Target Endpoint:', backendEndpoint);
+        const backendEndpoint = `${BACKEND_API_URL}/deposit/cregis-crypto`;
+        console.log('🔗 [CHECKOUT] Target Endpoint:', backendEndpoint);
 
-    try {
-      const backendResponse = await fetch(backendEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          mt5AccountId: account_number,
-          amount: order_amount,
-          currency: order_currency,
-          network: network || 'TRC20',
-          cregisOrderId: thirdPartyId, // order_id (for reference)
-          cregisId: cregisResult.data.cregis_id, // CRITICAL: This is what the callback uses to find the deposit
-          paymentUrl: cregisResult.data.checkout_url || cregisResult.data.paymentUrl,
-        }),
-      });
+        try {
+          const backendResponse = await fetch(backendEndpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              mt5AccountId: account_number,
+              amount: order_amount,
+              currency: order_currency,
+              network: network || 'TRC20',
+              cregisOrderId: thirdPartyId, // order_id (for reference)
+              cregisId: cregisResult.data.cregis_id, // CRITICAL: This is what the callback uses to find the deposit
+              paymentUrl: cregisResult.data.checkout_url || cregisResult.data.paymentUrl,
+            }),
+          });
 
-      console.log('📡 [CHECKOUT] Backend Response Status:', backendResponse.status);
+          console.log('📡 [CHECKOUT] Backend Response Status:', backendResponse.status);
 
       if (!backendResponse.ok) {
-        const errorText = await backendResponse.text();
-        console.error('❌ [CHECKOUT] Backend call failed with status:', backendResponse.status);
-        console.error('❌ [CHECKOUT] Backend response body:', errorText);
+            const errorText = await backendResponse.text();
+            console.error('❌ [CHECKOUT] Backend call failed with status:', backendResponse.status);
+            console.error('❌ [CHECKOUT] Backend response body:', errorText);
         return NextResponse.json(
           {
             code: "10000",
@@ -219,7 +219,7 @@ export async function POST(req: NextRequest) {
           },
           { status: 500 }
         );
-      }
+        }
 
       const backendData = await backendResponse.json();
       console.log('✅ [CHECKOUT] Deposit record created in database (pending status):', backendData);

@@ -179,7 +179,7 @@ export function UnipaymentDialog({
       const fetchRate = async () => {
         setIsLoadingRate(true);
         try {
-          const usdAmount = parseFloat(amount);
+            const usdAmount = parseFloat(amount);
           
           // Skip if amount is too low (less than $10)
           if (usdAmount < 10) {
@@ -203,7 +203,7 @@ export function UnipaymentDialog({
           // Don't log error if it's a minimum amount error (expected behavior)
           const errorMessage = error instanceof Error ? error.message : String(error);
           if (!errorMessage.includes('minimum amount') && !errorMessage.includes('below the minimum')) {
-            console.error('Error fetching exchange rate:', error);
+          console.error('Error fetching exchange rate:', error);
           }
           setExchangeRate(null);
           setCryptoAmount("");
@@ -316,8 +316,8 @@ export function UnipaymentDialog({
       // Calculate initial countdown
       const calculateCountdown = () => {
         if (invoiceData?.expiresAt) {
-          const expireAt = new Date(invoiceData.expiresAt).getTime();
-          const now = Date.now();
+      const expireAt = new Date(invoiceData.expiresAt).getTime();
+      const now = Date.now();
           const remaining = Math.max(0, Math.floor((expireAt - now) / 1000));
           return remaining;
         } else {
@@ -694,7 +694,7 @@ export function UnipaymentDialog({
                 {paymentMethod === 'crypto' && invoiceData.payAmount && invoiceData.payCurrency
                   ? `Pay ${formatCryptoAmount(invoiceData.payAmount, invoiceData.payCurrency)} ${invoiceData.payCurrency}-${selectedNetwork}` 
                   : paymentMethod === 'crypto' && cryptoAmount && currentSelectedCrypto
-                  ? `Pay ${cryptoAmount} ${currentSelectedCrypto.symbol}-${selectedNetwork}`
+                  ? `Pay ${cryptoAmount} ${currentSelectedCrypto.symbol}-${selectedNetwork}` 
                   : `Pay ${amount} ${currentSelectedCrypto ? `${currentSelectedCrypto.symbol}-${selectedNetwork}` : 'USD'}`}
               </h3>
               
@@ -1284,7 +1284,7 @@ function UnipaymentStep1Form({
                     // For INR, only allow integers (no decimals)
                     if (!/^\d*$/.test(e.target.value)) return;
                   } else {
-                    if (!/^\d*\.?\d*$/.test(e.target.value)) return;
+                  if (!/^\d*\.?\d*$/.test(e.target.value)) return;
                   }
                   const value = e.target.value;
                   setAmount(value);
@@ -1338,8 +1338,8 @@ function UnipaymentStep1Form({
                 }}
                 title="Click to set maximum amount ($5,000)"
               >
-                $1 - $5000.00
-              </p>
+              $1 - $5000.00
+            </p>
             )}
           </div>
           <Button

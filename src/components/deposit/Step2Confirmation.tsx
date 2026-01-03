@@ -184,14 +184,14 @@ export function Step2Confirmation({
                   
                   return (
                     <>
-                      <Image
+                  <Image
                         src={iconSrc}
-                        alt="Payment Method"
-                        className="h-6 w-6 mr-2"
-                        width={24}
-                        height={24}
-                      />
-                      <p className="dark:text-white/75 text-black">{paymentMethod}</p>
+                    alt="Payment Method"
+                    className="h-6 w-6 mr-2"
+                    width={24}
+                    height={24}
+                  />
+                <p className="dark:text-white/75 text-black">{paymentMethod}</p>
                     </>
                   );
                 })()}
