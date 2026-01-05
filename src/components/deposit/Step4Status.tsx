@@ -42,11 +42,11 @@ const statusConfig: StatusConfigType = {
     bgColor: "bg-red-500/10",
   },
   partial_paid: {
-    icon: <AlertTriangle className="h-8 w-8 text-yellow-500" />,
-    title: "Partial Payment",
-    description: "Only part of the payment was received",
-    color: "text-yellow-500",
-    bgColor: "bg-yellow-500/10",
+    icon: <Check className="h-8 w-8 text-green-500" />,
+    title: "Payment Successful",
+    description: "Your partial payment has been processed and credited to your account",
+    color: "text-green-500",
+    bgColor: "bg-green-500/10",
   },
   overpaid: {
     icon: <AlertTriangle className="h-8 w-8 text-purple-500" />,
@@ -101,6 +101,7 @@ export function Step4Status({
   const [error, setError] = useState<string | null>(null);
   const [depositCompleted, setDepositCompleted] = useState(false);
   const [receivedAmount, setReceivedAmount] = useState("");
+  const [orderAmount, setOrderAmount] = useState("");
   const [hasFetchedCheckoutInfo, setHasFetchedCheckoutInfo] = useState(false);
   const [isProcessingDeposit, setIsProcessingDeposit] = useState(false);
 
@@ -117,8 +118,12 @@ export function Step4Status({
         statusConfig[statusData.event_type] || statusConfig.pending;
       
       // Only show toast for non-paid statuses immediately
-      // For "paid", we'll show success after processing completes
-      if (statusData.event_type !== "paid" && statusData.event_type !== "complete") {
+      // For "paid" and "partial_paid", we'll show success after processing completes
+      const isPaidStatus = statusData.event_type === "paid" || 
+                          statusData.event_type === "partial_paid" ||
+                          statusData.event_type === "paid_partial" ||
+                          statusData.event_type === "complete";
+      if (!isPaidStatus) {
         toast[statusData.event_type === "expired" ? "error" : "info"](
           config.title,
           {
@@ -153,12 +158,17 @@ export function Step4Status({
         const data = await response.json();
         console.log('📥 [STEP4] Full checkout info response:', JSON.stringify(data, null, 2));
         
-        // Check if status is "paid" and trigger callback processing
+        // Check if status is "paid" or "paid_partial" and trigger callback processing
         const checkoutStatus = data?.data?.status || data?.status;
         console.log('📊 [STEP4] Checkout status:', checkoutStatus);
         
-        if (checkoutStatus === 'paid' || checkoutStatus === 'complete' || checkoutStatus === 'success') {
-          console.log('✅ [STEP4] Payment status is "paid" - processing deposit...');
+        const isPaidStatus = checkoutStatus === 'paid' || checkoutStatus === 'paid_partial' || 
+                            checkoutStatus === 'complete' || checkoutStatus === 'success' ||
+                            checkoutStatus === 'paid-partial';
+        
+        if (isPaidStatus) {
+          const isPartial = checkoutStatus === 'paid_partial' || checkoutStatus === 'paid-partial';
+          console.log(`✅ [STEP4] Payment status is "${checkoutStatus}" (${isPartial ? 'PARTIAL' : 'FULL'}) - processing deposit...`);
           
           // Set processing state BEFORE showing success
           setIsProcessingDeposit(true);
@@ -167,11 +177,25 @@ export function Step4Status({
           const receiveAmount = 
             data?.data?.payment_detail?.[0]?.receive_amount ||
             data?.data?.payment_detail?.[0]?.pay_amount ||
+            data?.data?.received_amount ||
             data?.data?.order_amount;
+          
+          const originalOrderAmount = data?.data?.order_amount || statusData.order_amount;
+          
+          // Store both amounts for display
+          if (receiveAmount) {
+            setReceivedAmount(receiveAmount);
+          }
+          if (originalOrderAmount) {
+            setOrderAmount(originalOrderAmount);
+          }
           
           // Manually trigger callback to process the payment
           try {
-            toast.loading("Processing deposit...", {
+            const loadingMessage = isPartial 
+              ? `Processing partial deposit (${receiveAmount} of ${orderAmount})...`
+              : "Processing deposit...";
+            toast.loading(loadingMessage, {
               description: "Crediting your MT5 account. Please wait...",
               duration: 10000,
             });
@@ -181,11 +205,12 @@ export function Step4Status({
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 cregis_id: statusData.cregis_id,
-                status: "paid",
+                status: checkoutStatus, // Use actual status (paid or paid_partial)
                 event_type: checkoutStatus,
-                order_amount: data?.data?.order_amount || statusData.order_amount,
+                order_amount: originalOrderAmount,
                 order_currency: data?.data?.order_currency || statusData.order_currency || "USDT",
-                received_amount: receiveAmount || data?.data?.order_amount,
+                received_amount: receiveAmount || originalOrderAmount,
+                pay_amount: receiveAmount || originalOrderAmount,
                 payment_detail: data?.data?.payment_detail || [],
               }),
             });
@@ -222,8 +247,16 @@ export function Step4Status({
                       verified = true;
                       setDepositCompleted(true);
                       toast.dismiss("processing-deposit");
+                      
+                      const isPartial = verifyData.data?.isPartialPayment || verifyData.data?.cregisStatus === 'paid_partial';
+                      const partialAmt = verifyData.data?.partialAmount || verifyData.data?.amount;
+                      const origAmt = orderAmount || statusData.order_amount;
+                      const successMessage = isPartial && partialAmt && origAmt
+                        ? `Your partial payment of ${partialAmt} ${verifyData.data?.currency || statusData.order_currency || 'USD'} (of ${origAmt} ${verifyData.data?.currency || statusData.order_currency || 'USD'} requested) has been processed and credited to your MT5 account.`
+                        : "Your payment has been processed and credited to your MT5 account.";
+                      
                       toast.success("Payment Successful", {
-                        description: "Your payment has been processed and credited to your MT5 account.",
+                        description: successMessage,
                         duration: 5000,
                       });
                       hasShownStatusToast.current = true;
@@ -250,8 +283,12 @@ export function Step4Status({
                 // Assume success if callback succeeded (backend might still be processing)
                 setDepositCompleted(true);
                 toast.dismiss("processing-deposit");
+                const origAmt = orderAmount || statusData.order_amount;
+                const successMessage = isPartial && receiveAmount && origAmt
+                  ? `Your partial payment of ${receiveAmount} ${statusData.order_currency || 'USD'} (of ${origAmt} ${statusData.order_currency || 'USD'} requested) has been processed. Please check your account balance.`
+                  : "Your payment has been processed. Please check your account balance.";
                 toast.success("Payment Successful", {
-                  description: "Your payment has been processed. Please check your account balance.",
+                  description: successMessage,
                   duration: 5000,
                 });
                 hasShownStatusToast.current = true;
@@ -279,7 +316,7 @@ export function Step4Status({
           }
         }
         
-        // Try multiple paths for receive_amount
+        // Try multiple paths for receive_amount (partial amount paid)
         const payAmount = 
           data?.data?.payment_detail?.[0]?.receive_amount ||
           data?.data?.payment_detail?.[0]?.pay_amount ||
@@ -289,7 +326,14 @@ export function Step4Status({
           data?.received_amount ||
           data?.data?.order_amount;
 
-        console.log('💰 [STEP4] Extracted receive_amount:', payAmount);
+        // Get original order amount
+        const originalOrderAmount = data?.data?.order_amount || statusData.order_amount;
+
+        console.log('💰 [STEP4] Extracted amounts:', {
+          receive_amount: payAmount,
+          order_amount: originalOrderAmount,
+          is_partial: payAmount && originalOrderAmount && parseFloat(payAmount) < parseFloat(originalOrderAmount),
+        });
 
         if (payAmount) {
           setReceivedAmount(payAmount);
@@ -367,23 +411,30 @@ export function Step4Status({
     }
   }, [accountNumber, receivedAmount, statusData.cregis_id, onClose]);
 
-  // Manually trigger callback processing when payment is detected as "paid"
+  // Manually trigger callback processing when payment is detected as "paid" or "partial_paid"
   useEffect(() => {
     const triggerCallback = async () => {
+      const isPaidStatus = 
+        statusData.event_type === "paid" || 
+        statusData.event_type === "partial_paid" ||
+        statusData.event_type === "paid_partial" ||
+        statusData.event_type === "complete" || 
+        statusData.event_type === "success" ||
+        statusData.event_type === "confirmed";
+      
       if (
-        (statusData.event_type === "paid" || 
-         statusData.event_type === "complete" || 
-         statusData.event_type === "success" ||
-         statusData.event_type === "confirmed") &&
+        isPaidStatus &&
         !depositCompleted &&
         statusData.cregis_id &&
         hasFetchedCheckoutInfo
       ) {
-        console.log('✅ [STEP4] Payment successful. Triggering callback processing...');
+        const isPartial = statusData.event_type === "partial_paid" || statusData.event_type === "paid_partial";
+        console.log(`✅ [STEP4] Payment successful (${isPartial ? 'PARTIAL' : 'FULL'}). Triggering callback processing...`);
         console.log('📊 [STEP4] Payment details:', {
           cregis_id: statusData.cregis_id,
           event_type: statusData.event_type,
           received_amount: receivedAmount,
+          order_amount: statusData.order_amount,
           account_number: accountNumber
         });
 
@@ -394,11 +445,12 @@ export function Step4Status({
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               cregis_id: statusData.cregis_id,
-              status: "paid",
+              status: statusData.event_type, // Use actual status (paid or paid_partial)
               event_type: statusData.event_type,
               order_amount: statusData.order_amount || receivedAmount,
               order_currency: statusData.order_currency || "USDT",
               received_amount: receivedAmount || statusData.order_amount,
+              pay_amount: receivedAmount || statusData.order_amount,
               payment_detail: statusData.payment_detail || [],
             }),
           });
@@ -500,7 +552,16 @@ Time: ${new Date(statusData.timestamp * 1000).toLocaleString()}`;
           <div>
             <p className="dark:text-white/75 text-black text-sm">Amount</p>
             <p className="text-white">
-              {receivedAmount} {statusData.order_currency}
+              {(() => {
+                const isPartial = statusData.event_type === 'partial_paid' || statusData.event_type === 'paid_partial';
+                const partialAmount = receivedAmount || statusData.paid_amount || statusData.order_amount;
+                const originalAmount = statusData.order_amount;
+                
+                if (isPartial && partialAmount && originalAmount && parseFloat(partialAmount) < parseFloat(originalAmount)) {
+                  return `${partialAmount} ${statusData.order_currency} (of ${originalAmount} ${statusData.order_currency} requested)`;
+                }
+                return `${receivedAmount || statusData.paid_amount || statusData.order_amount} ${statusData.order_currency}`;
+              })()}
             </p>
           </div>
           <div>
