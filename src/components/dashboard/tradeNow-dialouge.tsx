@@ -83,7 +83,7 @@ const TradeNowDialouge = ({
 
     // Get terminal URL from environment variable
     const terminalBaseUrl = process.env.NEXT_PUBLIC_TERMINAL_URL || 'https://trade.zuperior.com';
-    const terminalUrl = `${terminalBaseUrl}/login?token=${encodeURIComponent(token)}&clientId=${encodeURIComponent(clientId)}&autoLogin=true`;
+    const terminalUrl = `${terminalBaseUrl}/login?token=${encodeURIComponent(token)}&clientId=${encodeURIComponent(clientId)}&autoLogin=true&accountId=${encodeURIComponent(mtLogin)}`;
     window.open(terminalUrl, '_blank');
     
     // Close the dialog after opening terminal
