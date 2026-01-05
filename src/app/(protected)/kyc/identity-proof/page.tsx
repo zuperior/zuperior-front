@@ -238,17 +238,59 @@ const handleSubmit = async () => {
 
       // dispatch(setDocumentReference(documentVerificationResult.reference || ""));
 
-      if (documentVerificationResult.event !== "verification.accepted") {
-        setVerificationStatus("declined");
-        setDeclinedReason(documentVerificationResult?.declined_reason || null);
-        // to do: send kyc rejected email
-        return;
-      }
-
+      // Handle document verification response properly
+      // Only show declined if explicitly declined, otherwise show pending/loading
+      const docEvent = documentVerificationResult.event;
+      const docReference = documentVerificationResult.reference || "";
+      
+      console.log(`📊 Document Verification Event: ${docEvent}`);
+      
       // Extract data from KYC response for AML screening
       const extractedDob = documentVerificationResult?.additional_data?.document?.proof?.dob;
       const extractedFullName = documentVerificationResult?.additional_data?.document?.proof?.full_name;
       console.log("Dob and name", extractedDob, extractedFullName);
+      
+      if (docEvent === "verification.declined") {
+        // ❌ Document verification explicitly declined
+        setVerificationStatus("declined");
+        setDeclinedReason(documentVerificationResult?.declined_reason || null);
+        clearKycCache();
+        toast.error("Document verification was declined");
+        return;
+      } else if (docEvent === "verification.accepted") {
+        // ✅ Document verification accepted - continue with AML
+        console.log("✅ Document verification accepted - proceeding with AML screening");
+        // Store reference for tracking
+        if (docReference) {
+          setPendingReference(docReference);
+        }
+      } else if (docEvent === "request.pending" || docEvent === "request.received") {
+        // ⏳ Document verification still in progress
+        setVerificationStatus("pending");
+        setPendingReference(docReference);
+        toast.info("Document verification is in progress. This may take a few moments.");
+        console.log("⏳ Document Status: PENDING - Will be updated via webhook/polling");
+        
+        // If we have extracted data, we can proceed with AML while document verification completes
+        // Otherwise, wait for document verification to complete first
+        if (!extractedDob || !extractedFullName) {
+          toast.info("Waiting for document verification to complete before proceeding with background screening...");
+          return; // Exit early, polling will handle the update
+        }
+        // If we have the data, continue with AML screening below
+      } else {
+        // 🤷 Unknown event - default to pending (safe approach)
+        setVerificationStatus("pending");
+        setPendingReference(docReference);
+        toast.warning("Document verification status is being checked. Please wait...");
+        console.log(`⚠️ Document Unknown event: ${docEvent} - Defaulting to pending`);
+        
+        // If we have extracted data, we can proceed with AML
+        // Otherwise, wait
+        if (!extractedDob || !extractedFullName) {
+          return; // Exit early, polling will handle the update
+        }
+      }
 
       // Step 2: AML Screening
       toast("Performing background screening...", { duration: 400 });
