@@ -29,10 +29,50 @@ export async function GET(req: NextRequest) {
 
     console.log('[Unread Count API] Proxying to backend...');
 
-    const response = await fetch(`${BACKEND_API_URL}/notifications/unread-count`, {
-      headers,
-      cache: 'no-store',
-    });
+    // Add timeout to prevent hanging requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+    let response;
+    try {
+      response = await fetch(`${BACKEND_API_URL}/notifications/unread-count`, {
+        headers,
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      
+      // Handle connection errors gracefully
+      if (fetchError.name === 'AbortError' || fetchError.code === 'ECONNABORTED') {
+        console.error('❌ [Unread Count API] Request timeout');
+        return NextResponse.json(
+          { 
+            success: true,
+            unreadCount: 0,
+            message: 'Request timeout - returning 0',
+          },
+          { status: 200 }
+        );
+      }
+      
+      if (fetchError.code === 'ECONNREFUSED' || fetchError.cause?.code === 'ECONNREFUSED') {
+        console.error('❌ [Unread Count API] Connection refused - backend server is not running');
+        // Return 0 count instead of error to prevent UI issues
+        return NextResponse.json(
+          { 
+            success: true,
+            unreadCount: 0,
+            message: 'Backend server unavailable - returning 0',
+          },
+          { status: 200 }
+        );
+      }
+      
+      // Re-throw other errors
+      throw fetchError;
+    }
 
     if (!response.ok) {
       // Try to parse error response, but don't fail if it fails
@@ -63,15 +103,21 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error: any) {
-    console.error('❌ [Unread Count API] Error:', error);
+    console.error('❌ [Unread Count API] Error:', {
+      message: error?.message,
+      code: error?.code,
+      cause: error?.cause,
+      name: error?.name,
+    });
     
+    // Return 0 count instead of error to prevent UI issues
     return NextResponse.json(
       { 
-        success: false, 
-        message: 'Internal server error',
-        error: error?.message || 'Unknown error'
+        success: true,
+        unreadCount: 0,
+        message: 'Error fetching unread count - returning 0',
       },
-      { status: 500 }
+      { status: 200 }
     );
   }
 }

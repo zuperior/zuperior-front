@@ -41,10 +41,52 @@ export async function GET(req: NextRequest) {
     const backendUrl = `${BACKEND_API_URL}/notifications${queryString ? `?${queryString}` : ''}`;
     console.log('[Notifications API] Proxying to:', backendUrl);
 
-    const response = await fetch(backendUrl, {
-      headers,
-      cache: 'no-store',
-    });
+    // Add timeout to prevent hanging requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+    let response;
+    try {
+      response = await fetch(backendUrl, {
+        headers,
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      
+      // Handle connection errors gracefully
+      if (fetchError.name === 'AbortError' || fetchError.code === 'ECONNABORTED') {
+        console.error('❌ [Notifications API] Request timeout:', backendUrl);
+        return NextResponse.json(
+          { 
+            success: false, 
+            message: 'Request timeout - backend server may be slow or unavailable',
+            data: [],
+            notifications: []
+          },
+          { status: 408 }
+        );
+      }
+      
+      if (fetchError.code === 'ECONNREFUSED' || fetchError.cause?.code === 'ECONNREFUSED') {
+        console.error('❌ [Notifications API] Connection refused - backend server is not running:', backendUrl);
+        // Return empty notifications instead of error to prevent UI issues
+        return NextResponse.json(
+          { 
+            success: true, 
+            message: 'Backend server unavailable - returning empty notifications',
+            data: [],
+            notifications: []
+          },
+          { status: 200 }
+        );
+      }
+      
+      // Re-throw other errors
+      throw fetchError;
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -53,11 +95,26 @@ export async function GET(req: NextRequest) {
         error: errorText,
       });
       
+      // Return empty notifications for client errors (4xx) to prevent UI issues
+      if (response.status >= 400 && response.status < 500) {
+        return NextResponse.json(
+          { 
+            success: true,
+            message: 'Backend returned error - returning empty notifications',
+            data: [],
+            notifications: []
+          },
+          { status: 200 }
+        );
+      }
+      
       return NextResponse.json(
         { 
           success: false, 
           message: `Backend error: ${response.status}`,
-          error: errorText 
+          error: errorText,
+          data: [],
+          notifications: []
         },
         { status: response.status }
       );
@@ -68,15 +125,22 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error: any) {
-    console.error('❌ [Notifications API] Error:', error);
+    console.error('❌ [Notifications API] Error:', {
+      message: error?.message,
+      code: error?.code,
+      cause: error?.cause,
+      name: error?.name,
+    });
     
+    // Return empty notifications instead of error to prevent UI issues
     return NextResponse.json(
       { 
-        success: false, 
-        message: 'Internal server error',
-        error: error?.message || 'Unknown error'
+        success: true,
+        message: 'Error fetching notifications - returning empty list',
+        data: [],
+        notifications: []
       },
-      { status: 500 }
+      { status: 200 }
     );
   }
 }
