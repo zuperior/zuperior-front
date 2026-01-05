@@ -25,7 +25,7 @@ import { InternalTransfer } from "@/services/internalTransfer";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useFetchUserData } from "@/hooks/useFetchUserData";
-import { fetchUserAccountsFromDb } from "@/store/slices/mt5AccountSlice";
+import { fetchUserAccountsFromDb, updateAccountBalance } from "@/store/slices/mt5AccountSlice";
 // import { CrossIcon } from "lucide-react";
 import arrowSideways from "@/assets/icons/arrow-sideways.png";
 import Image from "next/image";
@@ -236,8 +236,84 @@ const TransferFundsDialog = ({
         comment: "Internal transfer between MT5 accounts",
       });
       if (response.success) {
-        toast.success(`$${amount} transferred to #${toAccount}`);
+        const isTransferToWallet = String(toAccount).toUpperCase() === 'WALLET';
+        toast.success(`$${amount} transferred to ${isTransferToWallet ? 'Wallet' : `#${toAccount}`}`);
         setStep("progress");
+
+        // If transferring to wallet, immediately update both MT5 account balance and wallet balance
+        // to keep the total (wallet + MT5) consistent
+        if (isTransferToWallet && fromAccObj) {
+          try {
+            // Use the actual new balance from backend response if available, otherwise calculate it
+            const currentBalance = Number(fromAccObj.balance ?? 0);
+            const newBalance = response.data?.fromBalance !== undefined 
+              ? Number(response.data.fromBalance)
+              : Math.max(currentBalance - numAmount, 0);
+            
+            // For equity, calculate by subtracting the amount from current equity
+            // (since backend doesn't return equity, we need to calculate it)
+            const currentEquity = Number((fromAccObj as any).equity ?? fromAccObj.balance ?? 0);
+            const newEquity = Math.max(currentEquity - numAmount, 0);
+
+            // Get account ID as number for the Redux action
+            const accountIdNum = Number(fromAccObj.accountId);
+            const accountIdStr = String(fromAccObj.accountId);
+            
+            if (!isNaN(accountIdNum) && accountIdNum > 0) {
+              console.log(`[Transfer] 🔄 Updating MT5 account ${accountIdNum} (${accountIdStr}):`);
+              console.log(`  Balance: $${currentBalance} → $${newBalance} (${currentBalance - newBalance})`);
+              console.log(`  Equity: $${currentEquity} → $${newEquity} (${currentEquity - newEquity})`);
+              
+              // Update the specific MT5 account in Redux so mt5Total updates immediately
+              // This must happen synchronously before any async operations
+              dispatch(
+                updateAccountBalance({
+                  login: accountIdNum,
+                  balance: newBalance,
+                  equity: newEquity,
+                })
+              );
+              
+              // Verify the update by checking Redux state
+              const updatedState = store.getState();
+              const updatedAccount = updatedState.mt5.accounts.find(
+                (acc: any) => acc.accountId === accountIdStr
+              );
+              if (updatedAccount) {
+                console.log(`[Transfer] ✅ Account updated in Redux: balance=${updatedAccount.balance}, equity=${updatedAccount.equity}`);
+                console.log(`[Transfer] 📊 New MT5 total: $${updatedState.mt5.totalBalance}`);
+              } else {
+                console.warn(`[Transfer] ⚠️ Account ${accountIdStr} not found in Redux state after update`);
+              }
+            } else {
+              console.warn(`[Transfer] ⚠️ Invalid account ID for balance update: ${fromAccObj.accountId}`);
+            }
+          } catch (e) {
+            console.error("❌ Failed to optimistically update MT5 balance after transfer:", e);
+          }
+
+          try {
+            // Fetch updated wallet balance and dispatch refresh event
+            const token = localStorage.getItem('userToken');
+            const walletResponse = await fetch('/api/wallet', {
+              headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+              cache: 'no-store',
+            });
+            const walletData = await walletResponse.json();
+            const updatedBalance = Number(walletData?.data?.balance ?? walletData?.balance ?? 0);
+            if (!Number.isNaN(updatedBalance)) {
+              // Dispatch with the updated balance
+              window.dispatchEvent(new CustomEvent('wallet:refresh', { detail: { balance: updatedBalance } }));
+            } else {
+              // Fallback: just trigger refresh without balance
+              window.dispatchEvent(new CustomEvent('wallet:refresh'));
+            }
+          } catch (walletError) {
+            console.warn('Failed to refresh wallet balance:', walletError);
+            // Still dispatch the event to trigger a refresh
+            window.dispatchEvent(new CustomEvent('wallet:refresh'));
+          }
+        }
       } else {
         toast.error(response?.message || "Transfer failed");
         setStep("form");
@@ -250,7 +326,8 @@ const TransferFundsDialog = ({
       setStep("form");
     } finally {
       setIsLoading(false);
-      fetchAllData();
+      // Force refresh to get updated balances from database
+      fetchAllData(true);
     }
   };
 
