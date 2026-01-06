@@ -135,6 +135,23 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
     });
   }, [dispatch]);
 
+  // Listen for MT5 balance refresh events (triggered after internal transfers)
+  useEffect(() => {
+    const handler = async () => {
+      console.log('[Navbar] 🔄 MT5 refresh event received, refreshing balances from database...');
+      try {
+        // Refresh balances from database (source of truth)
+        await dispatch(fetchUserAccountsFromDb() as any);
+        await dispatch(fetchAllAccountsWithBalance() as any);
+        console.log('[Navbar] ✅ MT5 balances refreshed from database');
+      } catch (error) {
+        console.error('[Navbar] ❌ Failed to refresh MT5 balances:', error);
+      }
+    };
+    window.addEventListener('mt5:refresh', handler);
+    return () => window.removeEventListener('mt5:refresh', handler);
+  }, [dispatch]);
+
   const formattedBalance = useMemo(() => {
     if (walletBalance === null || walletBalance === undefined) return '-';
     const s = `$${walletBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

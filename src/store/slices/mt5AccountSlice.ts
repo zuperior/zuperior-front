@@ -867,19 +867,20 @@ const mt5AccountSlice = createSlice({
         state.isLoading = false;
         const { accounts: accountsWithBalance, totalBalance } = action.payload;
 
-        console.log(`[MT5] 🔄 Updating ${accountsWithBalance.length} accounts with FRESH balances from API...`);
-        console.log(`[MT5] 📊 Balance data received:`, accountsWithBalance.map((acc: any) => ({
+        console.log(`[MT5] 🔄 Updating ${accountsWithBalance.length} accounts with FRESH balances from DATABASE...`);
+        console.log(`[MT5] 📊 Balance data received from DB:`, accountsWithBalance.map((acc: any) => ({
           accountId: acc.accountId,
           balance: acc.balance,
           equity: acc.equity
         })));
 
         // Update balances for all accounts that match - FORCE UPDATE (no checks)
+        // These values come from DATABASE, not MT5 API (database is source of truth)
         accountsWithBalance.forEach((details: any) => {
           const account = state.accounts.find(acc => acc.accountId === details.accountId);
           if (account) {
             const oldBalance = account.balance;
-            // FORCE UPDATE all account details from MT5 API (always overwrite)
+            // FORCE UPDATE all account details from DATABASE (always overwrite)
             account.balance = Number(details.balance ?? 0);
             account.equity = Number(details.equity ?? 0);
             account.profit = Number(details.profit ?? details.Floating ?? 0);
@@ -900,9 +901,21 @@ const mt5AccountSlice = createSlice({
           }
         });
 
-        // Set total balance from API response
+        // Set total balance from database response (calculated from equity of Live accounts)
+        // The backend endpoint /api/mt5/accounts-with-balance returns totalBalance calculated from DB equity values
         const oldTotalBalance = state.totalBalance;
         state.totalBalance = Number(totalBalance ?? 0);
+        
+        // Also recalculate from equity values as a safety check (should match backend calculation)
+        const calculatedTotal = state.accounts
+          .filter((acc) => (acc.accountType || 'Live') === 'Live')
+          .reduce((sum, acc) => sum + (acc.equity || 0), 0);
+        
+        if (Math.abs(state.totalBalance - calculatedTotal) > 0.01) {
+          console.warn(`[MT5] ⚠️ Total balance mismatch: API=${state.totalBalance}, Calculated=${calculatedTotal}. Using API value.`);
+        } else {
+          console.log(`[MT5] ✅ Total balance verified: $${state.totalBalance} (from DB equity values)`);
+        }
 
         console.log(`[MT5] ✅ Updated balances for ${accountsWithBalance.length} accounts. Total: ${oldTotalBalance} → ${state.totalBalance}`);
       })

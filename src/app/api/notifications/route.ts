@@ -48,10 +48,10 @@ export async function GET(req: NextRequest) {
     let response;
     try {
       response = await fetch(backendUrl, {
-        headers,
-        cache: 'no-store',
+      headers,
+      cache: 'no-store',
         signal: controller.signal,
-      });
+    });
       clearTimeout(timeoutId);
     } catch (fetchError: any) {
       clearTimeout(timeoutId);

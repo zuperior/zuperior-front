@@ -36,10 +36,10 @@ export async function GET(req: NextRequest) {
     let response;
     try {
       response = await fetch(`${BACKEND_API_URL}/notifications/unread-count`, {
-        headers,
-        cache: 'no-store',
+      headers,
+      cache: 'no-store',
         signal: controller.signal,
-      });
+    });
       clearTimeout(timeoutId);
     } catch (fetchError: any) {
       clearTimeout(timeoutId);

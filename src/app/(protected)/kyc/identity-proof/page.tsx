@@ -244,7 +244,7 @@ const handleSubmit = async () => {
       const docReference = documentVerificationResult.reference || "";
       
       console.log(`📊 Document Verification Event: ${docEvent}`);
-      
+
       // Extract data from KYC response for AML screening
       const extractedDob = documentVerificationResult?.additional_data?.document?.proof?.dob;
       const extractedFullName = documentVerificationResult?.additional_data?.document?.proof?.full_name;

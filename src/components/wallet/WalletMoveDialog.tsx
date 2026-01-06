@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { useAppDispatch } from "@/store/hooks";
-import { fetchUserAccountsFromDb } from "@/store/slices/mt5AccountSlice";
+import { fetchUserAccountsFromDb, fetchAllAccountsWithBalance } from "@/store/slices/mt5AccountSlice";
 import { toast } from "sonner";
 
 type Direction = "MT5_TO_WALLET" | "WALLET_TO_MT5";
@@ -110,10 +110,30 @@ export function WalletMoveDialog({ open, onOpenChange, direction }: { open: bool
       const r = await fetch(path, { method: 'POST', headers, body });
       const j = await r.json();
       if (j?.success) {
-        toast.success('Transfer requested');
+        // CRITICAL: Refresh balances from database BEFORE showing success message
+        // Database is the source of truth, not MT5 API
+        console.log('[WalletMoveDialog] 🔄 Refreshing balances from database...');
+        try {
+          // Step 1: Fetch accounts from database (includes updated balances)
+          await dispatch(fetchUserAccountsFromDb() as any);
+          console.log('[WalletMoveDialog] ✅ Fetched accounts from database');
+          
+          // Step 2: Fetch all accounts with balances from database
+          await dispatch(fetchAllAccountsWithBalance() as any);
+          console.log('[WalletMoveDialog] ✅ Fetched balances from database');
+          
+          // Step 3: Dispatch events to refresh navbar and wallet
+          window.dispatchEvent(new CustomEvent('mt5:refresh'));
+          window.dispatchEvent(new CustomEvent('wallet:refresh'));
+          console.log('[WalletMoveDialog] ✅ Dispatched refresh events');
+        } catch (refreshError) {
+          console.error('[WalletMoveDialog] ❌ Failed to refresh balances from database:', refreshError);
+          // Continue anyway - we'll show success but balances might be stale
+        }
+        
+        // NOW show success message after balances are refreshed
+        toast.success('Transfer completed successfully');
         setStep('done');
-        // Let the navbar update immediately; final accurate value will be sent by wallet page load()
-        try { window.dispatchEvent(new CustomEvent('wallet:refresh')); } catch {}
       }
       else { toast.error(j?.message || 'Transfer failed'); }
     } finally {

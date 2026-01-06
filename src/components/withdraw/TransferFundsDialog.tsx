@@ -25,7 +25,7 @@ import { InternalTransfer } from "@/services/internalTransfer";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useFetchUserData } from "@/hooks/useFetchUserData";
-import { fetchUserAccountsFromDb, updateAccountBalance } from "@/store/slices/mt5AccountSlice";
+import { fetchUserAccountsFromDb, fetchAllAccountsWithBalance, updateAccountBalance, addAccountOptimistically } from "@/store/slices/mt5AccountSlice";
 // import { CrossIcon } from "lucide-react";
 import arrowSideways from "@/assets/icons/arrow-sideways.png";
 import Image from "next/image";
@@ -235,65 +235,40 @@ const TransferFundsDialog = ({
         amount: parseFloat(amount),
         comment: "Internal transfer between MT5 accounts",
       });
+      
+      console.log('[Transfer] 📦 Backend response:', JSON.stringify(response, null, 2));
+      
       if (response.success) {
         const isTransferToWallet = String(toAccount).toUpperCase() === 'WALLET';
+        const isTransferFromWallet = String(fromAccount).toUpperCase() === 'WALLET';
+        
+        // CRITICAL: Refresh balances from database BEFORE showing success message
+        // Database is the source of truth, not MT5 API
+        console.log('[Transfer] 🔄 Refreshing balances from database...');
+        try {
+          // Step 1: Fetch accounts from database (includes updated balances)
+          await dispatch(fetchUserAccountsFromDb() as any);
+          console.log('[Transfer] ✅ Fetched accounts from database');
+          
+          // Step 2: Fetch all accounts with balances from database
+          await dispatch(fetchAllAccountsWithBalance() as any);
+          console.log('[Transfer] ✅ Fetched balances from database');
+          
+          // Step 3: Dispatch event to refresh navbar
+          window.dispatchEvent(new CustomEvent('mt5:refresh'));
+          console.log('[Transfer] ✅ Dispatched mt5:refresh event');
+        } catch (refreshError) {
+          console.error('[Transfer] ❌ Failed to refresh balances from database:', refreshError);
+          // Continue anyway - we'll show success but balances might be stale
+        }
+        
+        // NOW show success message after balances are refreshed
         toast.success(`$${amount} transferred to ${isTransferToWallet ? 'Wallet' : `#${toAccount}`}`);
         setStep("progress");
 
-        // If transferring to wallet, immediately update both MT5 account balance and wallet balance
-        // to keep the total (wallet + MT5) consistent
-        if (isTransferToWallet && fromAccObj) {
+        // Refresh wallet balance if transferring to/from wallet
+        if (isTransferToWallet || isTransferFromWallet) {
           try {
-            // Use the actual new balance from backend response if available, otherwise calculate it
-            const currentBalance = Number(fromAccObj.balance ?? 0);
-            const newBalance = response.data?.fromBalance !== undefined 
-              ? Number(response.data.fromBalance)
-              : Math.max(currentBalance - numAmount, 0);
-            
-            // For equity, calculate by subtracting the amount from current equity
-            // (since backend doesn't return equity, we need to calculate it)
-            const currentEquity = Number((fromAccObj as any).equity ?? fromAccObj.balance ?? 0);
-            const newEquity = Math.max(currentEquity - numAmount, 0);
-
-            // Get account ID as number for the Redux action
-            const accountIdNum = Number(fromAccObj.accountId);
-            const accountIdStr = String(fromAccObj.accountId);
-            
-            if (!isNaN(accountIdNum) && accountIdNum > 0) {
-              console.log(`[Transfer] 🔄 Updating MT5 account ${accountIdNum} (${accountIdStr}):`);
-              console.log(`  Balance: $${currentBalance} → $${newBalance} (${currentBalance - newBalance})`);
-              console.log(`  Equity: $${currentEquity} → $${newEquity} (${currentEquity - newEquity})`);
-              
-              // Update the specific MT5 account in Redux so mt5Total updates immediately
-              // This must happen synchronously before any async operations
-              dispatch(
-                updateAccountBalance({
-                  login: accountIdNum,
-                  balance: newBalance,
-                  equity: newEquity,
-                })
-              );
-              
-              // Verify the update by checking Redux state
-              const updatedState = store.getState();
-              const updatedAccount = updatedState.mt5.accounts.find(
-                (acc: any) => acc.accountId === accountIdStr
-              );
-              if (updatedAccount) {
-                console.log(`[Transfer] ✅ Account updated in Redux: balance=${updatedAccount.balance}, equity=${updatedAccount.equity}`);
-                console.log(`[Transfer] 📊 New MT5 total: $${updatedState.mt5.totalBalance}`);
-              } else {
-                console.warn(`[Transfer] ⚠️ Account ${accountIdStr} not found in Redux state after update`);
-              }
-            } else {
-              console.warn(`[Transfer] ⚠️ Invalid account ID for balance update: ${fromAccObj.accountId}`);
-            }
-          } catch (e) {
-            console.error("❌ Failed to optimistically update MT5 balance after transfer:", e);
-          }
-
-          try {
-            // Fetch updated wallet balance and dispatch refresh event
             const token = localStorage.getItem('userToken');
             const walletResponse = await fetch('/api/wallet', {
               headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -302,15 +277,12 @@ const TransferFundsDialog = ({
             const walletData = await walletResponse.json();
             const updatedBalance = Number(walletData?.data?.balance ?? walletData?.balance ?? 0);
             if (!Number.isNaN(updatedBalance)) {
-              // Dispatch with the updated balance
               window.dispatchEvent(new CustomEvent('wallet:refresh', { detail: { balance: updatedBalance } }));
             } else {
-              // Fallback: just trigger refresh without balance
               window.dispatchEvent(new CustomEvent('wallet:refresh'));
             }
           } catch (walletError) {
             console.warn('Failed to refresh wallet balance:', walletError);
-            // Still dispatch the event to trigger a refresh
             window.dispatchEvent(new CustomEvent('wallet:refresh'));
           }
         }
@@ -326,7 +298,8 @@ const TransferFundsDialog = ({
       setStep("form");
     } finally {
       setIsLoading(false);
-      // Force refresh to get updated balances from database
+      // Note: Balances are already refreshed from DB before showing success message above
+      // This is just a final safety refresh
       fetchAllData(true);
     }
   };
