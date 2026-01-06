@@ -25,7 +25,7 @@ import { InternalTransfer } from "@/services/internalTransfer";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useFetchUserData } from "@/hooks/useFetchUserData";
-import { fetchUserAccountsFromDb, fetchAllAccountsWithBalance, updateAccountBalance, addAccountOptimistically } from "@/store/slices/mt5AccountSlice";
+import { fetchUserAccountsFromDb, fetchAllAccountsWithBalance, updateAccountBalance } from "@/store/slices/mt5AccountSlice";
 // import { CrossIcon } from "lucide-react";
 import arrowSideways from "@/assets/icons/arrow-sideways.png";
 import Image from "next/image";
@@ -241,50 +241,80 @@ const TransferFundsDialog = ({
       if (response.success) {
         const isTransferToWallet = String(toAccount).toUpperCase() === 'WALLET';
         const isTransferFromWallet = String(fromAccount).toUpperCase() === 'WALLET';
+        const responseData = response?.data || {};
         
-        // CRITICAL: Refresh balances from database BEFORE showing success message
-        // Database is the source of truth, not MT5 API
-        console.log('[Transfer] 🔄 Refreshing balances from database...');
-        try {
-          // Step 1: Fetch accounts from database (includes updated balances)
-          await dispatch(fetchUserAccountsFromDb() as any);
-          console.log('[Transfer] ✅ Fetched accounts from database');
-          
-          // Step 2: Fetch all accounts with balances from database
-          await dispatch(fetchAllAccountsWithBalance() as any);
-          console.log('[Transfer] ✅ Fetched balances from database');
-          
-          // Step 3: Dispatch event to refresh navbar
-          window.dispatchEvent(new CustomEvent('mt5:refresh'));
-          console.log('[Transfer] ✅ Dispatched mt5:refresh event');
-        } catch (refreshError) {
-          console.error('[Transfer] ❌ Failed to refresh balances from database:', refreshError);
-          // Continue anyway - we'll show success but balances might be stale
+        // INSTANT UPDATE: Use optimistic updates from response data
+        // This ensures no delay - balance updates immediately
+        console.log('[Transfer] ⚡ Applying optimistic updates from response...');
+        
+        // Step 1: Update source account balance instantly (if MT5 account)
+        if (!isTransferFromWallet && responseData.fromBalance !== undefined) {
+          const fromBalance = Number(responseData.fromBalance || 0);
+          // For internal transfers, we need to calculate equity from balance
+          // Since we don't have equity in response, use balance as equity
+          dispatch(updateAccountBalance({
+            login: parseInt(String(fromAccount)),
+            balance: fromBalance,
+            equity: fromBalance
+          }));
+          console.log(`[Transfer] ✅ Updated source account ${fromAccount} balance instantly: $${fromBalance}`);
         }
         
-        // NOW show success message after balances are refreshed
+        // Step 2: Update destination account balance instantly (if MT5 account)
+        if (!isTransferToWallet && responseData.toBalance !== undefined) {
+          const toBalance = Number(responseData.toBalance || 0);
+          dispatch(updateAccountBalance({
+            login: parseInt(String(toAccount)),
+            balance: toBalance,
+            equity: toBalance
+          }));
+          console.log(`[Transfer] ✅ Updated destination account ${toAccount} balance instantly: $${toBalance}`);
+        }
+        
+        // Step 3: Update navbar total balance instantly
+        // Total balance should stay the same (internal transfer), but we update to ensure consistency
+        window.dispatchEvent(new CustomEvent('mt5:refresh'));
+        
+        // Step 4: Show success message IMMEDIATELY (no delay)
         toast.success(`$${amount} transferred to ${isTransferToWallet ? 'Wallet' : `#${toAccount}`}`);
         setStep("progress");
 
+        // Step 5: Refresh from database in the background (non-blocking)
+        // This ensures we have the latest data, but doesn't block the UI
+        Promise.all([
+          dispatch(fetchUserAccountsFromDb() as any),
+          dispatch(fetchAllAccountsWithBalance() as any)
+        ]).then(() => {
+          console.log('[Transfer] ✅ Background refresh from database completed');
+          // Dispatch refresh events again to ensure everything is in sync
+          window.dispatchEvent(new CustomEvent('mt5:refresh'));
+        }).catch((refreshError) => {
+          console.error('[Transfer] ⚠️ Background refresh failed (non-critical):', refreshError);
+          // Non-critical - we already updated optimistically
+        });
+        
         // Refresh wallet balance if transferring to/from wallet
         if (isTransferToWallet || isTransferFromWallet) {
-          try {
-            const token = localStorage.getItem('userToken');
-            const walletResponse = await fetch('/api/wallet', {
-              headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-              cache: 'no-store',
-            });
-            const walletData = await walletResponse.json();
-            const updatedBalance = Number(walletData?.data?.balance ?? walletData?.balance ?? 0);
-            if (!Number.isNaN(updatedBalance)) {
-              window.dispatchEvent(new CustomEvent('wallet:refresh', { detail: { balance: updatedBalance } }));
-            } else {
+          // Update wallet balance in background (non-blocking)
+          Promise.resolve().then(async () => {
+            try {
+              const token = localStorage.getItem('userToken');
+              const walletResponse = await fetch('/api/wallet', {
+                headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+                cache: 'no-store',
+              });
+              const walletData = await walletResponse.json();
+              const updatedBalance = Number(walletData?.data?.balance ?? walletData?.balance ?? 0);
+              if (!Number.isNaN(updatedBalance)) {
+                window.dispatchEvent(new CustomEvent('wallet:refresh', { detail: { balance: updatedBalance } }));
+              } else {
+                window.dispatchEvent(new CustomEvent('wallet:refresh'));
+              }
+            } catch (walletError) {
+              console.warn('Failed to refresh wallet balance:', walletError);
               window.dispatchEvent(new CustomEvent('wallet:refresh'));
             }
-          } catch (walletError) {
-            console.warn('Failed to refresh wallet balance:', walletError);
-            window.dispatchEvent(new CustomEvent('wallet:refresh'));
-          }
+          });
         }
       } else {
         toast.error(response?.message || "Transfer failed");

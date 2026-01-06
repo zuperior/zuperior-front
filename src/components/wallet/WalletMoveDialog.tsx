@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { useAppDispatch } from "@/store/hooks";
-import { fetchUserAccountsFromDb, fetchAllAccountsWithBalance } from "@/store/slices/mt5AccountSlice";
+import { fetchUserAccountsFromDb, fetchAllAccountsWithBalance, updateAccountBalance } from "@/store/slices/mt5AccountSlice";
 import { toast } from "sonner";
 
 type Direction = "MT5_TO_WALLET" | "WALLET_TO_MT5";
@@ -110,30 +110,52 @@ export function WalletMoveDialog({ open, onOpenChange, direction }: { open: bool
       const r = await fetch(path, { method: 'POST', headers, body });
       const j = await r.json();
       if (j?.success) {
-        // CRITICAL: Refresh balances from database BEFORE showing success message
-        // Database is the source of truth, not MT5 API
-        console.log('[WalletMoveDialog] 🔄 Refreshing balances from database...');
-        try {
-          // Step 1: Fetch accounts from database (includes updated balances)
-          await dispatch(fetchUserAccountsFromDb() as any);
-          console.log('[WalletMoveDialog] ✅ Fetched accounts from database');
-          
-          // Step 2: Fetch all accounts with balances from database
-          await dispatch(fetchAllAccountsWithBalance() as any);
-          console.log('[WalletMoveDialog] ✅ Fetched balances from database');
-          
-          // Step 3: Dispatch events to refresh navbar and wallet
-          window.dispatchEvent(new CustomEvent('mt5:refresh'));
-          window.dispatchEvent(new CustomEvent('wallet:refresh'));
-          console.log('[WalletMoveDialog] ✅ Dispatched refresh events');
-        } catch (refreshError) {
-          console.error('[WalletMoveDialog] ❌ Failed to refresh balances from database:', refreshError);
-          // Continue anyway - we'll show success but balances might be stale
+        // INSTANT UPDATE: Use optimistic updates from response data
+        // This ensures no delay - balance updates immediately
+        const responseData = j?.data || {};
+        const mt5AccountData = responseData.mt5Account;
+        const walletData = responseData.wallet || responseData;
+        
+        console.log('[WalletMoveDialog] ⚡ Applying optimistic updates from response...');
+        
+        // Step 1: Update MT5 account balance instantly in Redux (if MT5 account data is present)
+        if (mt5AccountData && mt5AccountData.accountId) {
+          dispatch(updateAccountBalance({
+            login: parseInt(mt5AccountData.accountId),
+            balance: mt5AccountData.balance || 0,
+            equity: mt5AccountData.equity || mt5AccountData.balance || 0
+          }));
+          console.log(`[WalletMoveDialog] ✅ Updated MT5 account ${mt5AccountData.accountId} balance instantly: $${mt5AccountData.balance}`);
         }
         
-        // NOW show success message after balances are refreshed
+        // Step 2: Update wallet balance instantly (if wallet data is present)
+        if (walletData && walletData.balance !== undefined) {
+          const walletBalance = Number(walletData.balance || 0);
+          window.dispatchEvent(new CustomEvent('wallet:refresh', { detail: { balance: walletBalance } }));
+          console.log(`[WalletMoveDialog] ✅ Updated wallet balance instantly: $${walletBalance}`);
+        }
+        
+        // Step 3: Update navbar total balance instantly
+        window.dispatchEvent(new CustomEvent('mt5:refresh'));
+        
+        // Step 4: Show success message IMMEDIATELY (no delay)
         toast.success('Transfer completed successfully');
         setStep('done');
+        
+        // Step 5: Refresh from database in the background (non-blocking)
+        // This ensures we have the latest data, but doesn't block the UI
+        Promise.all([
+          dispatch(fetchUserAccountsFromDb() as any),
+          dispatch(fetchAllAccountsWithBalance() as any)
+        ]).then(() => {
+          console.log('[WalletMoveDialog] ✅ Background refresh from database completed');
+          // Dispatch refresh events again to ensure everything is in sync
+          window.dispatchEvent(new CustomEvent('mt5:refresh'));
+          window.dispatchEvent(new CustomEvent('wallet:refresh'));
+        }).catch((refreshError) => {
+          console.error('[WalletMoveDialog] ⚠️ Background refresh failed (non-critical):', refreshError);
+          // Non-critical - we already updated optimistically
+        });
       }
       else { toast.error(j?.message || 'Transfer failed'); }
     } finally {
