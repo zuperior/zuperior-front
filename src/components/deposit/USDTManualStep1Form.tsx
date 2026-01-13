@@ -33,6 +33,8 @@ export function USDTManualStep1Form({
   accounts,
   lifetimeDeposit,
   nextStep,
+  fixedRate,
+  showInrConversion,
 }: {
   amount: string;
   setAmount: (amount: string) => void;
@@ -41,10 +43,15 @@ export function USDTManualStep1Form({
   accounts: MT5Account[];
   lifetimeDeposit: number;
   nextStep: () => void;
+  fixedRate?: number;
+  showInrConversion?: boolean;
 }) {
   const [step, setStep] = useState<"unverified" | "partial" | "verified" | "">(
     ""
   );
+  const [inrAmount, setInrAmount] = useState("");
+  const [inputMode, setInputMode] = useState<"usd" | "inr">("usd");
+  const rate = fixedRate || 92.00;
 
   useEffect(() => {
     const status = store.getState().kyc.verificationStatus;
@@ -64,6 +71,21 @@ export function USDTManualStep1Form({
       });
     }
   }, [accounts.length]);
+
+  // Sync INR amount when USD amount changes externally (e.g., form reset)
+  useEffect(() => {
+    if (showInrConversion && amount) {
+      const amountNum = parseFloat(amount);
+      if (!isNaN(amountNum) && amountNum > 0) {
+        const inrValue = (amountNum * rate).toFixed(2);
+        if (inputMode !== "inr") {
+          setInrAmount(inrValue);
+        }
+      } else if (!amount) {
+        setInrAmount("");
+      }
+    }
+  }, [amount, showInrConversion, rate, inputMode]);
 
   // Helper function to extract account type from group name
   // Helper function to get account package (use package field from DB)
@@ -170,10 +192,19 @@ export function USDTManualStep1Form({
   const handleAmountChange = (value: string) => {
     if (!/^\d*\.?\d*$/.test(value)) return;
     setAmount(value);
+    setInputMode("usd");
     toast.dismiss();
 
     const amountNum = parseFloat(value);
-    if (isNaN(amountNum)) return;
+    if (isNaN(amountNum)) {
+      setInrAmount("");
+      return;
+    }
+    
+    // Update INR amount when USD changes
+    const inrValue = (amountNum * rate).toFixed(2);
+    setInrAmount(inrValue);
+
     const totalAfterDeposit = lifetimeDeposit + amountNum;
 
     if (amountNum < 1) {
@@ -182,6 +213,39 @@ export function USDTManualStep1Form({
     }
     // REMOVED: Startup dynamic cap check while typing
     // Maximum deposit limit should be the same as in database, not reduced by current balance
+    if (step === "unverified" && totalAfterDeposit > 5000) {
+      toast.error("Deposit limit is $5,000 for Unverified accounts");
+      return;
+    }
+    if (step === "partial" && totalAfterDeposit > 10000) {
+      toast.error("Deposit limit is $10,000 for Partially Verified accounts");
+      return;
+    }
+  };
+
+  const handleInrAmountChange = (value: string) => {
+    if (!/^\d*\.?\d*$/.test(value)) return;
+    setInrAmount(value);
+    setInputMode("inr");
+    toast.dismiss();
+
+    const inrNum = parseFloat(value);
+    if (isNaN(inrNum)) {
+      setAmount("");
+      return;
+    }
+    
+    // Update USD amount when INR changes
+    const usdValue = (inrNum / rate).toFixed(2);
+    setAmount(usdValue);
+
+    const amountNum = parseFloat(usdValue);
+    const totalAfterDeposit = lifetimeDeposit + amountNum;
+
+    if (amountNum < 1) {
+      toast.error("Minimum deposit amount is $1");
+      return;
+    }
     if (step === "unverified" && totalAfterDeposit > 5000) {
       toast.error("Deposit limit is $5,000 for Unverified accounts");
       return;
@@ -284,17 +348,59 @@ export function USDTManualStep1Form({
       {/* Amount Field */}
       <div className="mb-6">
         <Label className="text-sm dark:text-white/75 text-black mb-3 block">Amount</Label>
-        <div className="relative w-full">
-          <Input
-            value={amount}
-            onChange={(e) => handleAmountChange(e.target.value)}
-            placeholder="Enter amount"
-            className="dark:text-white/75 text-black pr-12 border-[#362e36] p-5 focus-visible:ring-blue-600 w-full"
-          />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 dark:text-white/75 text-black text-sm">
-            USDT
-          </span>
-        </div>
+        
+        {showInrConversion ? (
+          // Bank Transfer: Show both USD and INR inputs
+          <div className="space-y-3">
+            {/* USD Input */}
+            <div className="relative w-full">
+              <Input
+                value={amount}
+                onChange={(e) => handleAmountChange(e.target.value)}
+                placeholder="Enter amount in USD"
+                className="dark:text-white/75 text-black pr-12 border-[#362e36] p-5 focus-visible:ring-blue-600 w-full"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 dark:text-white/75 text-black text-sm font-medium">
+                USD
+              </span>
+            </div>
+            
+            {/* INR Input */}
+            <div className="relative w-full">
+              <Input
+                value={inrAmount}
+                onChange={(e) => handleInrAmountChange(e.target.value)}
+                placeholder="Enter amount in INR"
+                className="dark:text-white/75 text-black pr-12 border-[#362e36] p-5 focus-visible:ring-blue-600 w-full"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 dark:text-white/75 text-black text-sm font-medium">
+                INR
+              </span>
+            </div>
+            
+            {/* Conversion Rate Info */}
+            {amount && parseFloat(amount) > 0 && (
+              <p className="text-xs mt-1 text-gray-400 flex items-center gap-2">
+                <span>Exchange Rate:</span>
+                <span className="font-medium">1 USD = {rate} INR</span>
+              </p>
+            )}
+          </div>
+        ) : (
+          // Other methods: Show only USD/USDT input
+          <div className="relative w-full">
+            <Input
+              value={amount}
+              onChange={(e) => handleAmountChange(e.target.value)}
+              placeholder="Enter amount"
+              className="dark:text-white/75 text-black pr-12 border-[#362e36] p-5 focus-visible:ring-blue-600 w-full"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 dark:text-white/75 text-black text-sm">
+              USDT
+            </span>
+          </div>
+        )}
+        
         {/* REMOVED: Startup allowance message - maximum deposit limit should be the same as in database */}
         {step && (
           <p className="text-xs mt-2 text-[#945393]">{getLimitMessage()}</p>

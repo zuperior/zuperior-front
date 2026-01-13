@@ -14,12 +14,14 @@ interface Props {
     swiftCode?: string | null;
     accountType?: string | null;
     countryCode?: string | null;
+    fixedRate?: number;
   };
   amount: string;
   nextStep: () => void;
+  fixedRate?: number;
 }
 
-export function WireStep2Instructions({ bank, amount, nextStep }: Props) {
+export function WireStep2Instructions({ bank, amount, nextStep, fixedRate }: Props) {
   const [copied, setCopied] = React.useState<string>('');
 
   const copy = async (label: string, value?: string | null) => {
@@ -29,6 +31,11 @@ export function WireStep2Instructions({ bank, amount, nextStep }: Props) {
     toast.success(`${label} copied`);
     setTimeout(() => setCopied(''), 1500);
   };
+
+  // Calculate INR equivalent
+  const rate = fixedRate || bank.fixedRate || 92.00;
+  const amountNum = parseFloat(amount) || 0;
+  const inrAmount = amountNum > 0 ? (amountNum * rate).toLocaleString('en-IN', { maximumFractionDigits: 2 }) : '0';
 
   return (
     <div className="w-full px-6 py-4">
@@ -46,7 +53,16 @@ export function WireStep2Instructions({ bank, amount, nextStep }: Props) {
 
         <div className="bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/20 rounded-lg p-4 mt-6">
           <p className="text-yellow-700 dark:text-yellow-300 text-sm">
-            Send exactly <strong>{amount || 'your'}</strong> USD equivalent to this bank account. Then upload your payment proof and enter the transaction/reference ID in the next step.
+            Send exactly <strong>{amount || 'your'}</strong> USD 
+            {amountNum > 0 && (
+              <> (<strong>₹{inrAmount}</strong> INR)</>
+            )}
+            {' '}equivalent to this bank account. Then upload your payment proof and enter the transaction/reference ID in the next step.
+            {amountNum > 0 && (
+              <span className="block mt-2 text-xs opacity-90">
+                Exchange Rate: 1 USD = {rate} INR
+              </span>
+            )}
           </p>
         </div>
       </div>

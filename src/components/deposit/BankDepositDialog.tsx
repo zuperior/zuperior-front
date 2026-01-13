@@ -33,7 +33,7 @@ export function BankDepositDialog({ open, onOpenChange, lifetimeDeposit }: { ope
     (async () => {
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
-        const res = await fetch('/api/manual-gateway?type=wire', {
+        const res = await fetch('/api/manual-gateway?type=bank_transfer', {
           cache: 'no-store',
           headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
         });
@@ -49,6 +49,7 @@ export function BankDepositDialog({ open, onOpenChange, lifetimeDeposit }: { ope
             swiftCode: raw.swiftCode ?? raw.swift_code ?? null,
             accountType: raw.accountType ?? raw.account_type ?? null,
             countryCode: raw.countryCode ?? raw.country_code ?? null,
+            fixedRate: raw.fixedRate ?? raw.fixed_rate ?? 92.00,
           };
           setBank(normalized);
         } else {
@@ -93,11 +94,18 @@ export function BankDepositDialog({ open, onOpenChange, lifetimeDeposit }: { ope
             accounts={filteredAccounts}
             lifetimeDeposit={lifetimeDeposit}
             nextStep={() => setStep(2)}
+            fixedRate={bank?.fixedRate || 92.00}
+            showInrConversion={true}
           />
         );
       case 2:
         return (
-          <WireStep2Instructions bank={bank || {}} amount={amount} nextStep={() => setStep(3)} />
+          <WireStep2Instructions 
+            bank={bank || {}} 
+            amount={amount} 
+            nextStep={() => setStep(3)}
+            fixedRate={bank?.fixedRate || 92.00}
+          />
         );
       case 3:
         return (
@@ -130,7 +138,7 @@ export function BankDepositDialog({ open, onOpenChange, lifetimeDeposit }: { ope
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw] sm:max-w-[95%] lg:max-w-2xl gap-4 bg-background shadow-lg border-2 border-transparent p-6 text-white rounded-[18px] flex flex-col items-center w-full max-h-[90vh] overflow-y-auto [background:linear-gradient(#fff,#fff)_padding-box,conic-gradient(from_var(--border-angle),#ddd,#f6e6fc,theme(colors.purple.400/48%))_border-box] dark:[background:linear-gradient(#070206,#030103)_padding-box,conic-gradient(from_var(--border-angle),#030103,#030103,color-mix(in_oklab,oklch(71.4%_0.203_305.504)_48%,transparent))_border-box] animate-border">
-        <VisuallyHidden><DialogTitle>Wire Transfer</DialogTitle></VisuallyHidden>
+        <VisuallyHidden><DialogTitle>Bank Transfer</DialogTitle></VisuallyHidden>
         {/* Stepper header to match USDT dialog */}
         <DialogHeader className="w-full py-3">
           <div className="flex items-center justify-between w-full pt-2">
@@ -181,7 +189,7 @@ export function BankDepositDialog({ open, onOpenChange, lifetimeDeposit }: { ope
             </div>
           </div>
         </DialogHeader>
-        <h2 className="text-2xl text-center font-bold dark:text-white/75 text-black">Wire Transfer</h2>
+        <h2 className="text-2xl text-center font-bold dark:text-white/75 text-black">Bank Transfer</h2>
         {renderStep()}
       </DialogContent>
     </Dialog>

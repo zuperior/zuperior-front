@@ -126,7 +126,7 @@ export function UnipaymentDialog({
   // For UPI: INR amount and USD conversion
   const [inrAmount, setInrAmount] = useState<string>("");
   const [usdAmountFromInr, setUsdAmountFromInr] = useState<string>("");
-  const USD_INR_RATE = 83; // Default USD/INR exchange rate (can be made dynamic later)
+  const [fixedRate, setFixedRate] = useState<number>(92.00); // Default 1 USD = 92 INR
   
   // Update network when currentSelectedCrypto changes
   useEffect(() => {
@@ -135,6 +135,27 @@ export function UnipaymentDialog({
     }
   }, [currentSelectedCrypto]);
   
+  // Fetch fixed rate for UPI when dialog opens
+  useEffect(() => {
+    if (open && paymentMethod === 'upi') {
+      (async () => {
+        try {
+          const r = await fetch('/api/deposit-payment-methods', { cache: 'no-store' });
+          const j = await r.json();
+          if (j.ok && Array.isArray(j.methods)) {
+            const upiMethod = j.methods.find((m: any) => m.method_key === 'unipayment_upi');
+            if (upiMethod?.fixed_rate) {
+              setFixedRate(Number(upiMethod.fixed_rate));
+            }
+          }
+        } catch (err) {
+          console.error('Failed to fetch fixed rate:', err);
+          // Keep default 92.00
+        }
+      })();
+    }
+  }, [open, paymentMethod]);
+
   // Reset selected crypto when dialog opens/closes
   useEffect(() => {
     if (!open) {
@@ -151,7 +172,7 @@ export function UnipaymentDialog({
     if (paymentMethod === 'upi' && inrAmount) {
       const inrValue = parseFloat(inrAmount);
       if (!isNaN(inrValue) && inrValue > 0) {
-        const usdValue = inrValue / USD_INR_RATE;
+        const usdValue = inrValue / fixedRate;
         setUsdAmountFromInr(usdValue.toFixed(2));
         setAmount(usdValue.toFixed(2)); // Set USD amount for processing
       } else {
@@ -162,7 +183,7 @@ export function UnipaymentDialog({
       setInrAmount("");
       setUsdAmountFromInr("");
     }
-  }, [inrAmount, paymentMethod]);
+  }, [inrAmount, paymentMethod, fixedRate]);
   
   // Fetch exchange rate and convert USD to crypto when amount or crypto changes
   useEffect(() => {
