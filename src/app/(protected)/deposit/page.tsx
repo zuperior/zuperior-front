@@ -199,7 +199,7 @@ export default function DepositPage() {
             console.warn('[Deposit Page] Using methods despite error flag');
             setEnabledPaymentMethods(j.methods);
           } else {
-            setEnabledPaymentMethods([]);
+          setEnabledPaymentMethods([]);
           }
         }
       } catch (err: any) {
@@ -213,12 +213,12 @@ export default function DepositPage() {
         setEnabledPaymentMethods([]);
       } finally {
         if (isMounted) {
-          setIsLoadingPaymentMethods(false);
+        setIsLoadingPaymentMethods(false);
           console.log('[Deposit Page] Loading payment methods completed');
         }
       }
     })();
-    
+
     return () => {
       isMounted = false;
     };
@@ -340,16 +340,36 @@ export default function DepositPage() {
 
     // Add Unipayment methods only if enabled
     if (isMethodEnabled('unipayment_crypto')) {
-      items.push({ type: 'unipayment', method: 'crypto', data: { id: 'UNIPAYMENT_CRYPTO', name: 'Crypto', icon: '/crypto.png' } });
+      const method = enabledPaymentMethods.find(m => m.method_key === 'unipayment_crypto');
+      const icon = method?.icon_path 
+        ? resolveImagePath(method.icon_path, '/payment_method_images/crypto.png')
+        : resolveImagePath('/payment_method_images/crypto.png', '/payment_method_images/crypto.png');
+      console.log('[Deposit Page] Unipayment Crypto icon:', { method_key: 'unipayment_crypto', icon_path: method?.icon_path, resolved_icon: icon });
+      items.push({ type: 'unipayment', method: 'crypto', data: { id: 'UNIPAYMENT_CRYPTO', name: 'Crypto', icon } });
     }
     if (isMethodEnabled('unipayment_card')) {
-      items.push({ type: 'unipayment', method: 'card', data: { id: 'UNIPAYMENT_CARD', name: 'Credit/Debit Cards', icon: '/pm_card.png' } });
+      const method = enabledPaymentMethods.find(m => m.method_key === 'unipayment_card');
+      const icon = method?.icon_path 
+        ? resolveImagePath(method.icon_path, '/payment_method_images/pm_card.png')
+        : resolveImagePath('/payment_method_images/pm_card.png', '/payment_method_images/pm_card.png');
+      console.log('[Deposit Page] Unipayment Card icon:', { method_key: 'unipayment_card', icon_path: method?.icon_path, resolved_icon: icon });
+      items.push({ type: 'unipayment', method: 'card', data: { id: 'UNIPAYMENT_CARD', name: 'Credit/Debit Cards', icon } });
     }
     if (isMethodEnabled('unipayment_google_apple_pay')) {
-      items.push({ type: 'unipayment', method: 'google_apple_pay', data: { id: 'UNIPAYMENT_GOOGLE_APPLE', name: 'Google/Apple Pay', icon: '/pm_googleapple.png' } });
+      const method = enabledPaymentMethods.find(m => m.method_key === 'unipayment_google_apple_pay');
+      const icon = method?.icon_path 
+        ? resolveImagePath(method.icon_path, '/payment_method_images/pm_googleapple.png')
+        : resolveImagePath('/payment_method_images/pm_googleapple.png', '/payment_method_images/pm_googleapple.png');
+      console.log('[Deposit Page] Unipayment Google/Apple Pay icon:', { method_key: 'unipayment_google_apple_pay', icon_path: method?.icon_path, resolved_icon: icon });
+      items.push({ type: 'unipayment', method: 'google_apple_pay', data: { id: 'UNIPAYMENT_GOOGLE_APPLE', name: 'Google/Apple Pay', icon } });
     }
     if (isMethodEnabled('unipayment_upi')) {
-      items.push({ type: 'unipayment', method: 'upi', data: { id: 'UNIPAYMENT_UPI', name: 'UPI', icon: '/pm_upi.png' } });
+      const method = enabledPaymentMethods.find(m => m.method_key === 'unipayment_upi');
+      const icon = method?.icon_path 
+        ? resolveImagePath(method.icon_path, '/payment_method_images/pm_upi.png')
+        : resolveImagePath('/payment_method_images/pm_upi.png', '/payment_method_images/pm_upi.png');
+      console.log('[Deposit Page] Unipayment UPI icon:', { method_key: 'unipayment_upi', icon_path: method?.icon_path, resolved_icon: icon });
+      items.push({ type: 'unipayment', method: 'upi', data: { id: 'UNIPAYMENT_UPI', name: 'UPI', icon } });
     }
     
     // Add bank transfer if enabled in deposit_payment_methods
@@ -372,9 +392,10 @@ export default function DepositPage() {
         method: bankTransferMethod,
         icon_path: bankTransferMethod?.icon_path
       });
+      // Always resolve to an image URL, never use 'bank' string
       const bankIcon = bankTransferMethod?.icon_path 
-        ? resolveImagePath(bankTransferMethod.icon_path, '/bank.png')
-        : 'bank'; // Use 'bank' string for Building2 icon component
+        ? resolveImagePath(bankTransferMethod.icon_path, '/payment_method_images/bank.png')
+        : resolveImagePath('/payment_method_images/bank.png', '/payment_method_images/bank.png'); // Fallback to default bank.png
       console.log('[Deposit Page] Bank transfer icon resolved:', bankIcon);
       items.push({ type: 'bank_transfer', data: { id: 'BANK_TRANSFER', name: 'Bank Transfer', icon: bankIcon } });
     }
@@ -382,10 +403,20 @@ export default function DepositPage() {
     // Add Cregis crypto options only if enabled
     cryptocurrencies.forEach((crypto) => {
       if (crypto.id === 'USDT-TRC20' && isMethodEnabled('cregis_usdt_trc20')) {
-        items.push({ type: "crypto", data: crypto });
+        const method = enabledPaymentMethods.find(m => m.method_key === 'cregis_usdt_trc20');
+        const icon = method?.icon_path 
+          ? resolveImagePath(method.icon_path, '/payment_method_images/trc20.png')
+          : resolveImagePath('/payment_method_images/trc20.png', '/payment_method_images/trc20.png');
+        console.log('[Deposit Page] Cregis USDT-TRC20 icon:', { method_key: 'cregis_usdt_trc20', icon_path: method?.icon_path, resolved_icon: icon });
+        items.push({ type: "crypto", data: { ...crypto, icon } });
       }
       if (crypto.id === 'USDT-BEP20' && isMethodEnabled('cregis_usdt_bep20')) {
-        items.push({ type: "crypto", data: crypto });
+        const method = enabledPaymentMethods.find(m => m.method_key === 'cregis_usdt_bep20');
+        const icon = method?.icon_path 
+          ? resolveImagePath(method.icon_path, '/payment_method_images/bep20.png')
+          : resolveImagePath('/payment_method_images/bep20.png', '/payment_method_images/bep20.png');
+        console.log('[Deposit Page] Cregis USDT-BEP20 icon:', { method_key: 'cregis_usdt_bep20', icon_path: method?.icon_path, resolved_icon: icon });
+        items.push({ type: "crypto", data: { ...crypto, icon } });
       }
     });
     
@@ -425,11 +456,12 @@ export default function DepositPage() {
           const bankTransferMethod = enabledPaymentMethods.find(m => 
             m.method_key === 'bank_transfer' || m.method_key === 'wire_transfer'
           );
+          // Always resolve to an image URL, never use 'bank' string
           const bankIcon = rawIconPath 
-            ? resolveImagePath(rawIconPath, 'bank')
+            ? resolveImagePath(rawIconPath, '/payment_method_images/bank.png')
             : (bankTransferMethod?.icon_path 
-                ? resolveImagePath(bankTransferMethod.icon_path, 'bank')
-                : 'bank');
+                ? resolveImagePath(bankTransferMethod.icon_path, '/payment_method_images/bank.png')
+                : resolveImagePath('/payment_method_images/bank.png', '/payment_method_images/bank.png'));
           items.push({ 
             type: 'manual_bank_transfer', 
             method_key: method.method_key,
@@ -444,7 +476,9 @@ export default function DepositPage() {
         }
         // For UPI type, add as UPI option
         else if (gatewayType === 'upi') {
-          const iconPath = resolveImagePath(rawIconPath, '/pm_upi.png');
+          const iconPath = rawIconPath 
+            ? resolveImagePath(rawIconPath, '/payment_method_images/pm_upi.png')
+            : resolveImagePath('/payment_method_images/pm_upi.png', '/pm_upi.png');
           items.push({ 
             type: 'manual_upi', 
             method_key: method.method_key,
@@ -459,7 +493,9 @@ export default function DepositPage() {
         }
         // For crypto type, add as crypto option
         else if (gatewayType === 'crypto') {
-          const iconPath = resolveImagePath(rawIconPath, '/crypto.png');
+          const iconPath = rawIconPath 
+            ? resolveImagePath(rawIconPath, '/payment_method_images/crypto.png')
+            : resolveImagePath('/payment_method_images/crypto.png', '/crypto.png');
           items.push({ 
             type: 'manual_crypto', 
             method_key: method.method_key,
@@ -474,8 +510,9 @@ export default function DepositPage() {
         }
         // For other types (including generic 'manual'), add as generic manual deposit
         else {
-          // Use crypto.png as fallback since manual.png might not exist
-          const iconPath = resolveImagePath(rawIconPath, '/crypto.png');
+          const iconPath = rawIconPath 
+            ? resolveImagePath(rawIconPath, '/payment_method_images/manual.png')
+            : resolveImagePath('/payment_method_images/manual.png', '/manual.png');
           items.push({ 
             type: 'manual', 
             method_key: method.method_key,
@@ -533,7 +570,9 @@ export default function DepositPage() {
       // Add unprocessed methods as generic manual deposits
       unprocessedMethods.forEach((method) => {
         const displayName = method.display_name || method.method_key || 'Deposit';
-        const iconPath = resolveImagePath(method.icon_path, '/crypto.png');
+        const iconPath = method.icon_path 
+          ? resolveImagePath(method.icon_path, '/payment_method_images/manual.png')
+          : resolveImagePath('/payment_method_images/manual.png', '/payment_method_images/manual.png');
         items.push({
           type: 'manual',
           method_key: method.method_key,
@@ -750,16 +789,11 @@ function PaymentMethodCard({
   // Handle image load error with fallback
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     const target = e.target as HTMLImageElement;
-    console.warn(`[PaymentMethodCard] Failed to load image: ${imageSrc}, trying fallback`);
+    console.error(`[PaymentMethodCard] Failed to load image: ${imageSrc}`);
+    console.error(`[PaymentMethodCard] Image URL was: ${imageSrc}`);
     
-    // Try fallback to crypto.png if original fails and we haven't already tried it
-    if (imageSrc !== '/crypto.png' && !imageError) {
-      setImageSrc('/crypto.png');
-      // Don't set error yet, let it try the fallback
-      return;
-    }
-    
-    // If fallback also fails, show placeholder icon
+    // Don't try fallback - just show placeholder icon
+    // This prevents all methods from showing the same fallback image
     setImageError(true);
     target.style.display = 'none';
   };
@@ -771,22 +805,23 @@ function PaymentMethodCard({
            dark:from-[#330F33] dark:to-[#1C061C]"
     >
       <div className="flex flex-col items-center mt-2 mb-4 text-center">
-        {icon === 'bank' ? (
-          <Building2 className="h-20 w-20 md:h-24 md:w-24 text-blue-600 dark:text-blue-400" />
-        ) : imageError ? (
-          <CreditCard className="h-20 w-20 md:h-24 md:w-24 text-gray-400 dark:text-gray-500" />
+        {imageError ? (
+          <div className="h-20 w-20 md:h-24 md:w-24 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+            <CreditCard className="h-10 w-10 md:h-12 md:w-12 text-gray-400 dark:text-gray-500" />
+          </div>
         ) : (
-          <Image
-            className="h-20 w-20 md:h-24 md:w-24 object-contain"
-            src={imageSrc}
-            alt={name}
-            width={126}
-            height={126}
-            quality={100}
-            unoptimized
-            style={{ imageRendering: 'auto' }}
-            onError={handleImageError}
-          />
+        // Use regular img tag for external HTTP images to avoid Next.js Image optimization issues
+        <img
+          className="h-20 w-20 md:h-24 md:w-24 object-contain"
+          src={imageSrc}
+          alt={name}
+          style={{ imageRendering: 'auto' }}
+          onError={handleImageError}
+          onLoad={() => {
+            console.log(`[PaymentMethodCard] Successfully loaded image: ${imageSrc} for ${name}`);
+          }}
+          crossOrigin="anonymous"
+        />
         )}
         <h3 className="mt-4 text-[18px] font-bold text-black dark:text-white">
           {name}
