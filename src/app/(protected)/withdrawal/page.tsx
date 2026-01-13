@@ -51,6 +51,7 @@ export default function WithdrawalDepositPage() {
 
   const [internalTransferDialogOpen, setInternalTransferDialogOpen] =
     useState(false);
+  const [bankTransferIcon, setBankTransferIcon] = useState<string>('/bank.png');
 
   // To Do: add tabs back again when bank transfer methods are added
   const [activeTab, setActiveTab] = useState<"all" | "crypto" | "bank">("all");
@@ -69,6 +70,38 @@ export default function WithdrawalDepositPage() {
   useEffect(() => {
     fetchAllData(true);
   }, [fetchAllData]);
+
+  // Fetch bank transfer payment method icon
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch('/api/deposit-payment-methods', { cache: 'no-store' });
+        const j = await r.json();
+        if (j?.ok && Array.isArray(j.methods)) {
+          const bankTransfer = j.methods.find((m: any) => 
+            m.method_key === 'bank_transfer' || 
+            m.method_key === 'wire_transfer' ||
+            (m.method_type === 'bank_transfer' && m.is_enabled)
+          );
+          if (bankTransfer?.icon_path) {
+            // Use the icon_path from API, prepend admin backend URL if it's a relative path
+            // Payment method images are served from admin backend (port 5003), not server (port 5000)
+            const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 'http://localhost:5003';
+            const iconPath = bankTransfer.icon_path.startsWith('http') 
+              ? bankTransfer.icon_path 
+              : bankTransfer.icon_path.startsWith('/') 
+                ? `${adminBackendUrl}${bankTransfer.icon_path}`
+                : `${adminBackendUrl}/${bankTransfer.icon_path}`;
+            console.log('[Withdrawal Page] Bank transfer icon path:', { icon_path: bankTransfer.icon_path, adminBackendUrl, iconPath });
+            setBankTransferIcon(iconPath);
+          }
+        }
+      } catch (err) {
+        console.error('[Withdrawal Page] Failed to fetch bank transfer icon:', err);
+        // Keep default /bank.png on error
+      }
+    })();
+  }, []);
 
   // Use only USDT-TRC20 for withdrawals
   useEffect(() => {
@@ -207,7 +240,7 @@ export default function WithdrawalDepositPage() {
             {(activeTab === "all" || activeTab === "bank") && (
               <PaymentTile
                 key="BANK"
-                icon={'/bank.png'}
+                icon={bankTransferIcon}
                 name={'Bank Transfer'}
                 unverified={isUnverified}
                 onOpenNewAccount={() => setBankDialogOpen(true)}

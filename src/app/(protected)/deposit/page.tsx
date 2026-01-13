@@ -283,6 +283,46 @@ export default function DepositPage() {
     setDepositDialogOpen(true);
   }, []);
 
+  // Helper function to resolve image paths
+  const resolveImagePath = (iconPath: string | null | undefined, fallback: string): string => {
+    // If no icon path provided, use fallback
+    if (!iconPath || iconPath.trim() === '') {
+      return fallback;
+    }
+    
+    const trimmedPath = iconPath.trim();
+    
+    // If it's already a full URL, return as is
+    if (trimmedPath.startsWith('http://') || trimmedPath.startsWith('https://')) {
+      return trimmedPath;
+    }
+    
+    // If it starts with /payment_method_images/, it's from admin backend (port 5003), not server (port 5000)
+    if (trimmedPath.startsWith('/payment_method_images/')) {
+      // Payment method images are ALWAYS served from admin backend (port 5003)
+      // Use explicit admin backend URL, don't rely on NEXT_PUBLIC_BACKEND_API_URL which points to server
+      const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 'http://localhost:5003';
+      console.log('[resolveImagePath] Payment method image:', { trimmedPath, adminBackendUrl, fullUrl: `${adminBackendUrl}${trimmedPath}` });
+      return `${adminBackendUrl}${trimmedPath}`;
+    }
+    
+    // If it's a relative path starting with /, check if it's a backend path or frontend public path
+    if (trimmedPath.startsWith('/')) {
+      // Check if it's a known backend path
+      if (trimmedPath.startsWith('/kyc_proofs/') || trimmedPath.startsWith('/uploads/')) {
+        // These are from server backend (port 5000)
+        const serverBackendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL?.replace('/api', '') || 'http://localhost:5000';
+        return `${serverBackendUrl}${trimmedPath}`;
+      }
+      // Otherwise, assume it's a frontend public path (Next.js serves from /public folder)
+      return trimmedPath;
+    }
+    
+    // Relative path without leading slash - treat as backend path (server, not admin)
+    const serverBackendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL?.replace('/api', '') || 'http://localhost:5000';
+    return `${serverBackendUrl}/${trimmedPath}`;
+  };
+
   // Filter items - show only enabled payment methods
   const filteredItems = useMemo(() => {
     const items: any[] = [];
@@ -324,7 +364,19 @@ export default function DepositPage() {
       enabledMethods: enabledPaymentMethods.map(m => m.method_key)
     });
     if (bankTransferMethodEnabled) {
-      items.push({ type: 'bank_transfer', data: { id: 'BANK_TRANSFER', name: 'Bank Transfer', icon: 'bank' } });
+      // Get bank transfer icon from payment methods if available
+      const bankTransferMethod = enabledPaymentMethods.find(m => 
+        m.method_key === 'bank_transfer' || m.method_key === 'wire_transfer'
+      );
+      console.log('[Deposit Page] Bank transfer method found:', {
+        method: bankTransferMethod,
+        icon_path: bankTransferMethod?.icon_path
+      });
+      const bankIcon = bankTransferMethod?.icon_path 
+        ? resolveImagePath(bankTransferMethod.icon_path, '/bank.png')
+        : 'bank'; // Use 'bank' string for Building2 icon component
+      console.log('[Deposit Page] Bank transfer icon resolved:', bankIcon);
+      items.push({ type: 'bank_transfer', data: { id: 'BANK_TRANSFER', name: 'Bank Transfer', icon: bankIcon } });
     }
     
     // Add Cregis crypto options only if enabled
@@ -337,64 +389,172 @@ export default function DepositPage() {
       }
     });
     
-    // Add manual gateway methods
+    // Add manual gateway methods and generic 'manual' method
     enabledPaymentMethods.forEach((method) => {
-      // Check if it's a manual gateway method
-      if (method.method_key?.startsWith('manual_gateway_') || method.method_type === 'manual') {
+      // Check if it's a manual gateway method OR the generic 'manual' method
+      const isManualGateway = method.method_key?.startsWith('manual_gateway_');
+      const isManualType = method.method_type === 'manual';
+      const isManualKey = method.method_key === 'manual';
+      
+      if (isManualGateway || isManualType || isManualKey) {
         const metadata = method.metadata || {};
         const gatewayType = metadata.type || method.method_type;
         const displayName = method.display_name || metadata.name || 'Manual Deposit';
-        const iconPath = method.icon_path || metadata.icon_url || '/manual.png';
+        const rawIconPath = method.icon_path || metadata.icon_url;
         
-        // Skip if it's bank_transfer type (already handled above)
-        if (gatewayType === 'bank_transfer' || gatewayType === 'wire') {
+        console.log('[Deposit Page] Processing manual method:', {
+          method_key: method.method_key,
+          method_type: method.method_type,
+          gatewayType,
+          displayName,
+          isManualGateway,
+          isManualType,
+          isManualKey
+        });
+        
+        // Skip only the main bank_transfer/wire_transfer method keys (not manual gateways with bank_transfer type)
+        // Manual gateways with bank_transfer type should still be shown as separate options
+        if ((method.method_key === 'bank_transfer' || method.method_key === 'wire_transfer') && !isManualGateway) {
+          console.log('[Deposit Page] Skipping main bank_transfer method (already handled above):', method.method_key);
           return;
         }
         
+        // For bank_transfer type manual gateways, add as manual bank transfer option
+        if (gatewayType === 'bank_transfer' || gatewayType === 'wire') {
+          // Get bank transfer icon from payment methods if available, or use 'bank' for Building2 icon
+          const bankTransferMethod = enabledPaymentMethods.find(m => 
+            m.method_key === 'bank_transfer' || m.method_key === 'wire_transfer'
+          );
+          const bankIcon = rawIconPath 
+            ? resolveImagePath(rawIconPath, 'bank')
+            : (bankTransferMethod?.icon_path 
+                ? resolveImagePath(bankTransferMethod.icon_path, 'bank')
+                : 'bank');
+          items.push({ 
+            type: 'manual_bank_transfer', 
+            method_key: method.method_key,
+            data: { 
+              id: method.method_key, 
+              name: displayName, 
+              icon: bankIcon,
+              gateway: manualGateways[method.method_key]
+            } 
+          });
+          console.log('[Deposit Page] Added manual bank transfer method:', method.method_key);
+        }
         // For UPI type, add as UPI option
-        if (gatewayType === 'upi') {
+        else if (gatewayType === 'upi') {
+          const iconPath = resolveImagePath(rawIconPath, '/pm_upi.png');
           items.push({ 
             type: 'manual_upi', 
             method_key: method.method_key,
             data: { 
               id: method.method_key, 
               name: displayName, 
-              icon: iconPath || '/pm_upi.png',
+              icon: iconPath,
               gateway: manualGateways[method.method_key]
             } 
           });
+          console.log('[Deposit Page] Added manual UPI method:', method.method_key);
         }
         // For crypto type, add as crypto option
         else if (gatewayType === 'crypto') {
+          const iconPath = resolveImagePath(rawIconPath, '/crypto.png');
           items.push({ 
             type: 'manual_crypto', 
             method_key: method.method_key,
             data: { 
               id: method.method_key, 
               name: displayName, 
-              icon: iconPath || '/crypto.png',
+              icon: iconPath,
               gateway: manualGateways[method.method_key]
             } 
           });
+          console.log('[Deposit Page] Added manual crypto method:', method.method_key);
         }
-        // For other types, add as generic manual deposit
+        // For other types (including generic 'manual'), add as generic manual deposit
         else {
+          // Use crypto.png as fallback since manual.png might not exist
+          const iconPath = resolveImagePath(rawIconPath, '/crypto.png');
           items.push({ 
             type: 'manual', 
             method_key: method.method_key,
             data: { 
               id: method.method_key, 
               name: displayName, 
-              icon: iconPath || '/manual.png',
+              icon: iconPath,
               gateway: manualGateways[method.method_key]
             } 
           });
+          console.log('[Deposit Page] Added generic manual method:', method.method_key);
         }
+      } else {
+        // Log methods that don't match manual criteria but might be enabled
+        console.log('[Deposit Page] Method not processed as manual:', {
+          method_key: method.method_key,
+          method_type: method.method_type,
+          is_enabled: method.is_enabled
+        });
       }
     });
     
+    // Check for any enabled methods that weren't processed above
+    const processedMethodKeys = new Set(items.map(item => {
+      if (item.type === 'unipayment') return `unipayment_${item.method}`;
+      if (item.type === 'bank_transfer') return 'bank_transfer';
+      if (item.type === 'crypto' && item.data?.id === 'USDT-TRC20') return 'cregis_usdt_trc20';
+      if (item.type === 'crypto' && item.data?.id === 'USDT-BEP20') return 'cregis_usdt_bep20';
+      return item.method_key || item.data?.id;
+    }));
+    
+    const unprocessedMethods = enabledPaymentMethods.filter(m => {
+      const key = m.method_key;
+      // Skip if already processed
+      if (processedMethodKeys.has(key)) return false;
+      // Skip if it's a method we explicitly handle above
+      if (['unipayment_crypto', 'unipayment_card', 'unipayment_google_apple_pay', 'unipayment_upi',
+           'bank_transfer', 'wire_transfer', 'cregis_usdt_trc20', 'cregis_usdt_bep20'].includes(key)) {
+        return false;
+      }
+      // Skip if it's a manual gateway (should have been processed above)
+      if (key?.startsWith('manual_gateway_') || m.method_type === 'manual' || key === 'manual') {
+        return false;
+      }
+      return true;
+    });
+    
+    if (unprocessedMethods.length > 0) {
+      console.warn('[Deposit Page] Found unprocessed enabled methods:', unprocessedMethods.map(m => ({
+        method_key: m.method_key,
+        method_type: m.method_type,
+        display_name: m.display_name
+      })));
+      
+      // Add unprocessed methods as generic manual deposits
+      unprocessedMethods.forEach((method) => {
+        const displayName = method.display_name || method.method_key || 'Deposit';
+        const iconPath = resolveImagePath(method.icon_path, '/crypto.png');
+        items.push({
+          type: 'manual',
+          method_key: method.method_key,
+          data: {
+            id: method.method_key,
+            name: displayName,
+            icon: iconPath,
+            gateway: manualGateways[method.method_key]
+          }
+        });
+        console.log('[Deposit Page] Added unprocessed method as generic manual:', method.method_key);
+      });
+    }
+    
     console.log('[Deposit Page] Final filtered items count:', items.length);
-    console.log('[Deposit Page] Final filtered items:', items.map(i => ({ type: i.type, method: i.method, name: i.data?.name })));
+    console.log('[Deposit Page] Final filtered items:', items.map(i => ({ 
+      type: i.type, 
+      method: i.method, 
+      method_key: i.method_key,
+      name: i.data?.name 
+    })));
     
     return items;
   }, [cryptocurrencies, bankTransferAvailable, enabledPaymentMethods, manualGateways]);
@@ -479,7 +639,7 @@ export default function DepositPage() {
               );
             }
             // Handle manual gateway methods
-            if (item.type === 'manual' || item.type === 'manual_upi' || item.type === 'manual_crypto') {
+            if (item.type === 'manual' || item.type === 'manual_upi' || item.type === 'manual_crypto' || item.type === 'manual_bank_transfer') {
               return (
                 <MemoizedPaymentMethodCard
                   key={item.data.id}
@@ -543,15 +703,16 @@ export default function DepositPage() {
         
         {/* Manual Gateway Dialogs */}
         {enabledPaymentMethods
-          .filter(m => m.method_key?.startsWith('manual_gateway_') || m.method_type === 'manual')
+          .filter(m => {
+            const isManualGateway = m.method_key?.startsWith('manual_gateway_');
+            const isManualType = m.method_type === 'manual';
+            const isManualKey = m.method_key === 'manual';
+            // Include manual gateways, but skip the main bank_transfer/wire_transfer method keys
+            return (isManualGateway || isManualType || isManualKey) && 
+                   m.method_key !== 'bank_transfer' && 
+                   m.method_key !== 'wire_transfer';
+          })
           .map((method) => {
-            const metadata = method.metadata || {};
-            const gatewayType = metadata.type || method.method_type;
-            // Skip bank_transfer as it has its own dialog
-            if (gatewayType === 'bank_transfer' || gatewayType === 'wire') {
-              return null;
-            }
-            
             return (
               <BankDepositDialog
                 key={method.method_key}
@@ -577,6 +738,32 @@ function PaymentMethodCard({
   name: string;
   onOpenNewAccount: () => void;
 }) {
+  const [imageError, setImageError] = useState(false);
+  const [imageSrc, setImageSrc] = useState(icon);
+
+  // Reset state when icon changes
+  useEffect(() => {
+    setImageSrc(icon);
+    setImageError(false);
+  }, [icon]);
+
+  // Handle image load error with fallback
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const target = e.target as HTMLImageElement;
+    console.warn(`[PaymentMethodCard] Failed to load image: ${imageSrc}, trying fallback`);
+    
+    // Try fallback to crypto.png if original fails and we haven't already tried it
+    if (imageSrc !== '/crypto.png' && !imageError) {
+      setImageSrc('/crypto.png');
+      // Don't set error yet, let it try the fallback
+      return;
+    }
+    
+    // If fallback also fails, show placeholder icon
+    setImageError(true);
+    target.style.display = 'none';
+  };
+
   return (
     <div
       onClick={onOpenNewAccount}
@@ -586,16 +773,19 @@ function PaymentMethodCard({
       <div className="flex flex-col items-center mt-2 mb-4 text-center">
         {icon === 'bank' ? (
           <Building2 className="h-20 w-20 md:h-24 md:w-24 text-blue-600 dark:text-blue-400" />
+        ) : imageError ? (
+          <CreditCard className="h-20 w-20 md:h-24 md:w-24 text-gray-400 dark:text-gray-500" />
         ) : (
           <Image
             className="h-20 w-20 md:h-24 md:w-24 object-contain"
-            src={icon}
+            src={imageSrc}
             alt={name}
             width={126}
             height={126}
             quality={100}
             unoptimized
             style={{ imageRendering: 'auto' }}
+            onError={handleImageError}
           />
         )}
         <h3 className="mt-4 text-[18px] font-bold text-black dark:text-white">
