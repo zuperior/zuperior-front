@@ -752,6 +752,10 @@ export default function DepositPage() {
                    m.method_key !== 'wire_transfer';
           })
           .map((method) => {
+            // Determine gateway type from method metadata or method_type
+            const metadata = method.metadata || {};
+            const gatewayType = metadata.type || method.method_type || 'bank_transfer';
+            
             return (
               <BankDepositDialog
                 key={method.method_key}
@@ -760,6 +764,8 @@ export default function DepositPage() {
                   setManualDepositDialogs(prev => ({ ...prev, [method.method_key]: open }));
                 }}
                 lifetimeDeposit={lifetimeDeposit}
+                gatewayType={gatewayType}
+                methodKey={method.method_key}
               />
             );
           })}

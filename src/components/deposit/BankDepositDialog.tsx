@@ -5,13 +5,26 @@ import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/u
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { USDTManualStep1Form } from "./USDTManualStep1Form";
 import { WireStep2Instructions } from "./WireStep2Instructions";
+import { UPIStep2Instructions } from "./UPIStep2Instructions";
 import { USDTManualStep3Transaction } from "./USDTManualStep3Transaction";
 import { USDTManualStep4Confirmation } from "./USDTManualStep4Confirmation";
 import { useSelector, useDispatch } from "react-redux";
 import type { RootState, AppDispatch } from "../../store";
 import { fetchUserAccountsFromDb } from "../../store/slices/mt5AccountSlice";
 
-export function BankDepositDialog({ open, onOpenChange, lifetimeDeposit }: { open: boolean; onOpenChange: (v: boolean)=>void; lifetimeDeposit: number; }) {
+export function BankDepositDialog({ 
+  open, 
+  onOpenChange, 
+  lifetimeDeposit,
+  gatewayType = 'bank_transfer',
+  methodKey
+}: { 
+  open: boolean; 
+  onOpenChange: (v: boolean)=>void; 
+  lifetimeDeposit: number;
+  gatewayType?: string;
+  methodKey?: string;
+}) {
   const [step, setStep] = useState(1);
   const [amount, setAmount] = useState("");
   const [selectedAccount, setSelectedAccount] = useState("");
@@ -19,6 +32,7 @@ export function BankDepositDialog({ open, onOpenChange, lifetimeDeposit }: { ope
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [depositRequestId, setDepositRequestId] = useState("");
   const [bank, setBank] = useState<any>(null);
+  const [upi, setUpi] = useState<any>(null);
 
   const dispatch = useDispatch<AppDispatch>();
   const mt5Accounts = useSelector((state: RootState) => state.mt5.accounts);
@@ -33,34 +47,51 @@ export function BankDepositDialog({ open, onOpenChange, lifetimeDeposit }: { ope
     (async () => {
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
-        const res = await fetch('/api/manual-gateway?type=bank_transfer', {
+        // Determine the type to fetch based on gatewayType
+        const fetchType = gatewayType === 'upi' ? 'upi' : 'bank_transfer';
+        const res = await fetch(`/api/manual-gateway?type=${fetchType}${methodKey ? `&method_key=${encodeURIComponent(methodKey)}` : ''}`, {
           cache: 'no-store',
           headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
         });
         const data = await res.json();
         if (data?.success) {
-          const raw = data?.data?.bank || data?.data || {};
-          // Normalize keys in case backend returns snake_case
-          const normalized = {
-            bankName: raw.bankName ?? raw.bank_name ?? null,
-            accountName: raw.accountName ?? raw.account_name ?? null,
-            accountNumber: raw.accountNumber ?? raw.account_number ?? null,
-            ifscCode: raw.ifscCode ?? raw.ifsc_code ?? null,
-            swiftCode: raw.swiftCode ?? raw.swift_code ?? null,
-            accountType: raw.accountType ?? raw.account_type ?? null,
-            countryCode: raw.countryCode ?? raw.country_code ?? null,
-            fixedRate: raw.fixedRate ?? raw.fixed_rate ?? 92.00,
-          };
-          setBank(normalized);
+          if (gatewayType === 'upi') {
+            // Handle UPI data
+            const raw = data?.data?.upi || data?.data || {};
+            const normalized = {
+              vpaAddress: raw.vpaAddress ?? raw.vpa_address ?? raw.vpa ?? null,
+              qrCode: raw.qrCode ?? raw.qr_code ?? raw.qr ?? null,
+              fixedRate: raw.fixedRate ?? raw.fixed_rate ?? 92.00,
+            };
+            setUpi(normalized);
+            setBank(null);
+          } else {
+            // Handle bank transfer data
+            const raw = data?.data?.bank || data?.data || {};
+            const normalized = {
+              bankName: raw.bankName ?? raw.bank_name ?? null,
+              accountName: raw.accountName ?? raw.account_name ?? null,
+              accountNumber: raw.accountNumber ?? raw.account_number ?? null,
+              ifscCode: raw.ifscCode ?? raw.ifsc_code ?? null,
+              swiftCode: raw.swiftCode ?? raw.swift_code ?? null,
+              accountType: raw.accountType ?? raw.account_type ?? null,
+              countryCode: raw.countryCode ?? raw.country_code ?? null,
+              fixedRate: raw.fixedRate ?? raw.fixed_rate ?? 92.00,
+            };
+            setBank(normalized);
+            setUpi(null);
+          }
         } else {
           setBank(null);
+          setUpi(null);
         }
       } catch (e) {
         console.error('Failed to fetch manual gateway:', e);
         setBank(null);
+        setUpi(null);
       }
     })();
-  }, [open]);
+  }, [open, gatewayType, methodKey]);
 
   const reset = useCallback(() => {
     setStep(1); setAmount(""); setSelectedAccount(""); setTransactionId(""); setProofFile(null); setDepositRequestId("");
@@ -99,6 +130,16 @@ export function BankDepositDialog({ open, onOpenChange, lifetimeDeposit }: { ope
           />
         );
       case 2:
+        if (gatewayType === 'upi') {
+          return (
+            <UPIStep2Instructions 
+              upi={upi || {}} 
+              amount={amount} 
+              nextStep={() => setStep(3)}
+              fixedRate={upi?.fixedRate || 92.00}
+            />
+          );
+        }
         return (
           <WireStep2Instructions 
             bank={bank || {}} 
@@ -189,7 +230,9 @@ export function BankDepositDialog({ open, onOpenChange, lifetimeDeposit }: { ope
             </div>
           </div>
         </DialogHeader>
-        <h2 className="text-2xl text-center font-bold dark:text-white/75 text-black">Bank Transfer</h2>
+        <h2 className="text-2xl text-center font-bold dark:text-white/75 text-black">
+          {gatewayType === 'upi' ? 'UPI Payment' : 'Bank Transfer'}
+        </h2>
         {renderStep()}
       </DialogContent>
     </Dialog>
