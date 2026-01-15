@@ -155,7 +155,7 @@ export function UnipaymentDialog({
       })();
     }
   }, [open, paymentMethod]);
-
+  
   // Reset selected crypto when dialog opens/closes
   useEffect(() => {
     if (!open) {

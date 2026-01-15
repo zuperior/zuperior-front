@@ -388,17 +388,17 @@ export function USDTManualStep1Form({
           </div>
         ) : (
           // Other methods: Show only USD/USDT input
-          <div className="relative w-full">
-            <Input
-              value={amount}
-              onChange={(e) => handleAmountChange(e.target.value)}
-              placeholder="Enter amount"
-              className="dark:text-white/75 text-black pr-12 border-[#362e36] p-5 focus-visible:ring-blue-600 w-full"
-            />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 dark:text-white/75 text-black text-sm">
-              USDT
-            </span>
-          </div>
+        <div className="relative w-full">
+          <Input
+            value={amount}
+            onChange={(e) => handleAmountChange(e.target.value)}
+            placeholder="Enter amount"
+            className="dark:text-white/75 text-black pr-12 border-[#362e36] p-5 focus-visible:ring-blue-600 w-full"
+          />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 dark:text-white/75 text-black text-sm">
+            USDT
+          </span>
+        </div>
         )}
         
         {/* REMOVED: Startup allowance message - maximum deposit limit should be the same as in database */}
