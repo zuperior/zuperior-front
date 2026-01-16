@@ -49,12 +49,25 @@ export function UPIStep2Instructions({ upi, amount, nextStep, fixedRate }: Props
             </p>
             <div className="flex justify-center mb-4">
               <div className="p-4 bg-white rounded-lg border-2 border-gray-200 dark:border-gray-700">
-                <Image
+                <img
                   src={upi.qrCode}
                   alt="UPI QR Code"
                   width={250}
                   height={250}
                   className="rounded"
+                  crossOrigin="anonymous"
+                  onError={(e) => {
+                    console.error('[UPI] Failed to load QR code:', upi.qrCode);
+                    // Show error message
+                    const parent = e.target.parentElement;
+                    if (parent) {
+                      parent.innerHTML = `
+                        <div class="flex items-center justify-center h-[250px] w-[250px] border-2 border-red-300 rounded bg-red-50">
+                          <span class="text-sm text-red-600">Failed to load QR code</span>
+                        </div>
+                      `;
+                    }
+                  }}
                 />
               </div>
             </div>

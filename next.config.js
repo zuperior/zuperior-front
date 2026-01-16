@@ -8,6 +8,7 @@ const nextConfig = {
       { protocol: "https", hostname: "cryptologos.cc" },
       { protocol: "http", hostname: "localhost", port: "5003" },
       { protocol: "http", hostname: "127.0.0.1", port: "5003" },
+      { protocol: "https", hostname: "zupback.zuperior.com" },
     ],
   },
   eslint: {
