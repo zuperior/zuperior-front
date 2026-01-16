@@ -71,11 +71,11 @@ export default function WithdrawalDepositPage() {
     fetchAllData(true);
   }, [fetchAllData]);
 
-  // Fetch bank transfer payment method icon
+  // Fetch bank transfer payment method icon from withdrawal payment methods
   useEffect(() => {
     (async () => {
       try {
-        const r = await fetch('/api/deposit-payment-methods', { cache: 'no-store' });
+        const r = await fetch('/api/withdrawal-payment-methods', { cache: 'no-store' });
         const j = await r.json();
         if (j?.ok && Array.isArray(j.methods)) {
           const bankTransfer = j.methods.find((m: any) => 
@@ -351,15 +351,19 @@ function PaymentTile({
       )}
 
       <div className="flex flex-col items-center mt-2 mb-4 text-center">
-        <Image
-          className="h-16 w-16 md:h-20 md:w-20"
+        <img
+          className="h-16 w-16 md:h-20 md:w-20 object-contain"
           src={icon}
           alt={name}
-          width={80}
-          height={80}
-          quality={100}
-          unoptimized
-          style={{ imageRendering: 'crisp-edges' }}
+          crossOrigin="anonymous"
+          onError={(e) => {
+            console.error('[PaymentTile] Failed to load image:', icon);
+            // Fallback to default bank.png if image fails to load
+            if (icon && !icon.includes('/bank.png')) {
+              const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 'http://localhost:5003';
+              e.currentTarget.src = `${adminBackendUrl}/payment_method_images/bank.png`;
+            }
+          }}
         />
         <h3 className="mt-4 text-[18px] font-bold text-black dark:text-white">
           {name}
