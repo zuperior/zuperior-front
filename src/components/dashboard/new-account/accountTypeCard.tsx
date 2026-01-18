@@ -59,15 +59,13 @@ export function AccountTypeCard({
   };
   return (
     <div
-      className={`group relative flex flex-col h-[312px] w-[240px] md:w-[250px] cursor-pointer items-center text-center gap-[10px] md:gap-[15px] rounded-[15px] px-3 md:px-[25px] pt-[15px] pb-[30px] transition-all duration-200 overflow-hidden ${
-        selected
-          ? ""
-          : "border border-gray-200 dark:border-white/5 opacity-60"
-      } ${
-        selected
-          ? "bg-gradient-to-br from-gray-50 to-gray-100 dark:bg-[linear-gradient(154deg,rgb(0,0,0)_0%,rgb(13,2,13)_129%)]"
-          : "bg-gray-50/50 dark:bg-[linear-gradient(154deg,rgba(0,0,0,0.3)_0%,rgba(13,2,13,0.2)_129%)]"
-      }`}
+      className={`group relative flex flex-col h-[312px] w-[240px] md:w-[250px] cursor-pointer items-center text-center gap-[10px] md:gap-[15px] rounded-[15px] px-3 md:px-[25px] pt-[15px] pb-[30px] transition-all duration-200 overflow-hidden ${selected
+        ? ""
+        : "border border-gray-200/50 dark:border-white/10 opacity-60"
+        } ${selected
+          ? "bg-gradient-to-br from-purple-50/80 via-white to-purple-50/50 dark:bg-gradient-to-br dark:from-purple-950/20 dark:via-black dark:to-purple-900/10"
+          : "bg-white/40 dark:bg-white/5 backdrop-blur-sm"
+        }`}
       style={{
         borderRadius: "15px",
         opacity: selected ? 1 : 0.6,
@@ -87,53 +85,53 @@ export function AccountTypeCard({
           }}
         >
           <div
-            className="w-full h-full rounded-[14px] bg-gradient-to-br from-gray-50 to-gray-100 dark:bg-[linear-gradient(154deg,rgb(0,0,0)_0%,rgb(13,2,13)_129%)]"
+            className="w-full h-full rounded-[14px] bg-gradient-to-br from-purple-50/80 via-white to-purple-50/50 dark:bg-gradient-to-br dark:from-purple-950/20 dark:via-black dark:to-purple-900/10"
           />
         </div>
       )}
       <div className="relative z-10 w-full h-full flex flex-col">
         <div
-          className={`rounded-[15px] relative py-1.5 px-4 font-semibold text-xs text-black dark:text-white/75 flex items-center justify-center bg-gray-200/50 dark:bg-transparent`}
+          className={`rounded-[15px] relative py-1.5 px-4 font-semibold text-xs text-purple-700 dark:text-purple-300 flex items-center justify-center bg-purple-100/60 dark:bg-purple-900/30 backdrop-blur-sm`}
         >
           <div
             style={roleMaskStyle as React.CSSProperties}
-            className="border border-gray-300 dark:border-white/50 pointer-events-none"
+            className="border border-purple-300/50 dark:border-purple-500/30 pointer-events-none"
           />
           <p>{userRole}</p>
         </div>
         <div className="flex-1">
           <h3
-            className={`font-bold text-center mb-2.5 text-lg -tracking-[0.02em] bg-clip-text text-black dark:bg-gradient-to-r from-white to-[#9E9E9E]/95 dark:text-transparent`}
+            className={`font-bold text-center mb-2.5 text-lg -tracking-[0.02em] text-gray-900 dark:text-white`}
           >
             {title}
           </h3>
 
-          <p className="text-xs dark:text-white/75 text-black  ">
-            {description || (accountType === "Demo" 
+          <p className="text-xs text-gray-700 dark:text-gray-300">
+            {description || (accountType === "Demo"
               ? "Perfect for newbies--Kick off your trading journey with micro lots."
-              : (userRole === "For Experts" 
+              : (userRole === "For Experts"
                 ? "Designed for skilled traders who demand performance, speed, and precision."
                 : "Ideal for traders taking their first steps with clarity and confidence."))}
           </p>
           <div className="mt-[15px] flex items-center flex-col gap-2.5">
-            <p className={`text-xs font-semibold dark:text-white/75 text-black `}>
+            <p className={`text-xs font-semibold text-gray-800 dark:text-gray-200`}>
               Minimum Deposit{" "}
-              <span className="dark:text-white/75 text-black ml-1 text-sm">{formatMinDeposit(minDeposit)}</span>
+              <span className="text-gray-900 dark:text-white ml-1 text-sm">{formatMinDeposit(minDeposit)}</span>
             </p>
-            <div className="w-full h-px bg-gradient-to-r from-gray-300 via-[#736496] to-gray-300 dark:from-black dark:via-[#736496] dark:to-black" />
-            <p className={`text-xs font-semibold dark:text-white/75 text-black `}>
+            <div className="w-full h-px bg-gradient-to-r from-transparent via-purple-300 to-transparent dark:from-transparent dark:via-purple-700/50 dark:to-transparent" />
+            <p className={`text-xs font-semibold text-gray-800 dark:text-gray-200`}>
               Low Spreads{" "}
-              <span className="text-gray-600 dark:text-white/75 ml-1 text-sm">{formatSpread(spread)}</span>
+              <span className="text-gray-700 dark:text-gray-300 ml-1 text-sm">{formatSpread(spread)}</span>
             </p>
-            <div className="w-full h-px bg-gradient-to-r from-gray-300 via-[#736496] to-gray-300 dark:from-black dark:via-[#736496] dark:to-black" />
-            <p className={`text-xs font-semibold dark:text-white/75 text-black `}>
+            <div className="w-full h-px bg-gradient-to-r from-transparent via-purple-300 to-transparent dark:from-transparent dark:via-purple-700/50 dark:to-transparent" />
+            <p className={`text-xs font-semibold text-gray-800 dark:text-gray-200`}>
               Leverage{" "}
-              <span className="text-gray-600 dark:text-white/75 ml-1 text-sm">{formatLeverage(leverage)}</span>
+              <span className="text-gray-700 dark:text-gray-300 ml-1 text-sm">{formatLeverage(leverage)}</span>
             </p>
-            <div className="w-full h-px bg-gradient-to-r from-gray-300 via-[#736496] to-gray-300 dark:from-black dark:via-[#736496] dark:to-black" />
-            <p className={`text-xs font-semibold dark:text-white/75 text-black `}>
+            <div className="w-full h-px bg-gradient-to-r from-transparent via-purple-300 to-transparent dark:from-transparent dark:via-purple-700/50 dark:to-transparent" />
+            <p className={`text-xs font-semibold text-gray-800 dark:text-gray-200`}>
               Commissions upto{" "}
-              <span className="dark:text-white/75 text-black ml-1 text-sm">{formatCommission(commission)}</span>
+              <span className="text-gray-900 dark:text-white ml-1 text-sm">{formatCommission(commission)}</span>
             </p>
           </div>
         </div>

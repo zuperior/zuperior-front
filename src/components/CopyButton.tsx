@@ -28,7 +28,7 @@ export const CopyButton: React.FC<CopyButtonProps> = ({
 
   return (
     <div onClick={handleCopy} className={`cursor-pointer ${className}`}>
-      {copied ? <Check size={size} className="text-green-500" /> : <Copy size={size} />}
+      {copied ? <Check size={size} className="text-green-500" /> : <Copy size={size} className="text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors" />}
     </div>
   );
 };
