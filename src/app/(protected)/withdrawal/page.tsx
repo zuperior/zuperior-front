@@ -86,7 +86,9 @@ export default function WithdrawalDepositPage() {
           if (bankTransfer?.icon_path) {
             // Use the icon_path from API, prepend admin backend URL if it's a relative path
             // Payment method images are served from admin backend (port 5003), not server (port 5000)
-            const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 'http://localhost:5003';
+            const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 
+                                   process.env.NEXT_PUBLIC_ADMIN_API_URL || 
+                                   'http://localhost:5003';
             const iconPath = bankTransfer.icon_path.startsWith('http') 
               ? bankTransfer.icon_path 
               : bankTransfer.icon_path.startsWith('/') 
@@ -360,7 +362,9 @@ function PaymentTile({
             console.error('[PaymentTile] Failed to load image:', icon);
             // Fallback to default bank.png if image fails to load
             if (icon && !icon.includes('/bank.png')) {
-              const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 'http://localhost:5003';
+              const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 
+                                   process.env.NEXT_PUBLIC_ADMIN_API_URL || 
+                                   'http://localhost:5003';
               e.currentTarget.src = `${adminBackendUrl}/payment_method_images/bank.png`;
             }
           }}

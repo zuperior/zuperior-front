@@ -477,7 +477,7 @@ export function Step1Form({
             {/* Limit range display */}
             {selectedAccountNumber && (
               <p className="text-xs mt-2 text-[#945393] font-medium">
-                {effectiveMin > 0 ? `$${effectiveMin}` : "$1"} - {effectiveMax === Infinity ? "Unlimited" : `$${effectiveMax.toFixed(2)}`}
+                {getLimitMessage()}
               </p>
             )}
           </div>

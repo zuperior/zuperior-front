@@ -297,11 +297,13 @@ export default function DepositPage() {
       return trimmedPath;
     }
     
-    // If it starts with /payment_method_images/, it's from admin backend (port 5003), not server (port 5000)
+    // If it starts with /payment_method_images/, it's from admin backend, not server
     if (trimmedPath.startsWith('/payment_method_images/')) {
-      // Payment method images are ALWAYS served from admin backend (port 5003)
-      // Use explicit admin backend URL, don't rely on NEXT_PUBLIC_BACKEND_API_URL which points to server
-      const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 'http://localhost:5003';
+      // Payment method images are ALWAYS served from admin backend
+      // Use explicit admin backend URL from environment variable
+      const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 
+                              process.env.NEXT_PUBLIC_ADMIN_API_URL || 
+                              'http://localhost:5003';
       console.log('[resolveImagePath] Payment method image:', { trimmedPath, adminBackendUrl, fullUrl: `${adminBackendUrl}${trimmedPath}` });
       return `${adminBackendUrl}${trimmedPath}`;
     }

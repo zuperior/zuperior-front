@@ -248,6 +248,25 @@ export function Step1FormPayout({
 
   // Limit Message
   const getLimitMessage = () => {
+    // Priority: Use group-based withdrawal limits from database if available
+    if (!useWallet && withdrawalLimits) {
+      const minText = withdrawalLimits.minWithdrawal !== null && withdrawalLimits.minWithdrawal !== undefined 
+        ? `$${withdrawalLimits.minWithdrawal.toFixed(2)}` 
+        : "$1";
+      const maxText = withdrawalLimits.maxWithdrawal !== null && withdrawalLimits.maxWithdrawal !== undefined 
+        ? `$${withdrawalLimits.maxWithdrawal.toFixed(2)}` 
+        : "Unlimited";
+      
+      if (withdrawalLimits.minWithdrawal !== null && withdrawalLimits.maxWithdrawal !== null) {
+        return `Withdrawal limit: ${minText} - ${maxText}`;
+      } else if (withdrawalLimits.maxWithdrawal !== null) {
+        return `Maximum withdrawal limit: ${maxText}`;
+      } else if (withdrawalLimits.minWithdrawal !== null) {
+        return `Minimum withdrawal limit: ${minText}`;
+      }
+    }
+    
+    // Fallback to KYC-based limits if no group limits
     switch (kycStep) {
       case "unverified":
         return "Please complete KYC to withdraw funds";

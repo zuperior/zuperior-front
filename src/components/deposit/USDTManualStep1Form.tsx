@@ -279,6 +279,25 @@ export function USDTManualStep1Form({
   };
 
   const getLimitMessage = () => {
+    // Priority: Use group-based limits from database if available
+    if (depositLimits) {
+      const minText = depositLimits.minLimit !== null && depositLimits.minLimit !== undefined 
+        ? `$${depositLimits.minLimit.toFixed(2)}` 
+        : "$1";
+      const maxText = depositLimits.maxLimit !== null && depositLimits.maxLimit !== undefined 
+        ? `$${depositLimits.maxLimit.toFixed(2)}` 
+        : "Unlimited";
+      
+      if (depositLimits.minLimit !== null && depositLimits.maxLimit !== null) {
+        return `Deposit limit: ${minText} - ${maxText}`;
+      } else if (depositLimits.maxLimit !== null) {
+        return `Maximum deposit limit: ${maxText}`;
+      } else if (depositLimits.minLimit !== null) {
+        return `Minimum deposit limit: ${minText}`;
+      }
+    }
+    
+    // Fallback to KYC-based limits if no group limits
     if (step === "verified") {
       return "No deposit limits (Unlimited account)";
     } else if (step === "partial") {
