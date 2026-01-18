@@ -25,6 +25,7 @@ interface USDTManualStep4ConfirmationProps {
   depositRequestId: string;
   onClose: () => void;
   bank?: BankDetails; // Admin bank details
+  gatewayType?: string; // 'upi' or 'bank_transfer' to conditionally show fields
 }
 
 export function USDTManualStep4Confirmation({
@@ -34,9 +35,24 @@ export function USDTManualStep4Confirmation({
   depositRequestId,
   onClose,
   bank = {},
+  gatewayType = 'bank_transfer',
 }: USDTManualStep4ConfirmationProps) {
   // Step 4 no copy UI needed per request
   const router = useRouter();
+  
+  // Determine if this is a UPI payment
+  const isUpi = gatewayType === 'upi';
+  
+  // Check if bank details are actually available (not just empty object)
+  const hasBankDetails = bank && (
+    bank.bankName || 
+    bank.accountName || 
+    bank.accountNumber || 
+    bank.ifscCode || 
+    bank.swiftCode || 
+    bank.accountType || 
+    bank.countryCode
+  );
 
   return (
     <div className="w-full px-6 py-4">
@@ -52,33 +68,37 @@ export function USDTManualStep4Confirmation({
         </p>
       </div>
 
-      {/* Summary (amount + bank name) */}
+      {/* Summary (amount + bank name) - only show bank if it's not UPI and has bank details */}
       <div className="rounded-lg p-6 mb-6 bg-white dark:bg-[#221D22] border border-gray-200 dark:border-[#362e36] shadow-sm">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Deposit Summary</h3>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className={`grid gap-3 ${!isUpi && hasBankDetails ? 'sm:grid-cols-2' : 'grid-cols-1'}`}>
           <div>
             <div className="text-xs text-gray-500 dark:text-white/50">Amount Submitted</div>
             <div className="text-sm font-medium text-gray-900 dark:text-white break-all">{amount ? `${amount} USD` : '-'}</div>
           </div>
-          <div>
-            <div className="text-xs text-gray-500 dark:text-white/50">Bank</div>
-            <div className="text-sm font-medium text-gray-900 dark:text-white break-all">{bank?.bankName || '-'}</div>
-          </div>
+          {!isUpi && hasBankDetails && (
+            <div>
+              <div className="text-xs text-gray-500 dark:text-white/50">Bank</div>
+              <div className="text-sm font-medium text-gray-900 dark:text-white break-all">{bank?.bankName || '-'}</div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Bank details for the account deposited into */}
-      <div className="rounded-lg p-6 mb-6 bg-white dark:bg-[#221D22] border border-gray-200 dark:border-[#362e36] shadow-sm">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Bank Account Details</h3>
-        <div className="grid md:grid-cols-2 gap-4">
-          <ReadOnlyField label="Bank Name" value={bank?.bankName} />
-          <ReadOnlyField label="Account Name" value={bank?.accountName} />
-          <ReadOnlyField label="Account Number" value={bank?.accountNumber} />
-          <ReadOnlyField label="IFSC / SWIFT" value={bank?.swiftCode || bank?.ifscCode} />
-          <ReadOnlyField label="Account Type" value={bank?.accountType} />
-          <ReadOnlyField label="Country" value={bank?.countryCode} />
+      {/* Bank details for the account deposited into - only show for bank_transfer, not UPI */}
+      {!isUpi && hasBankDetails && (
+        <div className="rounded-lg p-6 mb-6 bg-white dark:bg-[#221D22] border border-gray-200 dark:border-[#362e36] shadow-sm">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Bank Account Details</h3>
+          <div className="grid md:grid-cols-2 gap-4">
+            <ReadOnlyField label="Bank Name" value={bank?.bankName} />
+            <ReadOnlyField label="Account Name" value={bank?.accountName} />
+            <ReadOnlyField label="Account Number" value={bank?.accountNumber} />
+            <ReadOnlyField label="IFSC / SWIFT" value={bank?.swiftCode || bank?.ifscCode} />
+            <ReadOnlyField label="Account Type" value={bank?.accountType} />
+            <ReadOnlyField label="Country" value={bank?.countryCode} />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Instructions */}
       <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-lg p-4 mb-6">

@@ -130,6 +130,90 @@ export function UnipaymentDialog({
   const [usdAmountFromInr, setUsdAmountFromInr] = useState<string>("");
   const [fixedRate, setFixedRate] = useState<number>(92.00); // Default 1 USD = 92 INR
   
+  // State for deposit limits from group_management
+  const [depositLimits, setDepositLimits] = useState<{
+    minLimit: number | null;
+    maxLimit: number | null;
+  } | null>(null);
+  const [loadingLimits, setLoadingLimits] = useState(false);
+  
+  // Fetch deposit limits when account is selected
+  useEffect(() => {
+    const fetchDepositLimits = async () => {
+      if (!selectedAccount) {
+        setDepositLimits(null);
+        return;
+      }
+
+      const [accountNumber] = selectedAccount.split("|");
+      if (!accountNumber) {
+        setDepositLimits(null);
+        return;
+      }
+
+      setLoadingLimits(true);
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+        const response = await fetch(`/api/mt5/deposit-limits/${accountNumber}`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        });
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          // Always set depositLimits object, even if values are null
+          // This ensures we can distinguish between "no limits found" vs "limits are null/unlimited"
+          setDepositLimits({
+            minLimit: data.data.minLimit,
+            maxLimit: data.data.maxLimit,
+          });
+          console.log('📊 Deposit limits fetched for Unipayment:', {
+            accountId: accountNumber,
+            accountGroup: data.data.group,
+            accountPackage: data.data.package,
+            minLimit: data.data.minLimit,
+            maxLimit: data.data.maxLimit,
+            matchedBy: data.data.matchedBy,
+            searchValue: data.data.searchValue,
+            dedicatedName: data.data.dedicatedName,
+            matchedGroup: data.data.matchedGroup,
+            message: data.data.message
+          });
+          
+          // Log warning if limits are null
+          if (data.data.minLimit === null && data.data.maxLimit === null) {
+            if (data.data.matchedBy) {
+              console.warn('⚠️ Account matched but limits are NULL in database:', {
+                accountId: accountNumber,
+                accountGroup: data.data.group,
+                matchedBy: data.data.matchedBy,
+                dedicatedName: data.data.dedicatedName,
+                matchedGroup: data.data.matchedGroup,
+                message: 'Please configure min_limit and max_limit in group_management table for this group'
+              });
+            } else {
+              console.warn('⚠️ No group match found for account:', {
+                accountId: accountNumber,
+                accountGroup: data.data.group,
+                accountPackage: data.data.package,
+                message: data.data.message || 'No matching group found in group_management table'
+              });
+            }
+          }
+        } else {
+          setDepositLimits(null);
+          console.warn('⚠️ No deposit limits found for account:', accountNumber, data);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching deposit limits:', error);
+        setDepositLimits(null);
+      } finally {
+        setLoadingLimits(false);
+      }
+    };
+
+    fetchDepositLimits();
+  }, [selectedAccount]);
+  
   // Update network when currentSelectedCrypto changes
   useEffect(() => {
     if (currentSelectedCrypto && currentSelectedCrypto.networks.length > 0) {
@@ -391,17 +475,14 @@ export function UnipaymentDialog({
       return;
     }
 
-    // Validate minimum deposit for UPI (2000 INR / ~25 USD as per gateway)
+    // Validate using group-based limits from database only
     if (paymentMethod === 'upi') {
       const inrValue = parseFloat(inrAmount);
-      if (isNaN(inrValue) || inrValue < 2000) {
-        setError("Minimum deposit amount for UPI is ₹2,000 INR");
+      if (isNaN(inrValue) || inrValue <= 0) {
+        setError("Please enter a valid amount");
         return;
       }
-      if (inrValue > 100000) {
-        setError("Maximum deposit amount for UPI is ₹1,00,000 INR");
-        return;
-      }
+      // Validation against database limits is handled in handleContinue
     }
 
     if (!selectedAccount) {
@@ -511,12 +592,36 @@ export function UnipaymentDialog({
         remainingSeconds: Math.floor((new Date(expiresAtTime).getTime() - now) / 1000),
       });
 
+      // Resolve QR code URL if it's a relative path
+      let resolvedQrCode = invoiceData.qrCode;
+      if (resolvedQrCode && typeof resolvedQrCode === 'string') {
+        const trimmedPath = resolvedQrCode.trim();
+        // If it's not already a full URL, resolve it
+        if (!trimmedPath.startsWith('http://') && !trimmedPath.startsWith('https://') && !trimmedPath.startsWith('data:')) {
+          // If it starts with /kyc_proofs/, use admin backend URL
+          if (trimmedPath.startsWith('/kyc_proofs/') || trimmedPath.startsWith('kyc_proofs/')) {
+            const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 
+                                    process.env.NEXT_PUBLIC_ADMIN_API_URL || 
+                                    'http://localhost:5003';
+            const cleanPath = trimmedPath.startsWith('/') ? trimmedPath : `/${trimmedPath}`;
+            resolvedQrCode = `${adminBackendUrl}${cleanPath}`;
+            console.log('[UnipaymentDialog] Resolved QR code URL:', { original: invoiceData.qrCode, resolved: resolvedQrCode });
+          } else if (trimmedPath.startsWith('/')) {
+            // Other relative paths - use admin backend URL
+            const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 
+                                    process.env.NEXT_PUBLIC_ADMIN_API_URL || 
+                                    'http://localhost:5003';
+            resolvedQrCode = `${adminBackendUrl}${trimmedPath}`;
+          }
+        }
+      }
+      
       setInvoiceData({
         invoiceId: invoiceData.invoiceId,
         invoiceUrl: invoiceData.invoiceUrl,
         status: invoiceData.status,
         paymentMethod: invoiceData.paymentMethod,
-        qrCode: invoiceData.qrCode,
+        qrCode: resolvedQrCode,
         cryptoAddress: invoiceData.cryptoAddress,
         expiresAt: expiresAtTime,
         payAmount: invoicePayAmount,
@@ -700,6 +805,8 @@ export function UnipaymentDialog({
               setSelectedAccount={setSelectedAccount}
               lifetimeDeposit={lifetimeDeposit}
               usdAmountFromInr={usdAmountFromInr}
+              depositLimits={depositLimits}
+              fixedRate={fixedRate}
             />
           )}
 
@@ -843,7 +950,14 @@ export function UnipaymentDialog({
                         )}
                         {invoiceData.qrCode && !invoiceData.cryptoAddress && (
                           <div className="flex justify-center mb-2">
-                            <img src={invoiceData.qrCode} alt="Payment QR Code" className="max-w-[250px]" />
+                            <img 
+                              src={invoiceData.qrCode} 
+                              alt="Payment QR Code" 
+                              className="max-w-[250px]"
+                              onError={(e) => {
+                                console.error('[UnipaymentDialog] Failed to load QR code:', invoiceData.qrCode);
+                              }}
+                            />
                           </div>
                         )}
                       </div>
@@ -1022,6 +1136,8 @@ function UnipaymentStep1Form({
   setSelectedAccount,
   lifetimeDeposit,
   usdAmountFromInr,
+  depositLimits,
+  fixedRate,
 }: {
   amount: string;
   setAmount: (value: string) => void;
@@ -1040,6 +1156,11 @@ function UnipaymentStep1Form({
   setSelectedAccount: (account: string) => void;
   lifetimeDeposit: number;
   usdAmountFromInr?: string;
+  depositLimits: {
+    minLimit: number | null;
+    maxLimit: number | null;
+  } | null;
+  fixedRate: number;
 }) {
   // Update network when crypto changes
   useEffect(() => {
@@ -1085,25 +1206,40 @@ function UnipaymentStep1Form({
       return;
     }
     
-    // Validate minimum and maximum limits
+    // Validate minimum and maximum limits from group_management
+    // ONLY use group-based limits from database - NO static fallbacks
+    if (!depositLimits) {
+      toast.error("Deposit limits not configured for this account. Please contact support.");
+      return;
+    }
+    
+    const minLimit = depositLimits.minLimit;
+    const maxLimit = depositLimits.maxLimit;
+    
     if (paymentMethod === 'upi') {
-      // UPI limits: ₹2,000 - ₹1,00,000 INR
-      if (amountNum < 2000) {
-        toast.error("Minimum deposit amount for UPI is ₹2,000 INR");
+      // For UPI, convert USD amount to INR for validation
+      const inrAmount = amountNum * fixedRate;
+      
+      // Check group-based limits (in USD, then convert to INR for display)
+      if (minLimit !== null && minLimit !== undefined && amountNum < minLimit) {
+        const minInr = minLimit * fixedRate;
+        toast.error(`Minimum deposit for this account is ₹${minInr.toLocaleString('en-IN', { maximumFractionDigits: 0 })} INR ($${minLimit} USD)`);
         return;
       }
-      if (amountNum > 100000) {
-        toast.error("Maximum deposit amount for UPI is ₹1,00,000 INR");
+      if (maxLimit !== null && maxLimit !== undefined && amountNum > maxLimit) {
+        const maxInr = maxLimit * fixedRate;
+        toast.error(`Maximum deposit for this account is ₹${maxInr.toLocaleString('en-IN', { maximumFractionDigits: 0 })} INR ($${maxLimit} USD)`);
         return;
       }
     } else {
-      // Other payment methods: $1 - $5,000 USD
-      if (amountNum < 1) {
-        toast.error("Minimum deposit amount is $1 USD");
+      // For other payment methods (crypto, card, etc.)
+      // Check group-based limits
+      if (minLimit !== null && minLimit !== undefined && amountNum < minLimit) {
+        toast.error(`Minimum deposit for this account is $${minLimit}`);
         return;
       }
-      if (amountNum > 5000) {
-        toast.error("Maximum deposit amount is $5,000 USD. Please enter $5,000 or less.");
+      if (maxLimit !== null && maxLimit !== undefined && amountNum > maxLimit) {
+        toast.error(`Maximum deposit for this account is $${maxLimit}`);
         return;
       }
     }
@@ -1115,6 +1251,43 @@ function UnipaymentStep1Form({
   const selectedAccountObj = accounts.find(
     (account) => account.acc.toString() === selectedAccountNumber
   );
+
+  // Get limit message based on group limits - ONLY from database, NO static fallbacks
+  const getLimitMessage = () => {
+    // Only show limits from database - no fallbacks
+    if (!depositLimits) {
+      return { min: 'N/A', max: 'N/A', clickAmount: '0', message: 'Limits not configured' };
+    }
+    
+    const minLimit = depositLimits.minLimit;
+    const maxLimit = depositLimits.maxLimit;
+    
+    // If both limits are null, it means limits are not configured in the database
+    if (minLimit === null && maxLimit === null) {
+      return { min: 'N/A', max: 'N/A', clickAmount: '0', message: 'Limits not configured in admin panel' };
+    }
+    
+    if (paymentMethod === 'upi') {
+      // For UPI, convert USD limits to INR
+      const minInr = minLimit !== null && minLimit !== undefined ? minLimit * fixedRate : null;
+      const maxInr = maxLimit !== null && maxLimit !== undefined ? maxLimit * fixedRate : null;
+      
+      // Show actual limits from database only
+      return {
+        min: minInr !== null ? `₹${minInr.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : 'Not set',
+        max: maxInr !== null ? `₹${maxInr.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : 'Not set',
+        clickAmount: maxInr !== null ? maxInr.toString() : '0'
+      };
+    } else {
+      // For other payment methods (crypto, card, etc.)
+      // Show actual limits from database only
+      return {
+        min: minLimit !== null && minLimit !== undefined ? `$${minLimit.toFixed(2)}` : 'Not set',
+        max: maxLimit !== null && maxLimit !== undefined ? `$${maxLimit.toFixed(2)}` : 'Not set',
+        clickAmount: maxLimit !== null && maxLimit !== undefined ? maxLimit.toString() : '0'
+      };
+    }
+  };
 
   return (
     <div className="w-full px-6">
@@ -1323,17 +1496,36 @@ function UnipaymentStep1Form({
                   const value = e.target.value;
                   setAmount(value);
                   
-                  // Real-time validation
+                  // Real-time validation with group-based limits - ONLY from database
                   toast.dismiss(); // Dismiss previous toasts
                   const amountNum = parseFloat(value);
                   if (!isNaN(amountNum) && amountNum > 0) {
+                    if (!depositLimits) {
+                      toast.error("Deposit limits not configured for this account");
+                      return;
+                    }
+                    
+                    const minLimit = depositLimits.minLimit;
+                    const maxLimit = depositLimits.maxLimit;
+                    
                     if (paymentMethod === 'upi') {
-                      if (amountNum > 100000) {
-                        toast.error("Maximum deposit amount for UPI is ₹1,00,000 INR");
+                      // For UPI, convert USD amount to INR for validation
+                      const inrAmount = amountNum * fixedRate;
+                      
+                      // Check group-based limits only
+                      if (minLimit !== null && minLimit !== undefined && amountNum < minLimit) {
+                        const minInr = minLimit * fixedRate;
+                        toast.error(`Minimum deposit for this account is ₹${minInr.toLocaleString('en-IN', { maximumFractionDigits: 0 })} INR`);
+                      } else if (maxLimit !== null && maxLimit !== undefined && amountNum > maxLimit) {
+                        const maxInr = maxLimit * fixedRate;
+                        toast.error(`Maximum deposit for this account is ₹${maxInr.toLocaleString('en-IN', { maximumFractionDigits: 0 })} INR`);
                       }
                     } else {
-                      if (amountNum > 5000) {
-                        toast.error("Maximum deposit amount is $5,000 USD. Please enter $5,000 or less.");
+                      // Check group-based limits for other payment methods
+                      if (minLimit !== null && minLimit !== undefined && amountNum < minLimit) {
+                        toast.error(`Minimum deposit for this account is $${minLimit}`);
+                      } else if (maxLimit !== null && maxLimit !== undefined && amountNum > maxLimit) {
+                        toast.error(`Maximum deposit for this account is $${maxLimit}`);
                       }
                     }
                   }
@@ -1345,36 +1537,59 @@ function UnipaymentStep1Form({
                 {paymentMethod === 'upi' ? 'INR' : 'USD'}
               </span>
             </div>
-            {paymentMethod === 'upi' ? (
-              <>
-                <p 
-                  className="text-xs mt-2 text-[#945393] font-medium cursor-pointer hover:text-[#b366b3] transition-colors"
-                  onClick={() => {
-                    setAmount("100000");
-                    toast.dismiss();
-                  }}
-                  title="Click to set maximum amount (₹1,00,000)"
-                >
-                  ₹2,000 - ₹1,00,000 INR
-                </p>
-                {usdAmountFromInr && parseFloat(amount) > 0 && (
-                  <p className="text-xs mt-1 text-gray-400">
-                    ≈ ${usdAmountFromInr} USD
+            {(() => {
+              const limits = getLimitMessage();
+              
+              // Show limit message - only from database
+              if (limits.message) {
+                return (
+                  <p className="text-xs mt-2 text-red-500 font-medium">
+                    {limits.message}
                   </p>
-                )}
-              </>
-            ) : (
-              <p 
-                className="text-xs mt-2 text-[#945393] font-medium cursor-pointer hover:text-[#b366b3] transition-colors"
-                onClick={() => {
-                  setAmount("5000");
-                  toast.dismiss();
-                }}
-                title="Click to set maximum amount ($5,000)"
-              >
-              $1 - $5000.00
-            </p>
-            )}
+                );
+              }
+              
+              // Check if limits are configured (not "Not set" or "N/A")
+              const hasLimits = limits.min !== 'Not set' && limits.max !== 'Not set' && limits.min !== 'N/A' && limits.max !== 'N/A';
+              const limitText = paymentMethod === 'upi' 
+                ? `${limits.min} - ${limits.max} INR`
+                : `${limits.min} - ${limits.max}`;
+              
+              return paymentMethod === 'upi' ? (
+                <>
+                  <p 
+                    className={`text-xs mt-2 font-medium ${hasLimits ? 'text-[#945393] cursor-pointer hover:text-[#b366b3] transition-colors' : 'text-yellow-600'}`}
+                    onClick={() => {
+                      if (hasLimits && limits.clickAmount !== '0') {
+                        setAmount(limits.clickAmount);
+                        toast.dismiss();
+                      }
+                    }}
+                    title={hasLimits ? `Click to set maximum amount (${limits.max})` : "Limits not configured"}
+                  >
+                    Deposit limit: {limitText}
+                  </p>
+                  {usdAmountFromInr && parseFloat(amount) > 0 && (
+                    <p className="text-xs mt-1 text-gray-400">
+                      ≈ ${usdAmountFromInr} USD
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p 
+                  className={`text-xs mt-2 font-medium ${hasLimits ? 'text-[#945393] cursor-pointer hover:text-[#b366b3] transition-colors' : 'text-yellow-600'}`}
+                  onClick={() => {
+                    if (hasLimits && limits.clickAmount !== '0') {
+                      setAmount(limits.clickAmount);
+                      toast.dismiss();
+                    }
+                  }}
+                  title={hasLimits ? `Click to set maximum amount (${limits.max})` : "Limits not configured"}
+                >
+                  Deposit limit: {limitText}
+                </p>
+              );
+            })()}
           </div>
           <Button
             className="flex-1 cursor-pointer bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:bg-[#9d6ad9] w-full mt-3"

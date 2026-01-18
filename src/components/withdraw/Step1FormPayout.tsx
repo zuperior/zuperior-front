@@ -87,7 +87,10 @@ export function Step1FormPayout({
 
       setLoadingWithdrawalLimits(true);
       try {
-        const response = await fetch(`/api/mt5/deposit-limits/${accountNumber}`);
+        const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+        const response = await fetch(`/api/mt5/deposit-limits/${accountNumber}`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        });
         const data = await response.json();
 
         if (data.success && data.data) {

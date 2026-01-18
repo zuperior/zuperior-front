@@ -99,7 +99,10 @@ export function Step1Form({
 
       setLoadingLimits(true);
       try {
-        const response = await fetch(`/api/mt5/deposit-limits/${selectedAccountNumber}`);
+        const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+        const response = await fetch(`/api/mt5/deposit-limits/${selectedAccountNumber}`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        });
         const data = await response.json();
 
         if (data.success && data.data) {
@@ -208,18 +211,10 @@ export function Step1Form({
       toast.error("Please enter a valid amount");
       return false;
     }
-    if (amountNum < 1) {
-      toast.error("Minimum deposit amount is $1");
-      return false;
-    }
 
-    const totalAfterDeposit = lifetimeDeposit + amountNum;
-
-    // REMOVED: Startup dynamic cap enforcement
-    // Maximum deposit limit should be the same as in database, not reduced by current balance
-
-    if (step === "partial" && totalAfterDeposit > 10000) {
-      toast.error("Deposit limit is $10,000 for Partially Verified accounts");
+    // ONLY use group-based limits from database - NO static fallbacks
+    if (!depositLimits && !groupInfo) {
+      toast.error("Deposit limits not configured for this account. Please contact support.");
       return false;
     }
 
@@ -246,23 +241,10 @@ export function Step1Form({
 
     const amountNum = parseFloat(value);
     if (isNaN(amountNum)) return;
-    const totalAfterDeposit = lifetimeDeposit + amountNum;
 
-    // Check against effectiveMax while typing
-    if (amountNum > effectiveMax) {
-      // Just a warning, blocking handled in validateAmount
-    }
-
-    if (amountNum < 1) {
-      toast.error("Minimum deposit amount is $1");
-      return;
-    }
-    if (step === "unverified" && totalAfterDeposit > 5000) {
-      toast.error("Deposit limit is $5,000 for Unverified accounts");
-      return;
-    }
-    if (step === "partial" && totalAfterDeposit > 10000) {
-      toast.error("Deposit limit is $10,000 for Partially Verified accounts");
+    // ONLY use group-based limits from database - NO static fallbacks
+    if (!depositLimits && !groupInfo) {
+      toast.error("Deposit limits not configured for this account");
       return;
     }
 
@@ -308,53 +290,38 @@ export function Step1Form({
   };
 
   const { effectiveMin, effectiveMax, limitSource } = useMemo(() => {
-    let min = 1; // Default global min
-    let max = Infinity;
-    let source = "";
+    let min = null; // No default - only from database
+    let max = null; // No default - only from database
+    let source = "Database";
 
-    // 1. Verification Limits
-    if (step === "unverified") {
-      max = 5000;
-      source = "Unverified Account";
-    } else if (step === "partial") {
-      max = 10000;
-      source = "Partially Verified";
-    }
-
-    // 2. REMOVED: Startup Account Logic that subtracts balance
-    // Maximum deposit limit should be the same as in database, not reduced by current balance
-
-    // 3. Deposit Limits from group_management (Priority: API limits, fallback to groupInfo)
+    // ONLY use Deposit Limits from group_management - NO static fallbacks or KYC limits
     const minLimit = depositLimits?.minLimit ?? groupInfo?.MinLimit;
     const maxLimit = depositLimits?.maxLimit ?? groupInfo?.MaxLimit;
 
     if (minLimit !== undefined && minLimit !== null && !isNaN(minLimit)) {
-      if (minLimit > min) {
-        min = minLimit;
-      }
+      min = minLimit;
+      source = depositLimits ? `Account Package Limit` : `Group Limit (${groupInfo?.DedicatedName || groupInfo?.Group || 'Limited'})`;
     }
     if (maxLimit !== undefined && maxLimit !== null && !isNaN(maxLimit)) {
-      if (maxLimit < max) {
-        max = maxLimit;
-        source = depositLimits ? `Account Package Limit` : `Group Limit (${groupInfo?.DedicatedName || groupInfo?.Group || 'Limited'})`;
-      }
-    }
-
-    // If max is still Infinity and we have a selected account, set a reasonable default
-    if (max === Infinity && selectedAccountNumber) {
-      max = 100000; // Default max if no limit found
+      max = maxLimit;
+      source = depositLimits ? `Account Package Limit` : `Group Limit (${groupInfo?.DedicatedName || groupInfo?.Group || 'Limited'})`;
     }
 
     return { effectiveMin: min, effectiveMax: max, limitSource: source };
-  }, [step, groupInfo, depositLimits, selectedAccountNumber]);
+  }, [groupInfo, depositLimits, selectedAccountNumber]);
 
   const getLimitMessage = () => {
     if (!selectedAccountObj) return ""; // Show nothing if no account selected
 
-    const minText = effectiveMin > 0 ? `$${effectiveMin}` : "$1";
-    const maxText = effectiveMax === Infinity ? "Unlimited" : `$${effectiveMax.toFixed(2)}`;
+    // ONLY show limits from database - NO static fallbacks
+    if (effectiveMin === null && effectiveMax === null) {
+      return "Deposit limits not configured in admin panel";
+    }
 
-    return `Allowed: ${minText} - ${maxText}`;
+    const minText = effectiveMin !== null && effectiveMin !== undefined ? `$${effectiveMin}` : "Not set";
+    const maxText = effectiveMax !== null && effectiveMax !== undefined ? `$${effectiveMax.toFixed(2)}` : "Not set";
+
+    return `Deposit limit: ${minText} - ${maxText}`;
   };
 
   return (

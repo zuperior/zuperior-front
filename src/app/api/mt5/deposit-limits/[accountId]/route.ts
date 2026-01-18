@@ -16,8 +16,14 @@ export async function GET(
       );
     }
 
-    // Get auth token from cookies
-    const token = request.cookies.get('token')?.value;
+    // Get auth token from Authorization header or cookies
+    let token = request.headers.get('authorization')?.replace('Bearer ', '') ||
+                request.headers.get('Authorization')?.replace('Bearer ', '');
+    
+    // If no token in header, try to get from cookie
+    if (!token) {
+      token = request.cookies.get('token')?.value || null;
+    }
 
     if (!token) {
       return NextResponse.json(

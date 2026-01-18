@@ -60,9 +60,34 @@ export function BankDepositDialog({
           if (gatewayType === 'upi') {
             // Handle UPI data
             const raw = data?.data?.upi || data?.data || {};
+            
+            // Resolve QR code URL - if it's a relative path, use admin backend URL
+            let qrCodeUrl = raw.qrCode ?? raw.qr_code ?? raw.qr ?? null;
+            if (qrCodeUrl && typeof qrCodeUrl === 'string') {
+              const trimmedPath = qrCodeUrl.trim();
+              // If it's already a full URL, use as is
+              if (!trimmedPath.startsWith('http://') && !trimmedPath.startsWith('https://')) {
+                // If it starts with /kyc_proofs/, use admin backend URL
+                if (trimmedPath.startsWith('/kyc_proofs/') || trimmedPath.startsWith('kyc_proofs/')) {
+                  const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 
+                                          process.env.NEXT_PUBLIC_ADMIN_API_URL || 
+                                          'http://localhost:5003';
+                  const cleanPath = trimmedPath.startsWith('/') ? trimmedPath : `/${trimmedPath}`;
+                  qrCodeUrl = `${adminBackendUrl}${cleanPath}`;
+                  console.log('[BankDepositDialog] Resolved QR code URL:', { original: raw.qrCode, resolved: qrCodeUrl });
+                } else if (trimmedPath.startsWith('/')) {
+                  // Other relative paths - use admin backend URL
+                  const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 
+                                          process.env.NEXT_PUBLIC_ADMIN_API_URL || 
+                                          'http://localhost:5003';
+                  qrCodeUrl = `${adminBackendUrl}${trimmedPath}`;
+                }
+              }
+            }
+            
             const normalized = {
               vpaAddress: raw.vpaAddress ?? raw.vpa_address ?? raw.vpa ?? null,
-              qrCode: raw.qrCode ?? raw.qr_code ?? raw.qr ?? null,
+              qrCode: qrCodeUrl,
               fixedRate: raw.fixedRate ?? raw.fixed_rate ?? 92.00,
             };
             setUpi(normalized);
@@ -173,6 +198,7 @@ export function BankDepositDialog({
             depositRequestId={depositRequestId}
             onClose={() => onOpenChange(false)}
             bank={bank || {}}
+            gatewayType={gatewayType}
           />
         );
     }

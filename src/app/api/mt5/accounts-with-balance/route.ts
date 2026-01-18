@@ -28,6 +28,8 @@ export async function GET(request: NextRequest) {
     const url = `${API_URL}/mt5/accounts-with-balance?_t=${cacheBuster}&_nocache=${cacheBuster2}&_fresh=${Date.now()}`;
     
     console.log(`[Next.js API] 🚀 Fetching accounts with balance from: ${url}`);
+    console.log(`[Next.js API] 🔍 API_URL: ${API_URL}`);
+    console.log(`[Next.js API] 🔍 Full URL: ${url}`);
     
     const response = await fetch(url, {
       method: 'GET',
@@ -48,12 +50,19 @@ export async function GET(request: NextRequest) {
 
     if (!response || !response.ok) {
       const errorData = response ? (await response.json().catch(() => ({}))) : {};
+      const statusCode = response ? response.status : 503;
+      console.error(`[Next.js API] ❌ Backend error (${statusCode}):`, {
+        url,
+        status: statusCode,
+        errorData,
+        message: errorData.message || errorData.Message || (!response ? 'Backend unavailable' : 'Failed to fetch accounts with balance')
+      });
       return NextResponse.json(
         {
           success: false,
-          message: errorData.message || (!response ? 'Backend unavailable' : 'Failed to fetch accounts with balance')
+          message: errorData.message || errorData.Message || (!response ? 'Backend unavailable' : `Failed to fetch accounts with balance (${statusCode})`)
         },
-        { status: response ? response.status : 503 }
+        { status: statusCode }
       );
     }
 
@@ -69,7 +78,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data);
 
   } catch (error: any) {
-    console.error('Error fetching accounts with balance:', error?.message || error);
+    console.error('❌ Error fetching accounts with balance:', {
+      message: error?.message,
+      name: error?.name,
+      code: error?.code,
+      url,
+      API_URL
+    });
+    
+    // If it's a 404, the backend route might not exist or server isn't running
+    if (error?.message?.includes('404') || error?.code === 'ENOTFOUND' || error?.code === 'ECONNREFUSED') {
+      console.error('❌ Backend server may not be running or route not found. Check:', {
+        backendUrl: API_URL,
+        expectedRoute: `${API_URL}/mt5/accounts-with-balance`,
+        message: 'Ensure backend server is running on port 5000'
+      });
+    }
+    
     // Return empty accounts instead of 500 to prevent UI blocking
     return NextResponse.json(
       {

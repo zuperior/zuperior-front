@@ -553,11 +553,39 @@ export const fetchAllAccountsWithBalance = createAsyncThunk(
       if (error?.message === 'canceled' || error?.name === 'AbortError') {
         return rejectWithValue('Request canceled');
       }
-      const errorDetails = error?.response?.data || error?.message || JSON.stringify(error) || 'Unknown error';
-      console.error(`[MT5] ❌ fetchAllAccountsWithBalance error:`, errorDetails);
-      return rejectWithValue(
-        error.response?.data?.message || error.response?.data?.Message || error.message || "Failed to fetch account balances"
-      );
+      
+      // Enhanced error logging to capture all error details
+      console.error(`[MT5] ❌ fetchAllAccountsWithBalance error:`, {
+        error,
+        message: error?.message,
+        name: error?.name,
+        code: error?.code,
+        response: error?.response,
+        responseData: error?.response?.data,
+        responseStatus: error?.response?.status,
+        responseStatusText: error?.response?.statusText,
+        stack: error?.stack,
+        config: error?.config,
+        request: error?.request
+      });
+      
+      // Try to extract meaningful error message
+      let errorMessage = "Failed to fetch account balances";
+      if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.response?.data?.Message) {
+        errorMessage = error.response.data.Message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.code === 'ECONNREFUSED' || error?.code === 'ENOTFOUND') {
+        errorMessage = "Backend server is not reachable. Please check if the server is running.";
+      } else if (error?.response?.status === 404) {
+        errorMessage = "Endpoint not found. The backend route may not be registered.";
+      } else if (error?.response?.status === 401) {
+        errorMessage = "Authentication failed. Please log in again.";
+      }
+      
+      return rejectWithValue(errorMessage);
     }
   }
 );

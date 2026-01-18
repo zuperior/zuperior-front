@@ -519,7 +519,9 @@ const mt5Service = {
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second max timeout
 
     try {
-      const r = await api.get('/api/mt5/accounts-with-balance', {
+      const url = '/api/mt5/accounts-with-balance';
+      console.log(`[API] 📡 Making request to: ${url}`);
+      const r = await api.get(url, {
         signal: opts?.signal ?? controller.signal,
         // Aggressive cache busting - unique timestamp for each request
         params: {
@@ -551,12 +553,44 @@ const mt5Service = {
       return result;
     } catch (error: any) {
       clearTimeout(timeoutId);
+      
+      // Enhanced error logging
+      console.error(`[API] ❌ getUserAccountsWithBalance error:`, {
+        error,
+        message: error?.message,
+        name: error?.name,
+        code: error?.code,
+        response: error?.response ? {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          headers: error.response.headers
+        } : null,
+        request: error?.request,
+        config: error?.config ? {
+          url: error.config.url,
+          method: error.config.method,
+          baseURL: error.config.baseURL
+        } : null,
+        stack: error?.stack
+      });
+      
       // Don't throw on abort - just return empty data
       if (error.name === 'AbortError' || error.code === 'ECONNABORTED') {
         console.warn(`[API] ⚠️ Balance fetch aborted or timed out`);
         throw error;
       }
-      throw error;
+      
+      // Re-throw with more context
+      const enhancedError = new Error(
+        error?.response?.data?.message || 
+        error?.response?.data?.Message || 
+        error?.message || 
+        `Failed to fetch account balances (${error?.response?.status || 'unknown status'})`
+      );
+      (enhancedError as any).originalError = error;
+      (enhancedError as any).response = error?.response;
+      throw enhancedError;
     }
   },
 

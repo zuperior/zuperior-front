@@ -23,6 +23,42 @@ export function UPIStep2Instructions({ upi, amount, nextStep, fixedRate }: Props
   const rate = fixedRate || upi.fixedRate || 92.00;
   const inrAmount = (amountNum * rate).toFixed(2);
 
+  // Resolve QR code URL to use admin backend URL if it's a relative path
+  const resolveQrCodeUrl = (qrCode: string | null | undefined): string | null => {
+    if (!qrCode || typeof qrCode !== 'string') return null;
+    
+    const trimmedPath = qrCode.trim();
+    
+    // If it's already a full URL, return as is
+    if (trimmedPath.startsWith('http://') || trimmedPath.startsWith('https://')) {
+      return trimmedPath;
+    }
+    
+    // If it starts with /kyc_proofs/ or kyc_proofs/, use admin backend URL
+    if (trimmedPath.startsWith('/kyc_proofs/') || trimmedPath.startsWith('kyc_proofs/')) {
+      const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 
+                              process.env.NEXT_PUBLIC_ADMIN_API_URL || 
+                              'http://localhost:5003';
+      const cleanPath = trimmedPath.startsWith('/') ? trimmedPath : `/${trimmedPath}`;
+      const resolvedUrl = `${adminBackendUrl}${cleanPath}`;
+      console.log('[UPIStep2Instructions] Resolved QR code URL:', { original: qrCode, resolved: resolvedUrl });
+      return resolvedUrl;
+    }
+    
+    // If it's a relative path starting with /, use admin backend URL
+    if (trimmedPath.startsWith('/')) {
+      const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 
+                              process.env.NEXT_PUBLIC_ADMIN_API_URL || 
+                              'http://localhost:5003';
+      return `${adminBackendUrl}${trimmedPath}`;
+    }
+    
+    // Return as is if we can't determine the path
+    return qrCode;
+  };
+
+  const resolvedQrCodeUrl = resolveQrCodeUrl(upi.qrCode);
+
   const copy = (label: string, value: string) => {
     navigator.clipboard.writeText(value).then(
       () => {
@@ -42,7 +78,7 @@ export function UPIStep2Instructions({ upi, amount, nextStep, fixedRate }: Props
 
       <div className="rounded-lg p-6 mb-6 bg-white dark:bg-[#221D22] border border-gray-200 dark:border-[#362e36] shadow-sm">
         {/* QR Code Section */}
-        {upi.qrCode && (
+        {resolvedQrCodeUrl && (
           <div className="mb-6 text-center">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
               Scan QR code to pay via UPI
@@ -50,14 +86,15 @@ export function UPIStep2Instructions({ upi, amount, nextStep, fixedRate }: Props
             <div className="flex justify-center mb-4">
               <div className="p-4 bg-white rounded-lg border-2 border-gray-200 dark:border-gray-700">
                 <img
-                  src={upi.qrCode}
+                  src={resolvedQrCodeUrl}
                   alt="UPI QR Code"
                   width={250}
                   height={250}
                   className="rounded"
                   crossOrigin="anonymous"
                   onError={(e) => {
-                    console.error('[UPI] Failed to load QR code:', upi.qrCode);
+                    console.error('[UPI] Failed to load QR code:', resolvedQrCodeUrl);
+                    console.error('[UPI] Original QR code:', upi.qrCode);
                     // Show error message
                     const parent = e.target.parentElement;
                     if (parent) {

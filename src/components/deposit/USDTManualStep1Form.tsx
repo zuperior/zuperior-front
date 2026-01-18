@@ -115,7 +115,10 @@ export function USDTManualStep1Form({
 
       setLoadingLimits(true);
       try {
-        const response = await fetch(`/api/mt5/deposit-limits/${selectedAccount}`);
+        const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+        const response = await fetch(`/api/mt5/deposit-limits/${selectedAccount}`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        });
         const data = await response.json();
 
         if (data.success && data.data) {
@@ -155,35 +158,21 @@ export function USDTManualStep1Form({
       toast.error("Please enter a valid amount");
       return false;
     }
-    if (amountNum < 1) {
-      toast.error("Minimum deposit amount is $1");
-      return false;
-    }
 
-    const totalAfterDeposit = lifetimeDeposit + amountNum;
-
-    // REMOVED: Startup dynamic cap enforcement
-    // Maximum deposit limit should be the same as in database, not reduced by current balance
-
-    if (step === "unverified" && totalAfterDeposit > 5000) {
-      toast.error("Deposit limit is $5,000 for Unverified accounts");
-      return false;
-    }
-    if (step === "partial" && totalAfterDeposit > 10000) {
-      toast.error("Deposit limit is $10,000 for Partially Verified accounts");
+    // ONLY use group-based limits from database - NO static fallbacks
+    if (!depositLimits) {
+      toast.error("Deposit limits not configured for this account. Please contact support.");
       return false;
     }
 
     // Check Deposit Limits from group_management
-    if (depositLimits) {
-      if (depositLimits.minLimit !== null && amountNum < depositLimits.minLimit) {
-        toast.error(`Minimum deposit for this account is $${depositLimits.minLimit}`);
-        return false;
-      }
-      if (depositLimits.maxLimit !== null && amountNum > depositLimits.maxLimit) {
-        toast.error(`Maximum deposit for this account is $${depositLimits.maxLimit}`);
-        return false;
-      }
+    if (depositLimits.minLimit !== null && depositLimits.minLimit !== undefined && amountNum < depositLimits.minLimit) {
+      toast.error(`Minimum deposit for this account is $${depositLimits.minLimit}`);
+      return false;
+    }
+    if (depositLimits.maxLimit !== null && depositLimits.maxLimit !== undefined && amountNum > depositLimits.maxLimit) {
+      toast.error(`Maximum deposit for this account is $${depositLimits.maxLimit}`);
+      return false;
     }
 
     return true;
@@ -196,29 +185,21 @@ export function USDTManualStep1Form({
     toast.dismiss();
 
     const amountNum = parseFloat(value);
-    if (isNaN(amountNum)) {
-      setInrAmount("");
-      return;
-    }
-    
-    // Update INR amount when USD changes
-    const inrValue = (amountNum * rate).toFixed(2);
-    setInrAmount(inrValue);
+    if (isNaN(amountNum)) return;
 
-    const totalAfterDeposit = lifetimeDeposit + amountNum;
+    // ONLY use group-based limits from database - NO static fallbacks
+    if (!depositLimits) {
+      toast.error("Deposit limits not configured for this account");
+      return;
+    }
 
-    if (amountNum < 1) {
-      toast.error("Minimum deposit amount is $1");
+    // Check Deposit Limits from group_management
+    if (depositLimits.minLimit !== null && depositLimits.minLimit !== undefined && amountNum < depositLimits.minLimit) {
+      toast.error(`Minimum deposit for this account is $${depositLimits.minLimit}`);
       return;
     }
-    // REMOVED: Startup dynamic cap check while typing
-    // Maximum deposit limit should be the same as in database, not reduced by current balance
-    if (step === "unverified" && totalAfterDeposit > 5000) {
-      toast.error("Deposit limit is $5,000 for Unverified accounts");
-      return;
-    }
-    if (step === "partial" && totalAfterDeposit > 10000) {
-      toast.error("Deposit limit is $10,000 for Partially Verified accounts");
+    if (depositLimits.maxLimit !== null && depositLimits.maxLimit !== undefined && amountNum > depositLimits.maxLimit) {
+      toast.error(`Maximum deposit for this account is $${depositLimits.maxLimit}`);
       return;
     }
   };
@@ -240,18 +221,20 @@ export function USDTManualStep1Form({
     setAmount(usdValue);
 
     const amountNum = parseFloat(usdValue);
-    const totalAfterDeposit = lifetimeDeposit + amountNum;
 
-    if (amountNum < 1) {
-      toast.error("Minimum deposit amount is $1");
+    // ONLY use group-based limits from database - NO static fallbacks
+    if (!depositLimits) {
+      toast.error("Deposit limits not configured for this account");
       return;
     }
-    if (step === "unverified" && totalAfterDeposit > 5000) {
-      toast.error("Deposit limit is $5,000 for Unverified accounts");
+
+    // Check Deposit Limits from group_management
+    if (depositLimits.minLimit !== null && depositLimits.minLimit !== undefined && amountNum < depositLimits.minLimit) {
+      toast.error(`Minimum deposit for this account is $${depositLimits.minLimit}`);
       return;
     }
-    if (step === "partial" && totalAfterDeposit > 10000) {
-      toast.error("Deposit limit is $10,000 for Partially Verified accounts");
+    if (depositLimits.maxLimit !== null && depositLimits.maxLimit !== undefined && amountNum > depositLimits.maxLimit) {
+      toast.error(`Maximum deposit for this account is $${depositLimits.maxLimit}`);
       return;
     }
   };
@@ -279,33 +262,32 @@ export function USDTManualStep1Form({
   };
 
   const getLimitMessage = () => {
-    // Priority: Use group-based limits from database if available
-    if (depositLimits) {
-      const minText = depositLimits.minLimit !== null && depositLimits.minLimit !== undefined 
-        ? `$${depositLimits.minLimit.toFixed(2)}` 
-        : "$1";
-      const maxText = depositLimits.maxLimit !== null && depositLimits.maxLimit !== undefined 
-        ? `$${depositLimits.maxLimit.toFixed(2)}` 
-        : "Unlimited";
-      
-      if (depositLimits.minLimit !== null && depositLimits.maxLimit !== null) {
-        return `Deposit limit: ${minText} - ${maxText}`;
-      } else if (depositLimits.maxLimit !== null) {
-        return `Maximum deposit limit: ${maxText}`;
-      } else if (depositLimits.minLimit !== null) {
-        return `Minimum deposit limit: ${minText}`;
-      }
+    // ONLY use group-based limits from database - NO static fallbacks
+    if (!depositLimits) {
+      return "Deposit limits not configured in admin panel";
     }
     
-    // Fallback to KYC-based limits if no group limits
-    if (step === "verified") {
-      return "No deposit limits (Unlimited account)";
-    } else if (step === "partial") {
-      return "Maximum deposit limit: $10,000";
-    } else if (step === "unverified") {
-      return "Maximum deposit limit: $5,000";
+    // If both limits are null, it means limits are not configured
+    if (depositLimits.minLimit === null && depositLimits.maxLimit === null) {
+      return "Deposit limits not configured in admin panel";
     }
-    return "";
+    
+    const minText = depositLimits.minLimit !== null && depositLimits.minLimit !== undefined 
+      ? `$${depositLimits.minLimit.toFixed(2)}` 
+      : "Not set";
+    const maxText = depositLimits.maxLimit !== null && depositLimits.maxLimit !== undefined 
+      ? `$${depositLimits.maxLimit.toFixed(2)}` 
+      : "Not set";
+    
+    if (depositLimits.minLimit !== null && depositLimits.maxLimit !== null) {
+      return `Deposit limit: ${minText} - ${maxText}`;
+    } else if (depositLimits.maxLimit !== null) {
+      return `Maximum deposit limit: ${maxText}`;
+    } else if (depositLimits.minLimit !== null) {
+      return `Minimum deposit limit: ${minText}`;
+    } else {
+      return "Deposit limits not configured in admin panel";
+    }
   };
 
   return (
