@@ -8,6 +8,66 @@ import { useTheme } from "next-themes";
 
 const WalletBalance = ({ balance }: { balance: string | number }) => {
   const [showBalance, setShowBalance] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch wallet balance from API
+  const fetchWalletBalance = async () => {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+      const response = await fetch('/api/wallet', {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        cache: 'no-store',
+      });
+      const data = await response.json();
+      const bal = Number(data?.data?.balance ?? data?.balance ?? 0);
+      if (!Number.isNaN(bal)) {
+        setWalletBalance(bal);
+      }
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Failed to fetch wallet balance:', error);
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch wallet balance on mount and set up refresh
+  useEffect(() => {
+    fetchWalletBalance();
+
+    // Set up polling every 15 seconds
+    const intervalId = setInterval(() => {
+      fetchWalletBalance();
+    }, 15000);
+
+    // Listen for wallet refresh events
+    const handleWalletRefresh = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const balance = customEvent?.detail?.balance;
+      if (typeof balance === 'number' && !Number.isNaN(balance)) {
+        setWalletBalance(balance);
+      } else {
+        fetchWalletBalance();
+      }
+    };
+
+    window.addEventListener('wallet:refresh', handleWalletRefresh as EventListener);
+
+    // Refresh when page becomes visible
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchWalletBalance();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('wallet:refresh', handleWalletRefresh as EventListener);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   const parseAndFormatBalance = (
     balance: string | number
   ): { whole: string; decimal: string } => {
@@ -22,7 +82,8 @@ const WalletBalance = ({ balance }: { balance: string | number }) => {
     return { whole, decimal };
   };
 
-  const { whole, decimal } = parseAndFormatBalance(balance);
+  // Use walletBalance from API instead of prop
+  const { whole, decimal } = parseAndFormatBalance(walletBalance);
   const { theme } = useTheme();
 
   const arrowMaskStyle = {

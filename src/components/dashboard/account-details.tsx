@@ -127,8 +127,8 @@ const AccountDetails = ({
   const availableForWithdrawal = equity;
 
   const equityFormatted = `${equity.toFixed(2)}`;
-  // Header should display Equity (Balance + P/L), details row labeled "Balance" should show actual balance
-  const headerBalance = `$${equity.toFixed(2)}`;
+  // Header should display Wallet Balance (actual account balance), not Equity
+  const headerBalance = `$${bal.toFixed(2)}`;
   const actualBalance = `$${bal.toFixed(2)}`;
   const freeMargin = `${parseFloat(accountDetails.margin_free || "0").toFixed(2)}`;
   const credit = `${parseFloat(accountDetails.credit || "0").toFixed(2)}`;
@@ -447,10 +447,6 @@ const AccountDetails = ({
                       Available for Withdrawal
                     </p>
                     <div className="text-sm w-24 text-right" style={numericStyle}>{availableForWithdrawalFormatted}</div>
-                  </div>
-                  <div className="flex justify-between w-full items-center">
-                    <p className="text-xs opacity-75">Balance</p>
-                    <div className="text-sm w-24 text-right" style={numericStyle}>{actualBalance}</div>
                   </div>
                   <div className="flex justify-between w-full items-center">
                     <p className="text-xs opacity-75">Credit</p>

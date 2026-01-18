@@ -206,8 +206,9 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
         {/* Wallet balance dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button className="hidden md:flex rounded-[10px] items-center gap-[6px] py-2 px-4 text-white dark:bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-xs leading-[14px] cursor-pointer [background:radial-gradient(ellipse_27%_80%_at_0%_0%,rgba(163,92,162,0.5),rgba(0,0,0,1))] hover:bg-transparent">
-              {formattedTotalBalance}
+            <Button className="flex rounded-[10px] items-center gap-[6px] py-2 px-2 md:px-4 text-white dark:bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-xs leading-[14px] cursor-pointer [background:radial-gradient(ellipse_27%_80%_at_0%_0%,rgba(163,92,162,0.5),rgba(0,0,0,1))] hover:bg-transparent">
+              {/* Mobile: Show only icon, Desktop: Show balance + icon */}
+              <span className="hidden md:inline">{formattedTotalBalance}</span>
               {walletIcon && (
                 <Image 
                   className="h-5 w-5" 
@@ -231,7 +232,7 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
                   <div className="flex items-start justify-between mb-2 w-full">
                     <Link href="/wallet" className="flex-1 min-w-0">
                       <div className="text-sm font-semibold">{formattedBalance}</div>
-                      <div className="text-[11px] text-white/60">Wallet balance</div>
+                      <div className="text-[11px] text-white/60">Wallet Balance</div>
                     </Link>
                     <div className="flex flex-col gap-1.5 ml-2 flex-shrink-0 items-end">
                       <button
