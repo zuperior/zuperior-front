@@ -592,25 +592,52 @@ export function UnipaymentDialog({
         remainingSeconds: Math.floor((new Date(expiresAtTime).getTime() - now) / 1000),
       });
 
-      // Resolve QR code URL if it's a relative path
+      // Resolve QR code URL if it's a relative path or has wrong domain
       let resolvedQrCode = invoiceData.qrCode;
       if (resolvedQrCode && typeof resolvedQrCode === 'string') {
         const trimmedPath = resolvedQrCode.trim();
-        // If it's not already a full URL, resolve it
-        if (!trimmedPath.startsWith('http://') && !trimmedPath.startsWith('https://') && !trimmedPath.startsWith('data:')) {
+        const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 
+                                process.env.NEXT_PUBLIC_ADMIN_API_URL || 
+                                'http://localhost:5003';
+        
+        // If it's already a full URL, check if it has the wrong domain and fix it
+        if (trimmedPath.startsWith('http://') || trimmedPath.startsWith('https://')) {
+          try {
+            const url = new URL(trimmedPath);
+            const path = url.pathname;
+            
+            // If it's a kyc_proofs path, replace the entire URL with the correct admin backend URL
+            if (path.includes('/kyc_proofs/') || path.startsWith('/kyc_proofs/')) {
+              resolvedQrCode = `${adminBackendUrl}${path}`;
+              console.log('[UnipaymentDialog] Fixed QR code URL (wrong domain):', { 
+                original: invoiceData.qrCode, 
+                resolved: resolvedQrCode,
+                originalHost: url.hostname,
+                correctHost: new URL(adminBackendUrl).hostname
+              });
+            } else {
+              // If the hostname doesn't match the admin backend URL and it's a kyc_proofs path, replace it
+              const adminUrlObj = new URL(adminBackendUrl);
+              if (url.hostname !== adminUrlObj.hostname && path.includes('/kyc_proofs/')) {
+                resolvedQrCode = `${adminBackendUrl}${path}`;
+                console.log('[UnipaymentDialog] Fixed QR code URL (hostname mismatch):', { 
+                  original: invoiceData.qrCode, 
+                  resolved: resolvedQrCode 
+                });
+              }
+            }
+          } catch (e) {
+            // If URL parsing fails, continue with relative path logic
+            console.warn('[UnipaymentDialog] Failed to parse URL:', resolvedQrCode, e);
+          }
+        } else if (!trimmedPath.startsWith('data:')) {
           // If it starts with /kyc_proofs/, use admin backend URL
           if (trimmedPath.startsWith('/kyc_proofs/') || trimmedPath.startsWith('kyc_proofs/')) {
-            const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 
-                                    process.env.NEXT_PUBLIC_ADMIN_API_URL || 
-                                    'http://localhost:5003';
             const cleanPath = trimmedPath.startsWith('/') ? trimmedPath : `/${trimmedPath}`;
             resolvedQrCode = `${adminBackendUrl}${cleanPath}`;
             console.log('[UnipaymentDialog] Resolved QR code URL:', { original: invoiceData.qrCode, resolved: resolvedQrCode });
           } else if (trimmedPath.startsWith('/')) {
             // Other relative paths - use admin backend URL
-            const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 
-                                    process.env.NEXT_PUBLIC_ADMIN_API_URL || 
-                                    'http://localhost:5003';
             resolvedQrCode = `${adminBackendUrl}${trimmedPath}`;
           }
         }

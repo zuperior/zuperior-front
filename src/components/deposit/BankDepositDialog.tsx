@@ -61,25 +61,52 @@ export function BankDepositDialog({
             // Handle UPI data
             const raw = data?.data?.upi || data?.data || {};
             
-            // Resolve QR code URL - if it's a relative path, use admin backend URL
+            // Resolve QR code URL - if it's a relative path or wrong domain, use admin backend URL
             let qrCodeUrl = raw.qrCode ?? raw.qr_code ?? raw.qr ?? null;
             if (qrCodeUrl && typeof qrCodeUrl === 'string') {
               const trimmedPath = qrCodeUrl.trim();
-              // If it's already a full URL, use as is
-              if (!trimmedPath.startsWith('http://') && !trimmedPath.startsWith('https://')) {
+              const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 
+                                      process.env.NEXT_PUBLIC_ADMIN_API_URL || 
+                                      'http://localhost:5003';
+              
+              // If it's already a full URL, check if it has the wrong domain and fix it
+              if (trimmedPath.startsWith('http://') || trimmedPath.startsWith('https://')) {
+                try {
+                  const url = new URL(trimmedPath);
+                  const path = url.pathname;
+                  
+                  // If it's a kyc_proofs path, replace the entire URL with the correct admin backend URL
+                  if (path.includes('/kyc_proofs/') || path.startsWith('/kyc_proofs/')) {
+                    qrCodeUrl = `${adminBackendUrl}${path}`;
+                    console.log('[BankDepositDialog] Fixed QR code URL (wrong domain):', { 
+                      original: raw.qrCode, 
+                      resolved: qrCodeUrl,
+                      originalHost: url.hostname,
+                      correctHost: new URL(adminBackendUrl).hostname
+                    });
+                  } else {
+                    // If the hostname doesn't match the admin backend URL and it's a kyc_proofs path, replace it
+                    const adminUrlObj = new URL(adminBackendUrl);
+                    if (url.hostname !== adminUrlObj.hostname && path.includes('/kyc_proofs/')) {
+                      qrCodeUrl = `${adminBackendUrl}${path}`;
+                      console.log('[BankDepositDialog] Fixed QR code URL (hostname mismatch):', { 
+                        original: raw.qrCode, 
+                        resolved: qrCodeUrl 
+                      });
+                    }
+                  }
+                } catch (e) {
+                  // If URL parsing fails, continue with relative path logic
+                  console.warn('[BankDepositDialog] Failed to parse URL:', qrCodeUrl, e);
+                }
+              } else {
                 // If it starts with /kyc_proofs/, use admin backend URL
                 if (trimmedPath.startsWith('/kyc_proofs/') || trimmedPath.startsWith('kyc_proofs/')) {
-                  const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 
-                                          process.env.NEXT_PUBLIC_ADMIN_API_URL || 
-                                          'http://localhost:5003';
                   const cleanPath = trimmedPath.startsWith('/') ? trimmedPath : `/${trimmedPath}`;
                   qrCodeUrl = `${adminBackendUrl}${cleanPath}`;
                   console.log('[BankDepositDialog] Resolved QR code URL:', { original: raw.qrCode, resolved: qrCodeUrl });
                 } else if (trimmedPath.startsWith('/')) {
                   // Other relative paths - use admin backend URL
-                  const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 
-                                          process.env.NEXT_PUBLIC_ADMIN_API_URL || 
-                                          'http://localhost:5003';
                   qrCodeUrl = `${adminBackendUrl}${trimmedPath}`;
                 }
               }

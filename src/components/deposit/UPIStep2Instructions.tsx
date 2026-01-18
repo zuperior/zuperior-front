@@ -23,22 +23,52 @@ export function UPIStep2Instructions({ upi, amount, nextStep, fixedRate }: Props
   const rate = fixedRate || upi.fixedRate || 92.00;
   const inrAmount = (amountNum * rate).toFixed(2);
 
-  // Resolve QR code URL to use admin backend URL if it's a relative path
+  // Resolve QR code URL to use admin backend URL if it's a relative path or wrong domain
   const resolveQrCodeUrl = (qrCode: string | null | undefined): string | null => {
     if (!qrCode || typeof qrCode !== 'string') return null;
     
     const trimmedPath = qrCode.trim();
+    const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 
+                            process.env.NEXT_PUBLIC_ADMIN_API_URL || 
+                            'http://localhost:5003';
     
-    // If it's already a full URL, return as is
+    // If it's already a full URL, check if it has the wrong domain and fix it
     if (trimmedPath.startsWith('http://') || trimmedPath.startsWith('https://')) {
-      return trimmedPath;
+      try {
+        const url = new URL(trimmedPath);
+        // Extract the path from the URL
+        const path = url.pathname;
+        
+        // If it's a kyc_proofs path, replace the entire URL with the correct admin backend URL
+        if (path.includes('/kyc_proofs/') || path.startsWith('/kyc_proofs/')) {
+          const resolvedUrl = `${adminBackendUrl}${path}`;
+          console.log('[UPIStep2Instructions] Fixed QR code URL (wrong domain):', { 
+            original: qrCode, 
+            resolved: resolvedUrl,
+            originalHost: url.hostname,
+            correctHost: new URL(adminBackendUrl).hostname
+          });
+          return resolvedUrl;
+        }
+        
+        // If the hostname doesn't match the admin backend URL, replace it
+        const adminUrlObj = new URL(adminBackendUrl);
+        if (url.hostname !== adminUrlObj.hostname && path.includes('/kyc_proofs/')) {
+          const resolvedUrl = `${adminBackendUrl}${path}`;
+          console.log('[UPIStep2Instructions] Fixed QR code URL (hostname mismatch):', { 
+            original: qrCode, 
+            resolved: resolvedUrl 
+          });
+          return resolvedUrl;
+        }
+      } catch (e) {
+        // If URL parsing fails, continue with relative path logic
+        console.warn('[UPIStep2Instructions] Failed to parse URL:', qrCode, e);
+      }
     }
     
     // If it starts with /kyc_proofs/ or kyc_proofs/, use admin backend URL
     if (trimmedPath.startsWith('/kyc_proofs/') || trimmedPath.startsWith('kyc_proofs/')) {
-      const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 
-                              process.env.NEXT_PUBLIC_ADMIN_API_URL || 
-                              'http://localhost:5003';
       const cleanPath = trimmedPath.startsWith('/') ? trimmedPath : `/${trimmedPath}`;
       const resolvedUrl = `${adminBackendUrl}${cleanPath}`;
       console.log('[UPIStep2Instructions] Resolved QR code URL:', { original: qrCode, resolved: resolvedUrl });
@@ -47,9 +77,6 @@ export function UPIStep2Instructions({ upi, amount, nextStep, fixedRate }: Props
     
     // If it's a relative path starting with /, use admin backend URL
     if (trimmedPath.startsWith('/')) {
-      const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 
-                              process.env.NEXT_PUBLIC_ADMIN_API_URL || 
-                              'http://localhost:5003';
       return `${adminBackendUrl}${trimmedPath}`;
     }
     
