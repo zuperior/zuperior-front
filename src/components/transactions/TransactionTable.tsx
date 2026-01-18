@@ -151,6 +151,27 @@ const renderPaymentMethod = (comment: string | undefined | null) => {
   return comment.toUpperCase();
 };
 
+// Helper function to get payment method as simple text (without icons) for display in transfer type column
+const getPaymentMethodText = (comment: string | undefined | null): string => {
+  if (!comment) return "";
+  
+  // Handle Cregis format: cregis_usdt_trc20 -> USDT TRC20
+  const cregisMatch = comment.match(/^cregis_([a-z]+)_([a-z0-9]+)$/i);
+  if (cregisMatch) {
+    const currency = cregisMatch[1].toUpperCase();
+    const network = cregisMatch[2].toUpperCase();
+    return `${currency} ${network}`;
+  }
+  
+  const cryptoSymbol = extractCryptoSymbol(comment);
+  if (cryptoSymbol) {
+    return `CRYPTO (${cryptoSymbol})`;
+  }
+  
+  // Return uppercase for non-crypto payments
+  return comment.toUpperCase();
+};
+
 export const TransactionsTable: React.FC<Props> = ({
   loadingTx,
   selectedAccountId,
@@ -213,8 +234,18 @@ export const TransactionsTable: React.FC<Props> = ({
                   })()}
                 </td>
                 <td className="px-2 py-[15px]">{renderPaymentMethod(tx.comment)}</td>
-                <td className="px-2 py-[15px] whitespace-nowrap flex items-center gap-2">
-                  {getArrowIcon(tx.type)} {tx.type}
+                <td className="px-2 py-[15px]">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2 whitespace-nowrap">
+                      {getArrowIcon(tx.type)} 
+                      <span>{tx.type}</span>
+                    </div>
+                    {tx.comment && (
+                      <span className="text-xs text-black/50 dark:text-white/50 ml-5">
+                        {getPaymentMethodText(tx.comment)}
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-2 py-[15px]">
                   {formatDate(tx.open_time ?? "")}
@@ -280,9 +311,16 @@ export const TransactionsTable: React.FC<Props> = ({
                     return usdDisplay;
                   })()}
                 </p>
-                <p className="flex items-center gap-1 text-green-400 text-sm">
-                  {getArrowIcon(tx.type)} {tx.type}
-                </p>
+                <div className="flex flex-col gap-1">
+                  <p className="flex items-center gap-1 text-green-400 text-sm">
+                    {getArrowIcon(tx.type)} {tx.type}
+                  </p>
+                  {tx.comment && (
+                    <p className="text-xs text-gray-400 dark:text-white/50">
+                      {getPaymentMethodText(tx.comment)}
+                    </p>
+                  )}
+                </div>
                 <p className={`text-xs mt-1 ${getStatusColor(tx.status)}`}>
                   {tx.status || "Success"}
                 </p>
