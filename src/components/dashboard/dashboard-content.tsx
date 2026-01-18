@@ -10,6 +10,7 @@ import { BalanceSection } from "./balance-section";
 import { AccountsSection } from "./accounts-section";
 import { DashboardSkeleton } from "./dashboard-skeleton";
 import { NewAccountDialog } from "./new-account";
+import { PromotionalSlider } from "./promotional-slider";
 import { useFetchUserData } from "@/hooks/useFetchUserData";
 
 
@@ -114,6 +115,8 @@ export function DashboardContent() {
       <TextAnimate className="text-xl sm:text-2xl font-bold text-black/85 dark:text-white/85 tracking-tighter">
         {`Welcome, ${name || "User"}`}
       </TextAnimate>
+
+      <PromotionalSlider />
 
       <VerificationAlert
         name={name || "User"}
