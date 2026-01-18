@@ -62,12 +62,13 @@ export function AccountTypeCard({
       className={`group relative flex flex-col h-[312px] w-[240px] md:w-[250px] cursor-pointer items-center text-center gap-[10px] md:gap-[15px] rounded-[15px] px-3 md:px-[25px] pt-[15px] pb-[30px] transition-all duration-200 overflow-hidden ${
         selected
           ? ""
-          : "border border-white/5 opacity-60"
+          : "border border-gray-200 dark:border-white/5 opacity-60"
+      } ${
+        selected
+          ? "bg-gradient-to-br from-gray-50 to-gray-100 dark:bg-[linear-gradient(154deg,rgb(0,0,0)_0%,rgb(13,2,13)_129%)]"
+          : "bg-gray-50/50 dark:bg-[linear-gradient(154deg,rgba(0,0,0,0.3)_0%,rgba(13,2,13,0.2)_129%)]"
       }`}
       style={{
-        background: selected
-          ? "linear-gradient(154deg, rgb(0, 0, 0) 0%, rgb(13, 2, 13) 129%)"
-          : "linear-gradient(154deg, rgba(0, 0, 0, 0.3) 0%, rgba(13, 2, 13, 0.2) 129%)",
         borderRadius: "15px",
         opacity: selected ? 1 : 0.6,
         position: "relative",
@@ -86,20 +87,17 @@ export function AccountTypeCard({
           }}
         >
           <div
-            className="w-full h-full rounded-[14px]"
-            style={{
-              background: "linear-gradient(154deg, rgb(0, 0, 0) 0%, rgb(13, 2, 13) 129%)",
-            }}
+            className="w-full h-full rounded-[14px] bg-gradient-to-br from-gray-50 to-gray-100 dark:bg-[linear-gradient(154deg,rgb(0,0,0)_0%,rgb(13,2,13)_129%)]"
           />
         </div>
       )}
       <div className="relative z-10 w-full h-full flex flex-col">
         <div
-          className={`rounded-[15px] relative py-1.5 px-4 font-semibold text-xs text-black dark:text-white/75 flex items-center justify-center`}
+          className={`rounded-[15px] relative py-1.5 px-4 font-semibold text-xs text-black dark:text-white/75 flex items-center justify-center bg-gray-200/50 dark:bg-transparent`}
         >
           <div
             style={roleMaskStyle as React.CSSProperties}
-            className="border border-white/50 pointer-events-none"
+            className="border border-gray-300 dark:border-white/50 pointer-events-none"
           />
           <p>{userRole}</p>
         </div>
@@ -122,20 +120,20 @@ export function AccountTypeCard({
               Minimum Deposit{" "}
               <span className="dark:text-white/75 text-black ml-1 text-sm">{formatMinDeposit(minDeposit)}</span>
             </p>
-            <div className="w-full h-px bg-gradient-to-r from-black via-[#736496] to-black" />
+            <div className="w-full h-px bg-gradient-to-r from-gray-300 via-[#736496] to-gray-300 dark:from-black dark:via-[#736496] dark:to-black" />
             <p className={`text-xs font-semibold dark:text-white/75 text-black `}>
               Low Spreads{" "}
-              <span className="text-white/75 ml-1 text-sm">{formatSpread(spread)}</span>
+              <span className="text-gray-600 dark:text-white/75 ml-1 text-sm">{formatSpread(spread)}</span>
             </p>
-            <div className="w-full h-px bg-gradient-to-r from-black via-[#736496] to-black" />
+            <div className="w-full h-px bg-gradient-to-r from-gray-300 via-[#736496] to-gray-300 dark:from-black dark:via-[#736496] dark:to-black" />
             <p className={`text-xs font-semibold dark:text-white/75 text-black `}>
               Leverage{" "}
-              <span className="text-white/75 ml-1 text-sm dark:text-white/75 text-black">{formatLeverage(leverage)}</span>
+              <span className="text-gray-600 dark:text-white/75 ml-1 text-sm">{formatLeverage(leverage)}</span>
             </p>
-            <div className="w-full h-px bg-gradient-to-r from-black via-[#736496] to-black" />
+            <div className="w-full h-px bg-gradient-to-r from-gray-300 via-[#736496] to-gray-300 dark:from-black dark:via-[#736496] dark:to-black" />
             <p className={`text-xs font-semibold dark:text-white/75 text-black `}>
               Commissions upto{" "}
-              <span className="dark:text-white/75 text-black  ml-1 text-sm">{formatCommission(commission)}</span>
+              <span className="dark:text-white/75 text-black ml-1 text-sm">{formatCommission(commission)}</span>
             </p>
           </div>
         </div>
