@@ -17,13 +17,15 @@ export function BankDepositDialog({
   onOpenChange, 
   lifetimeDeposit,
   gatewayType = 'bank_transfer',
-  methodKey
+  methodKey,
+  displayName
 }: { 
   open: boolean; 
   onOpenChange: (v: boolean)=>void; 
   lifetimeDeposit: number;
   gatewayType?: string;
   methodKey?: string;
+  displayName?: string;
 }) {
   const [step, setStep] = useState(1);
   const [amount, setAmount] = useState("");
@@ -231,7 +233,7 @@ export function BankDepositDialog({
           </div>
         </DialogHeader>
         <h2 className="text-2xl text-center font-bold dark:text-white/75 text-black">
-          {gatewayType === 'upi' ? 'UPI Payment' : 'Bank Transfer'}
+          {displayName || (gatewayType === 'upi' ? 'UPI Payment' : 'Bank Transfer')}
         </h2>
         {renderStep()}
       </DialogContent>

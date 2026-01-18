@@ -100,11 +100,13 @@ export function UnipaymentDialog({
   selectedCrypto,
   availableCryptos,
   lifetimeDeposit,
+  displayName,
 }: NewAccountDialogProps & { 
   paymentMethod: PaymentMethod; 
   selectedCrypto?: Cryptocurrency | null;
   availableCryptos?: Cryptocurrency[];
   lifetimeDeposit: number;
+  displayName?: string;
 }) {
   const [step, setStep] = useState(1);
   const [amount, setAmount] = useState("");
@@ -606,12 +608,23 @@ export function UnipaymentDialog({
   };
 
   const getPaymentMethodName = () => {
+    // Use displayName if provided (from admin panel customization)
+    if (displayName) {
+      // For crypto payments, still format with network if available
+      if (paymentMethod === 'crypto' && currentSelectedCrypto && selectedNetwork) {
+        const networkPart = selectedNetwork ? `-${selectedNetwork.toUpperCase()}` : '';
+        return `${displayName}${networkPart}`;
+      }
+      return displayName;
+    }
+    
     // For crypto payments, format as crypto-BTC, crypto-USDT-BEP20, etc.
     if (paymentMethod === 'crypto' && currentSelectedCrypto && selectedNetwork) {
       const networkPart = selectedNetwork ? `-${selectedNetwork.toUpperCase()}` : '';
       return `crypto-${currentSelectedCrypto.symbol.toUpperCase()}${networkPart}`;
     }
     
+    // Fallback to default names
     const names: Record<PaymentMethod, string> = {
       crypto: 'Crypto',
       card: 'Credit/Debit Cards',

@@ -38,6 +38,7 @@ export default function DepositPage() {
   const [unipaymentCardOpen, setUnipaymentCardOpen] = useState(false);
   const [unipaymentGoogleAppleOpen, setUnipaymentGoogleAppleOpen] = useState(false);
   const [unipaymentUpiOpen, setUnipaymentUpiOpen] = useState(false);
+  const [unipaymentDisplayNames, setUnipaymentDisplayNames] = useState<Record<string, string>>({});
   const [manualDepositDialogs, setManualDepositDialogs] = useState<Record<string, boolean>>({});
   const dispatch = useAppDispatch();
   const [lifetimeDeposit, setLifetimeDeposit] = useState<number>(0);
@@ -185,6 +186,16 @@ export default function DepositPage() {
           console.log(`[Deposit Page] Setting ${j.methods.length} enabled payment methods:`, 
             j.methods.map((m: any) => m.method_key).join(', '));
           setEnabledPaymentMethods(j.methods);
+          
+          // Store display names for Unipayment methods
+          const displayNames: Record<string, string> = {};
+          j.methods.forEach((m: any) => {
+            if (m.method_key === 'unipayment_crypto') displayNames.crypto = m.display_name || 'Crypto';
+            if (m.method_key === 'unipayment_card') displayNames.card = m.display_name || 'Credit/Debit Cards';
+            if (m.method_key === 'unipayment_google_apple_pay') displayNames.google_apple_pay = m.display_name || 'Google/Apple Pay';
+            if (m.method_key === 'unipayment_upi') displayNames.upi = m.display_name || 'UPI';
+          });
+          setUnipaymentDisplayNames(displayNames);
         } else {
           console.warn('[Deposit Page] Invalid API response format:', j);
           if (j.error) {
@@ -346,32 +357,36 @@ export default function DepositPage() {
       const icon = method?.icon_path 
         ? resolveImagePath(method.icon_path, '/payment_method_images/crypto.png')
         : resolveImagePath('/payment_method_images/crypto.png', '/payment_method_images/crypto.png');
-      console.log('[Deposit Page] Unipayment Crypto icon:', { method_key: 'unipayment_crypto', icon_path: method?.icon_path, resolved_icon: icon });
-      items.push({ type: 'unipayment', method: 'crypto', data: { id: 'UNIPAYMENT_CRYPTO', name: 'Crypto', icon } });
+      const displayName = method?.display_name || 'Crypto';
+      console.log('[Deposit Page] Unipayment Crypto:', { method_key: 'unipayment_crypto', display_name: method?.display_name, icon_path: method?.icon_path, resolved_icon: icon });
+      items.push({ type: 'unipayment', method: 'crypto', data: { id: 'UNIPAYMENT_CRYPTO', name: displayName, icon } });
     }
     if (isMethodEnabled('unipayment_card')) {
       const method = enabledPaymentMethods.find(m => m.method_key === 'unipayment_card');
       const icon = method?.icon_path 
         ? resolveImagePath(method.icon_path, '/payment_method_images/pm_card.png')
         : resolveImagePath('/payment_method_images/pm_card.png', '/payment_method_images/pm_card.png');
-      console.log('[Deposit Page] Unipayment Card icon:', { method_key: 'unipayment_card', icon_path: method?.icon_path, resolved_icon: icon });
-      items.push({ type: 'unipayment', method: 'card', data: { id: 'UNIPAYMENT_CARD', name: 'Credit/Debit Cards', icon } });
+      const displayName = method?.display_name || 'Credit/Debit Cards';
+      console.log('[Deposit Page] Unipayment Card:', { method_key: 'unipayment_card', display_name: method?.display_name, icon_path: method?.icon_path, resolved_icon: icon });
+      items.push({ type: 'unipayment', method: 'card', data: { id: 'UNIPAYMENT_CARD', name: displayName, icon } });
     }
     if (isMethodEnabled('unipayment_google_apple_pay')) {
       const method = enabledPaymentMethods.find(m => m.method_key === 'unipayment_google_apple_pay');
       const icon = method?.icon_path 
         ? resolveImagePath(method.icon_path, '/payment_method_images/pm_googleapple.png')
         : resolveImagePath('/payment_method_images/pm_googleapple.png', '/payment_method_images/pm_googleapple.png');
-      console.log('[Deposit Page] Unipayment Google/Apple Pay icon:', { method_key: 'unipayment_google_apple_pay', icon_path: method?.icon_path, resolved_icon: icon });
-      items.push({ type: 'unipayment', method: 'google_apple_pay', data: { id: 'UNIPAYMENT_GOOGLE_APPLE', name: 'Google/Apple Pay', icon } });
+      const displayName = method?.display_name || 'Google/Apple Pay';
+      console.log('[Deposit Page] Unipayment Google/Apple Pay:', { method_key: 'unipayment_google_apple_pay', display_name: method?.display_name, icon_path: method?.icon_path, resolved_icon: icon });
+      items.push({ type: 'unipayment', method: 'google_apple_pay', data: { id: 'UNIPAYMENT_GOOGLE_APPLE', name: displayName, icon } });
     }
     if (isMethodEnabled('unipayment_upi')) {
       const method = enabledPaymentMethods.find(m => m.method_key === 'unipayment_upi');
       const icon = method?.icon_path 
         ? resolveImagePath(method.icon_path, '/payment_method_images/pm_upi.png')
         : resolveImagePath('/payment_method_images/pm_upi.png', '/payment_method_images/pm_upi.png');
-      console.log('[Deposit Page] Unipayment UPI icon:', { method_key: 'unipayment_upi', icon_path: method?.icon_path, resolved_icon: icon });
-      items.push({ type: 'unipayment', method: 'upi', data: { id: 'UNIPAYMENT_UPI', name: 'UPI', icon } });
+      const displayName = method?.display_name || 'UPI';
+      console.log('[Deposit Page] Unipayment UPI:', { method_key: 'unipayment_upi', display_name: method?.display_name, icon_path: method?.icon_path, resolved_icon: icon });
+      items.push({ type: 'unipayment', method: 'upi', data: { id: 'UNIPAYMENT_UPI', name: displayName, icon } });
     }
     
     // Add bank transfer if enabled in deposit_payment_methods
@@ -392,14 +407,16 @@ export default function DepositPage() {
       );
       console.log('[Deposit Page] Bank transfer method found:', {
         method: bankTransferMethod,
-        icon_path: bankTransferMethod?.icon_path
+        icon_path: bankTransferMethod?.icon_path,
+        display_name: bankTransferMethod?.display_name
       });
       // Always resolve to an image URL, never use 'bank' string
       const bankIcon = bankTransferMethod?.icon_path 
         ? resolveImagePath(bankTransferMethod.icon_path, '/payment_method_images/bank.png')
         : resolveImagePath('/payment_method_images/bank.png', '/payment_method_images/bank.png'); // Fallback to default bank.png
-      console.log('[Deposit Page] Bank transfer icon resolved:', bankIcon);
-      items.push({ type: 'bank_transfer', data: { id: 'BANK_TRANSFER', name: 'Bank Transfer', icon: bankIcon } });
+      const displayName = bankTransferMethod?.display_name || 'Bank Transfer';
+      console.log('[Deposit Page] Bank transfer icon resolved:', bankIcon, 'display_name:', displayName);
+      items.push({ type: 'bank_transfer', data: { id: 'BANK_TRANSFER', name: displayName, icon: bankIcon } });
     }
     
     // Add Cregis crypto options only if enabled
@@ -409,16 +426,18 @@ export default function DepositPage() {
         const icon = method?.icon_path 
           ? resolveImagePath(method.icon_path, '/payment_method_images/trc20.png')
           : resolveImagePath('/payment_method_images/trc20.png', '/payment_method_images/trc20.png');
-        console.log('[Deposit Page] Cregis USDT-TRC20 icon:', { method_key: 'cregis_usdt_trc20', icon_path: method?.icon_path, resolved_icon: icon });
-        items.push({ type: "crypto", data: { ...crypto, icon } });
+        const displayName = method?.display_name || crypto.name;
+        console.log('[Deposit Page] Cregis USDT-TRC20:', { method_key: 'cregis_usdt_trc20', display_name: method?.display_name, icon_path: method?.icon_path, resolved_icon: icon });
+        items.push({ type: "crypto", data: { ...crypto, name: displayName, icon } });
       }
       if (crypto.id === 'USDT-BEP20' && isMethodEnabled('cregis_usdt_bep20')) {
         const method = enabledPaymentMethods.find(m => m.method_key === 'cregis_usdt_bep20');
         const icon = method?.icon_path 
           ? resolveImagePath(method.icon_path, '/payment_method_images/bep20.png')
           : resolveImagePath('/payment_method_images/bep20.png', '/payment_method_images/bep20.png');
-        console.log('[Deposit Page] Cregis USDT-BEP20 icon:', { method_key: 'cregis_usdt_bep20', icon_path: method?.icon_path, resolved_icon: icon });
-        items.push({ type: "crypto", data: { ...crypto, icon } });
+        const displayName = method?.display_name || crypto.name;
+        console.log('[Deposit Page] Cregis USDT-BEP20:', { method_key: 'cregis_usdt_bep20', display_name: method?.display_name, icon_path: method?.icon_path, resolved_icon: icon });
+        items.push({ type: "crypto", data: { ...crypto, name: displayName, icon } });
       }
     });
     
@@ -713,7 +732,17 @@ export default function DepositPage() {
           lifetimeDeposit={lifetimeDeposit}
         />
         {/* Bank Transfer Dialog */}
-        <BankDepositDialog open={bankDialogOpen} onOpenChange={setBankDialogOpen} lifetimeDeposit={lifetimeDeposit} />
+        <BankDepositDialog 
+          open={bankDialogOpen} 
+          onOpenChange={setBankDialogOpen} 
+          lifetimeDeposit={lifetimeDeposit}
+          displayName={(() => {
+            const bankMethod = enabledPaymentMethods.find(m => 
+              m.method_key === 'bank_transfer' || m.method_key === 'wire_transfer'
+            );
+            return bankMethod?.display_name || 'Bank Transfer';
+          })()}
+        />
         
         {/* Unipayment Dialogs */}
         <UnipaymentDialog
@@ -722,24 +751,28 @@ export default function DepositPage() {
           paymentMethod="crypto"
           availableCryptos={cryptocurrencies}
           lifetimeDeposit={lifetimeDeposit}
+          displayName={unipaymentDisplayNames.crypto}
         />
         <UnipaymentDialog
           open={unipaymentCardOpen}
           onOpenChange={setUnipaymentCardOpen}
           paymentMethod="card"
           lifetimeDeposit={lifetimeDeposit}
+          displayName={unipaymentDisplayNames.card}
         />
         <UnipaymentDialog
           open={unipaymentGoogleAppleOpen}
           onOpenChange={setUnipaymentGoogleAppleOpen}
           paymentMethod="google_apple_pay"
           lifetimeDeposit={lifetimeDeposit}
+          displayName={unipaymentDisplayNames.google_apple_pay}
         />
         <UnipaymentDialog
           open={unipaymentUpiOpen}
           onOpenChange={setUnipaymentUpiOpen}
           paymentMethod="upi"
           lifetimeDeposit={lifetimeDeposit}
+          displayName={unipaymentDisplayNames.upi}
         />
         
         {/* Manual Gateway Dialogs */}
@@ -768,6 +801,7 @@ export default function DepositPage() {
                 lifetimeDeposit={lifetimeDeposit}
                 gatewayType={gatewayType}
                 methodKey={method.method_key}
+                displayName={method.display_name}
               />
             );
           })}
