@@ -359,7 +359,7 @@ export default function DepositPage() {
         : resolveImagePath('/payment_method_images/crypto.png', '/payment_method_images/crypto.png');
       const displayName = method?.display_name || 'Crypto';
       console.log('[Deposit Page] Unipayment Crypto:', { method_key: 'unipayment_crypto', display_name: method?.display_name, icon_path: method?.icon_path, resolved_icon: icon });
-      items.push({ type: 'unipayment', method: 'crypto', data: { id: 'UNIPAYMENT_CRYPTO', name: displayName, icon } });
+      items.push({ type: 'unipayment', method: 'crypto', data: { id: 'UNIPAYMENT_CRYPTO', name: displayName, icon }, paymentMethod: method });
     }
     if (isMethodEnabled('unipayment_card')) {
       const method = enabledPaymentMethods.find(m => m.method_key === 'unipayment_card');
@@ -368,7 +368,7 @@ export default function DepositPage() {
         : resolveImagePath('/payment_method_images/pm_card.png', '/payment_method_images/pm_card.png');
       const displayName = method?.display_name || 'Credit/Debit Cards';
       console.log('[Deposit Page] Unipayment Card:', { method_key: 'unipayment_card', display_name: method?.display_name, icon_path: method?.icon_path, resolved_icon: icon });
-      items.push({ type: 'unipayment', method: 'card', data: { id: 'UNIPAYMENT_CARD', name: displayName, icon } });
+      items.push({ type: 'unipayment', method: 'card', data: { id: 'UNIPAYMENT_CARD', name: displayName, icon }, paymentMethod: method });
     }
     if (isMethodEnabled('unipayment_google_apple_pay')) {
       const method = enabledPaymentMethods.find(m => m.method_key === 'unipayment_google_apple_pay');
@@ -377,7 +377,7 @@ export default function DepositPage() {
         : resolveImagePath('/payment_method_images/pm_googleapple.png', '/payment_method_images/pm_googleapple.png');
       const displayName = method?.display_name || 'Google/Apple Pay';
       console.log('[Deposit Page] Unipayment Google/Apple Pay:', { method_key: 'unipayment_google_apple_pay', display_name: method?.display_name, icon_path: method?.icon_path, resolved_icon: icon });
-      items.push({ type: 'unipayment', method: 'google_apple_pay', data: { id: 'UNIPAYMENT_GOOGLE_APPLE', name: displayName, icon } });
+      items.push({ type: 'unipayment', method: 'google_apple_pay', data: { id: 'UNIPAYMENT_GOOGLE_APPLE', name: displayName, icon }, paymentMethod: method });
     }
     if (isMethodEnabled('unipayment_upi')) {
       const method = enabledPaymentMethods.find(m => m.method_key === 'unipayment_upi');
@@ -386,7 +386,7 @@ export default function DepositPage() {
         : resolveImagePath('/payment_method_images/pm_upi.png', '/payment_method_images/pm_upi.png');
       const displayName = method?.display_name || 'UPI';
       console.log('[Deposit Page] Unipayment UPI:', { method_key: 'unipayment_upi', display_name: method?.display_name, icon_path: method?.icon_path, resolved_icon: icon });
-      items.push({ type: 'unipayment', method: 'upi', data: { id: 'UNIPAYMENT_UPI', name: displayName, icon } });
+      items.push({ type: 'unipayment', method: 'upi', data: { id: 'UNIPAYMENT_UPI', name: displayName, icon }, paymentMethod: method });
     }
     
     // Add bank transfer if enabled in deposit_payment_methods
@@ -416,7 +416,7 @@ export default function DepositPage() {
         : resolveImagePath('/payment_method_images/bank.png', '/payment_method_images/bank.png'); // Fallback to default bank.png
       const displayName = bankTransferMethod?.display_name || 'Bank Transfer';
       console.log('[Deposit Page] Bank transfer icon resolved:', bankIcon, 'display_name:', displayName);
-      items.push({ type: 'bank_transfer', data: { id: 'BANK_TRANSFER', name: displayName, icon: bankIcon } });
+      items.push({ type: 'bank_transfer', data: { id: 'BANK_TRANSFER', name: displayName, icon: bankIcon }, paymentMethod: bankTransferMethod });
     }
     
     // Add Cregis crypto options only if enabled
@@ -428,7 +428,7 @@ export default function DepositPage() {
           : resolveImagePath('/payment_method_images/trc20.png', '/payment_method_images/trc20.png');
         const displayName = method?.display_name || crypto.name;
         console.log('[Deposit Page] Cregis USDT-TRC20:', { method_key: 'cregis_usdt_trc20', display_name: method?.display_name, icon_path: method?.icon_path, resolved_icon: icon });
-        items.push({ type: "crypto", data: { ...crypto, name: displayName, icon } });
+        items.push({ type: "crypto", data: { ...crypto, name: displayName, icon }, paymentMethod: method });
       }
       if (crypto.id === 'USDT-BEP20' && isMethodEnabled('cregis_usdt_bep20')) {
         const method = enabledPaymentMethods.find(m => m.method_key === 'cregis_usdt_bep20');
@@ -437,7 +437,7 @@ export default function DepositPage() {
           : resolveImagePath('/payment_method_images/bep20.png', '/payment_method_images/bep20.png');
         const displayName = method?.display_name || crypto.name;
         console.log('[Deposit Page] Cregis USDT-BEP20:', { method_key: 'cregis_usdt_bep20', display_name: method?.display_name, icon_path: method?.icon_path, resolved_icon: icon });
-        items.push({ type: "crypto", data: { ...crypto, name: displayName, icon } });
+        items.push({ type: "crypto", data: { ...crypto, name: displayName, icon }, paymentMethod: method });
       }
     });
     
@@ -491,7 +491,8 @@ export default function DepositPage() {
               name: displayName, 
               icon: bankIcon,
               gateway: manualGateways[method.method_key]
-            } 
+            },
+            paymentMethod: method
           });
           console.log('[Deposit Page] Added manual bank transfer method:', method.method_key);
         }
@@ -508,7 +509,8 @@ export default function DepositPage() {
               name: displayName, 
               icon: iconPath,
               gateway: manualGateways[method.method_key]
-            } 
+            },
+            paymentMethod: method
           });
           console.log('[Deposit Page] Added manual UPI method:', method.method_key);
         }
@@ -525,7 +527,8 @@ export default function DepositPage() {
               name: displayName, 
               icon: iconPath,
               gateway: manualGateways[method.method_key]
-            } 
+            },
+            paymentMethod: method
           });
           console.log('[Deposit Page] Added manual crypto method:', method.method_key);
         }
@@ -542,7 +545,8 @@ export default function DepositPage() {
               name: displayName, 
               icon: iconPath,
               gateway: manualGateways[method.method_key]
-            } 
+            },
+            paymentMethod: method
           });
           console.log('[Deposit Page] Added generic manual method:', method.method_key);
         }
@@ -602,7 +606,8 @@ export default function DepositPage() {
             name: displayName,
             icon: iconPath,
             gateway: manualGateways[method.method_key]
-          }
+          },
+          paymentMethod: method
         });
         console.log('[Deposit Page] Added unprocessed method as generic manual:', method.method_key);
       });
@@ -624,8 +629,50 @@ export default function DepositPage() {
     return <CardLoader message="Loading deposit options..." />;
   }
 
-  // Helper to get metadata for payment methods (mock data to match design)
-  const getPaymentMethodMetadata = (id: string, type: string) => {
+  // Helper to get metadata for payment methods
+  // First checks metadata from payment method, then falls back to hardcoded values
+  const getPaymentMethodMetadata = (id: string, type: string, paymentMethod?: any) => {
+    // First, check if metadata exists in the payment method object
+    if (paymentMethod?.metadata) {
+      let metadata = paymentMethod.metadata;
+      
+      // Handle string metadata (should be parsed, but just in case)
+      if (typeof metadata === 'string') {
+        try {
+          metadata = JSON.parse(metadata);
+        } catch {
+          metadata = {};
+        }
+      }
+      
+      // If metadata has the fields we need, use them (even if empty, to allow override)
+      const result: any = {};
+      if (metadata.processingTime !== undefined) {
+        result.processingTime = metadata.processingTime;
+      }
+      if (metadata.fee !== undefined) {
+        result.fee = metadata.fee;
+      }
+      if (metadata.limits !== undefined) {
+        result.limits = metadata.limits;
+      }
+      if (metadata.recommended !== undefined) {
+        result.recommended = metadata.recommended;
+      }
+      
+      // If we have at least one metadata field, use it and fill in defaults for missing ones
+      if (Object.keys(result).length > 0) {
+        return {
+          processingTime: result.processingTime || "Instant",
+          fee: result.fee || "0%",
+          limits: result.limits || "50 - 10,000 USD",
+          // Handle recommended: use explicit false if set, otherwise default to false
+          recommended: result.recommended === true || result.recommended === 'true' || result.recommended === 1
+        };
+      }
+    }
+    
+    // Fallback to hardcoded values based on ID and type
     const normalizedId = (id || '').toUpperCase();
     const normalizedType = (type || '').toLowerCase();
     
@@ -634,7 +681,7 @@ export default function DepositPage() {
         processingTime: "Instant - 15 minutes",
         fee: "0%",
         limits: "10 - 200,000 USD",
-        recommended: true
+        recommended: false
       };
     }
     
@@ -731,7 +778,7 @@ export default function DepositPage() {
           <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredItems.map((item) => {
             if (item.type === 'bank_transfer') {
-              const metadata = getPaymentMethodMetadata(item.data.id, item.type);
+              const metadata = getPaymentMethodMetadata(item.data.id, item.type, item.paymentMethod);
               return (
                 <MemoizedPaymentMethodCard
                   key="BANK_TRANSFER"
@@ -750,7 +797,7 @@ export default function DepositPage() {
                 'google_apple_pay': () => setUnipaymentGoogleAppleOpen(true),
                 'upi': () => setUnipaymentUpiOpen(true),
               };
-              const metadata = getPaymentMethodMetadata(item.data.id, item.type);
+              const metadata = getPaymentMethodMetadata(item.data.id, item.type, item.paymentMethod);
               return (
                 <MemoizedPaymentMethodCard
                   key={item.data.id}
@@ -763,7 +810,7 @@ export default function DepositPage() {
             }
             // Handle manual gateway methods
             if (item.type === 'manual' || item.type === 'manual_upi' || item.type === 'manual_crypto' || item.type === 'manual_bank_transfer') {
-              const metadata = getPaymentMethodMetadata(item.data.id, item.type);
+              const metadata = getPaymentMethodMetadata(item.data.id, item.type, item.paymentMethod);
               return (
                 <MemoizedPaymentMethodCard
                   key={item.data.id}
@@ -777,7 +824,7 @@ export default function DepositPage() {
               );
             }
             const crypto = item.data as Cryptocurrency;
-            const metadata = getPaymentMethodMetadata(crypto.id, 'crypto');
+            const metadata = getPaymentMethodMetadata(crypto.id, 'crypto', item.paymentMethod);
             return (
               <MemoizedPaymentMethodCard
                 key={crypto.id}
