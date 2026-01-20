@@ -56,22 +56,13 @@ export function SidebarHeader({ collapsed }: SidebarHeaderProps) {
             >
               <Image
                 alt="Zuperior Logo"
-                src={collapsed ? "/logo_icon.png" : "/logo.png"}
+                src={collapsed ? "/logo_icon.png" : isDark ? "/logo.png" : "/dark-logo.png"}
                 width={collapsed ? 48 : 224}
                 height={collapsed ? 48 : 48}
                 quality={100}
                 unoptimized
                 priority
                 className="object-contain transition-all duration-300"
-                style={!isDark ? {
-                  // Light mode: Enhanced brightness, contrast, and saturation for better visibility on light backgrounds
-                  filter: 'brightness(1.15) contrast(1.3) saturate(1.4) drop-shadow(0 2px 8px rgba(124, 58, 237, 0.3))',
-                  opacity: 1,
-                } : {
-                  // Dark mode: Original logo appearance
-                  filter: 'none',
-                  opacity: 1,
-                }}
               />
             </div>
           </Link>

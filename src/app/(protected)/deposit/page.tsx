@@ -624,6 +624,74 @@ export default function DepositPage() {
     return <CardLoader message="Loading deposit options..." />;
   }
 
+  // Helper to get metadata for payment methods (mock data to match design)
+  const getPaymentMethodMetadata = (id: string, type: string) => {
+    const normalizedId = (id || '').toUpperCase();
+    const normalizedType = (type || '').toLowerCase();
+    
+    if (normalizedId.includes('USDT') || normalizedId.includes('TRC20') || normalizedId.includes('ERC20') || normalizedId.includes('BEP20')) {
+      return {
+        processingTime: "Instant - 15 minutes",
+        fee: "0%",
+        limits: "10 - 200,000 USD",
+        recommended: true
+      };
+    }
+    
+    if (normalizedId === 'BTC' || normalizedId === 'BITCOIN') {
+      return {
+        processingTime: "Instant - 1 hour",
+        fee: "0%",
+        limits: "10 - 200,000 USD",
+        recommended: false
+      };
+    }
+    
+    if (normalizedId === 'ETH' || normalizedId === 'ETHEREUM') {
+      return {
+        processingTime: "Instant - 15 minutes",
+        fee: "0%",
+        limits: "10 - 200,000 USD",
+        recommended: false
+      };
+    }
+
+    if (normalizedId === 'TRX' || normalizedId === 'TRON') {
+      return {
+        processingTime: "Instant - 15 minutes",
+        fee: "0%",
+        limits: "10 - 200,000 USD",
+        recommended: false
+      };
+    }
+    
+    if (normalizedType === 'bank_transfer' || normalizedId.includes('BANK')) {
+      return {
+        processingTime: "1 - 3 business days",
+        fee: "0%",
+        limits: "100 - 50,000 USD",
+        recommended: false
+      };
+    }
+
+    if (normalizedId.includes('BINANCE') || normalizedId.includes('PAY')) {
+      return {
+        processingTime: "Instant - 30 minutes",
+        fee: "0%",
+        limits: "100 - 20,000 USD",
+        recommended: false
+      };
+    }
+    
+    // Default for others
+    return {
+      processingTime: "Instant",
+      fee: "0%",
+      limits: "50 - 10,000 USD",
+      recommended: false
+    };
+  };
+
   return (
     <div className="flex flex-col dark:bg-[#01040D]">
       <main className="flex-1 overflow-y-auto px-2.5 md:px-0">
@@ -639,15 +707,6 @@ export default function DepositPage() {
           >
             Deposit Funds
           </TextAnimate>
-          {/* <TextAnimate
-            duration={0.2}
-            animation="slideUp"
-            once
-            as="h2"
-            by="word"
-            className="mt-[19px] text-[20px] font-bold text-black dark:text-white/75">
-            All Payment Methods
-          </TextAnimate> */}
         </div>
 
         {/* Payment Cards - Unipayment, Wire, and Cregis */}
@@ -672,12 +731,14 @@ export default function DepositPage() {
           <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredItems.map((item) => {
             if (item.type === 'bank_transfer') {
+              const metadata = getPaymentMethodMetadata(item.data.id, item.type);
               return (
                 <MemoizedPaymentMethodCard
                   key="BANK_TRANSFER"
                   onOpenNewAccount={() => setBankDialogOpen(true)}
                   icon={item.data.icon}
                   name={item.data.name}
+                  {...metadata}
                 />
               );
             }
@@ -689,17 +750,20 @@ export default function DepositPage() {
                 'google_apple_pay': () => setUnipaymentGoogleAppleOpen(true),
                 'upi': () => setUnipaymentUpiOpen(true),
               };
+              const metadata = getPaymentMethodMetadata(item.data.id, item.type);
               return (
                 <MemoizedPaymentMethodCard
                   key={item.data.id}
                   onOpenNewAccount={handlers[method] || (() => {})}
                   icon={item.data.icon}
                   name={item.data.name}
+                  {...metadata}
                 />
               );
             }
             // Handle manual gateway methods
             if (item.type === 'manual' || item.type === 'manual_upi' || item.type === 'manual_crypto' || item.type === 'manual_bank_transfer') {
+              const metadata = getPaymentMethodMetadata(item.data.id, item.type);
               return (
                 <MemoizedPaymentMethodCard
                   key={item.data.id}
@@ -708,16 +772,19 @@ export default function DepositPage() {
                   }}
                   icon={item.data.icon}
                   name={item.data.name}
+                  {...metadata}
                 />
               );
             }
             const crypto = item.data as Cryptocurrency;
+            const metadata = getPaymentMethodMetadata(crypto.id, 'crypto');
             return (
               <MemoizedPaymentMethodCard
                 key={crypto.id}
                 onOpenNewAccount={() => handleCryptoSelect(crypto)}
                 icon={crypto.icon}
                 name={crypto.name}
+                {...metadata}
               />
             );
           })}
@@ -814,10 +881,18 @@ function PaymentMethodCard({
   icon,
   name,
   onOpenNewAccount,
+  processingTime = "Instant - 15 minutes",
+  fee = "0%",
+  limits = "10 - 200,000 USD",
+  recommended = false,
 }: {
   icon: string;
   name: string;
   onOpenNewAccount: () => void;
+  processingTime?: string;
+  fee?: string;
+  limits?: string;
+  recommended?: boolean;
 }) {
   const [imageError, setImageError] = useState(false);
   const [imageSrc, setImageSrc] = useState(icon);
@@ -843,31 +918,51 @@ function PaymentMethodCard({
   return (
     <div
       onClick={onOpenNewAccount}
-      className="group relative h-auto rounded-[15px] bg-[#fbfafd] dark:bg-[#0d0414] p-6 border dark:border-[#1D1825] border-gray-300 overflow-hidden cursor-pointer hover:bg-gradient-to-r from-white to-[#f4e7f6]
-           dark:from-[#330F33] dark:to-[#1C061C]"
+      className="group relative flex flex-col justify-between rounded-xl bg-white dark:bg-[#0d0414] border border-gray-200 dark:border-gray-800 p-6 cursor-pointer transition-all hover:shadow-lg hover:border-purple-500/50 dark:hover:border-purple-500/50"
     >
-      <div className="flex flex-col items-center mt-2 mb-4 text-center">
-        {imageError ? (
-          <div className="h-20 w-20 md:h-24 md:w-24 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
-            <CreditCard className="h-10 w-10 md:h-12 md:w-12 text-gray-400 dark:text-gray-500" />
+      <div className="flex justify-between items-start mb-6">
+        <div className="flex items-center gap-3">
+          <div className="relative h-10 w-10 flex-shrink-0">
+            {imageError ? (
+              <div className="h-full w-full flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+                <CreditCard className="h-5 w-5 text-gray-400" />
+              </div>
+            ) : (
+              <img
+                className="h-full w-full object-contain"
+                src={imageSrc}
+                alt={name}
+                style={{ imageRendering: 'auto' }}
+                onError={handleImageError}
+                crossOrigin="anonymous"
+              />
+            )}
+            {/* Small secondary icon overlay if needed (like the ETH icon on Tether in the screenshot) - skipping for now as we don't have secondary icon data */}
           </div>
-        ) : (
-        // Use regular img tag for external HTTP images to avoid Next.js Image optimization issues
-        <img
-          className="h-20 w-20 md:h-24 md:w-24 object-contain"
-          src={imageSrc}
-          alt={name}
-          style={{ imageRendering: 'auto' }}
-          onError={handleImageError}
-          onLoad={() => {
-            console.log(`[PaymentMethodCard] Successfully loaded image: ${imageSrc} for ${name}`);
-          }}
-          crossOrigin="anonymous"
-        />
+          <h3 className="text-base font-bold text-gray-900 dark:text-white leading-tight">
+            {name}
+          </h3>
+        </div>
+        {recommended && (
+          <span className="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/30 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:text-green-400">
+            Recommended
+          </span>
         )}
-        <h3 className="mt-4 text-[18px] font-bold text-black dark:text-white">
-          {name}
-        </h3>
+      </div>
+
+      <div className="space-y-2 text-sm">
+        <div className="flex flex-col sm:flex-row sm:gap-1 text-gray-500 dark:text-gray-400">
+          <span>Processing time</span>
+          <span className="font-medium text-gray-900 dark:text-gray-200 sm:ml-1">{processingTime}</span>
+        </div>
+        <div className="flex flex-col sm:flex-row sm:gap-1 text-gray-500 dark:text-gray-400">
+          <span>Fee</span>
+          <span className="font-medium text-gray-900 dark:text-gray-200 sm:ml-1">{fee}</span>
+        </div>
+        <div className="flex flex-col sm:flex-row sm:gap-1 text-gray-500 dark:text-gray-400">
+          <span>Limits</span>
+          <span className="font-medium text-gray-900 dark:text-gray-200 sm:ml-1">{limits}</span>
+        </div>
       </div>
     </div>
   );

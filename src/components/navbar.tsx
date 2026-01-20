@@ -47,10 +47,10 @@ import { NotificationPanel } from "@/components/NotificationPanel";
 import { SuggestFeatureDialog } from "@/components/SuggestFeatureDialog";
 
 export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
-  const { theme, setTheme } = useTheme();
+  const { theme, resolvedTheme, setTheme } = useTheme();
   const router = useRouter();
   // Get icons from sidebar menu items
-  const currentTheme = theme.resolvedTheme || theme.theme || "dark";
+  const currentTheme = resolvedTheme || theme || "dark";
   const menuItems = getMenuItems({ theme: currentTheme === "light" ? "light" : "dark" });
   const paymentMethodsMenuItem = menuItems.find(item => item.name === "Payment Methods");
   // Light mode: use wallet icon directly, Dark mode: use payment method icon from sidebar
@@ -208,7 +208,7 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
           <DropdownMenuTrigger asChild>
             <Button className="flex rounded-[10px] items-center gap-[6px] py-2 px-2 md:px-4 text-white dark:bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-xs leading-[14px] cursor-pointer [background:radial-gradient(ellipse_27%_80%_at_0%_0%,rgba(163,92,162,0.5),rgba(0,0,0,1))] hover:bg-transparent">
               {/* Mobile: Show only icon, Desktop: Show balance + icon */}
-              <span className="hidden md:inline">{formattedTotalBalance}</span>
+              <span className="inline">{formattedTotalBalance}</span>
               {walletIcon && (
                 <Image 
                   className="h-5 w-5" 
@@ -344,7 +344,7 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
                   unoptimized
                 />
               </div>
-              <div className="flex flex-col items-start">
+              <div className="flex flex-col items-start hidden md:flex">
                 <span className="text-sm font-semibold text-black dark:text-white">
                   {userDetails?.name || firstName}
                 </span>
@@ -352,7 +352,7 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
                   {userDetails?.email ? `@${userDetails.email.split('@')[0]}` : ''}
                 </span>
               </div>
-              <ChevronDown className="h-4 w-4 text-black/60 dark:text-white/50 ml-1" />
+              <ChevronDown className="h-4 w-4 text-black/60 dark:text-white/50 ml-1 hidden md:block" />
             </div>
           </DropdownMenuTrigger>
 
