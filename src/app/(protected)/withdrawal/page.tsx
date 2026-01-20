@@ -147,6 +147,38 @@ export default function WithdrawalDepositPage() {
     pointerEvents: "none",
   };
 
+  // Helper to get metadata for payment methods
+  const getPaymentMethodMetadata = (id: string, type: string) => {
+    const normalizedId = (id || '').toUpperCase();
+    const normalizedType = (type || '').toLowerCase();
+    
+    if (normalizedId.includes('USDT') || normalizedId.includes('TRC20')) {
+      return {
+        processingTime: "Instant - 15 minutes",
+        fee: "1 USD",
+        limits: "10 - 200,000 USD",
+        recommended: true
+      };
+    }
+    
+    if (normalizedType === 'bank_transfer' || normalizedId.includes('BANK')) {
+      return {
+        processingTime: "1 - 3 business days",
+        fee: "2.5%",
+        limits: "100 - 50,000 USD",
+        recommended: false
+      };
+    }
+    
+    // Default for others
+    return {
+      processingTime: "Instant",
+      fee: "0%",
+      limits: "50 - 10,000 USD",
+      recommended: false
+    };
+  };
+
   return (
     <div className="flex flex-col dark:bg-[#01040D] px-3 ">
       <main className="flex-1 overflow-y-auto">
@@ -229,15 +261,19 @@ export default function WithdrawalDepositPage() {
               ))} */}
 
             {(activeTab === "all" || activeTab === "crypto") &&
-              cryptocurrencies.map((crypto) => (
-                <PaymentTile
-                  key={crypto.id}
-                  icon={crypto.icon}
-                  name={crypto.name}
-                  unverified={isUnverified}
-                  onOpenNewAccount={() => handleCryptoSelect(crypto)}
-                />
-              ))}
+              cryptocurrencies.map((crypto) => {
+                const metadata = getPaymentMethodMetadata(crypto.id, 'crypto');
+                return (
+                  <PaymentTile
+                    key={crypto.id}
+                    icon={crypto.icon}
+                    name={crypto.name}
+                    unverified={isUnverified}
+                    onOpenNewAccount={() => handleCryptoSelect(crypto)}
+                    {...metadata}
+                  />
+                );
+              })}
             {/* Bank transfer tile */}
             {(activeTab === "all" || activeTab === "bank") && (
               <PaymentTile
@@ -246,6 +282,7 @@ export default function WithdrawalDepositPage() {
                 name={'Bank Transfer'}
                 unverified={isUnverified}
                 onOpenNewAccount={() => setBankDialogOpen(true)}
+                {...getPaymentMethodMetadata('BANK', 'bank_transfer')}
               />
             )}
           </div>
@@ -324,58 +361,100 @@ export default function WithdrawalDepositPage() {
   );
 }
 
-/* PaymentTile like DepositPage */
+/* PaymentTile updated to match DepositPage design */
 function PaymentTile({
   icon,
   name,
   unverified,
   onOpenNewAccount,
+  processingTime = "Instant - 15 minutes",
+  fee = "0%",
+  limits = "10 - 200,000 USD",
+  recommended = false,
 }: {
   icon: string;
   name: string;
   unverified: boolean;
   onOpenNewAccount: () => void;
+  processingTime?: string;
+  fee?: string;
+  limits?: string;
+  recommended?: boolean;
 }) {
+  const [imageError, setImageError] = useState(false);
+  const [imageSrc, setImageSrc] = useState(icon);
+
+  // Reset state when icon changes
+  useEffect(() => {
+    setImageSrc(icon);
+    setImageError(false);
+  }, [icon]);
+
+  // Handle image load error with fallback
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const target = e.target as HTMLImageElement;
+    console.error(`[PaymentTile] Failed to load image: ${imageSrc}`);
+    
+    setImageError(true);
+    target.style.display = 'none';
+  };
+
   return (
     <div
       onClick={unverified ? undefined : onOpenNewAccount}
-      className={`group relative h-auto rounded-[15px] bg-[#fbfafd] dark:bg-[#0d0414] p-6 border dark:border-[#1D1825] border-gray-300 overflow-hidden ${
-        unverified
-          ? "cursor-not-allowed opacity-50"
-          : "cursor-pointer hover:bg-gradient-to-r from-white to-[#f4e7f6] dark:from-[#330F33] dark:to-[#1C061C]"
-      }`}>
-      {unverified && (
-        <div className="absolute right-5 top-5 flex items-center justify-center z-10 rounded-[15px]">
-          <div className="flex flex-col items-center text-white">
-            <Lock className="w-6 h-6 mb-2 dark:text-white text-black" />
+      className={`group relative flex flex-col justify-between rounded-xl bg-white dark:bg-[#0d0414] border border-gray-200 dark:border-gray-800 p-6 cursor-pointer transition-all hover:shadow-lg hover:border-purple-500/50 dark:hover:border-purple-500/50 ${
+        unverified ? "cursor-not-allowed opacity-70" : ""
+      }`}
+    >
+      <div className="flex justify-between items-start mb-6">
+        <div className="flex items-center gap-3">
+          <div className="relative h-10 w-10 flex-shrink-0">
+            {imageError ? (
+              <div className="h-full w-full flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+                <div className="h-5 w-5 text-gray-400">💰</div>
+              </div>
+            ) : (
+              <img
+                className="h-full w-full object-contain"
+                src={imageSrc}
+                alt={name}
+                style={{ imageRendering: 'auto' }}
+                onError={handleImageError}
+                crossOrigin="anonymous"
+              />
+            )}
           </div>
+          <h3 className="text-base font-bold text-gray-900 dark:text-white leading-tight">
+            {name}
+          </h3>
         </div>
-      )}
+        <div className="flex gap-2">
+          {recommended && (
+            <span className="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/30 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:text-green-400">
+              Recommended
+            </span>
+          )}
+          {unverified && <Lock className="w-5 h-5 text-gray-400 dark:text-gray-500" />}
+        </div>
+      </div>
 
-      <div className="flex flex-col items-center mt-2 mb-4 text-center">
-        <img
-          className="h-16 w-16 md:h-20 md:w-20 object-contain"
-          src={icon}
-          alt={name}
-          crossOrigin="anonymous"
-          onError={(e) => {
-            console.error('[PaymentTile] Failed to load image:', icon);
-            // Fallback to default bank.png if image fails to load
-            if (icon && !icon.includes('/bank.png')) {
-              const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 
-                                   process.env.NEXT_PUBLIC_ADMIN_API_URL || 
-                                   'http://localhost:5003';
-              e.currentTarget.src = `${adminBackendUrl}/payment_method_images/bank.png`;
-            }
-          }}
-        />
-        <h3 className="mt-4 text-[18px] font-bold text-black dark:text-white">
-          {name}
-        </h3>
+      <div className="space-y-2 text-sm">
+        <div className="flex flex-col sm:flex-row sm:gap-1 text-gray-500 dark:text-gray-400">
+          <span>Processing time</span>
+          <span className="font-medium text-gray-900 dark:text-gray-200 sm:ml-1">{processingTime}</span>
+        </div>
+        <div className="flex flex-col sm:flex-row sm:gap-1 text-gray-500 dark:text-gray-400">
+          <span>Fee</span>
+          <span className="font-medium text-gray-900 dark:text-gray-200 sm:ml-1">{fee}</span>
+        </div>
+        <div className="flex flex-col sm:flex-row sm:gap-1 text-gray-500 dark:text-gray-400">
+          <span>Limits</span>
+          <span className="font-medium text-gray-900 dark:text-gray-200 sm:ml-1">{limits}</span>
+        </div>
         {unverified && (
-          <p className="mt-1 text-sm text-red-500 dark:text-red-400">
+          <div className="pt-2 text-red-500 dark:text-red-400 text-xs font-medium">
             Verification required
-          </p>
+          </div>
         )}
       </div>
     </div>
