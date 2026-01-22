@@ -82,7 +82,7 @@ const refreshToken = async (): Promise<string | null> => {
     // Try to validate session with backend (optional check)
     try {
       const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
-      const checkResponse = await axios.get(`${BACKEND_URL}/auth/session/check-valid`, {
+      const checkResponse = await axios.get(`${BACKEND_URL}/session/check-valid`, {
         headers: {
           'Authorization': `Bearer ${currentToken}`,
         },
@@ -553,7 +553,7 @@ const mt5Service = {
       return result;
     } catch (error: any) {
       clearTimeout(timeoutId);
-      
+
       // Enhanced error logging
       console.error(`[API] ❌ getUserAccountsWithBalance error:`, {
         error,
@@ -574,18 +574,18 @@ const mt5Service = {
         } : null,
         stack: error?.stack
       });
-      
+
       // Don't throw on abort - just return empty data
       if (error.name === 'AbortError' || error.code === 'ECONNABORTED') {
         console.warn(`[API] ⚠️ Balance fetch aborted or timed out`);
         throw error;
       }
-      
+
       // Re-throw with more context
       const enhancedError = new Error(
-        error?.response?.data?.message || 
-        error?.response?.data?.Message || 
-        error?.message || 
+        error?.response?.data?.message ||
+        error?.response?.data?.Message ||
+        error?.message ||
         `Failed to fetch account balances (${error?.response?.status || 'unknown status'})`
       );
       (enhancedError as any).originalError = error;

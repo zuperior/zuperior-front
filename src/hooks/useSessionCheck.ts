@@ -37,13 +37,13 @@ async function getSocket() {
 
 export function useSessionCheck() {
   const dispatch = useAppDispatch();
-  
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    
+
     const token = localStorage.getItem('userToken') || localStorage.getItem('token') || localStorage.getItem('access_token') || localStorage.getItem('accessToken');
     if (!token) return; // Not logged in, skip
-    
+
     // Get backend URL - remove /api suffix for socket connection, keep it for fetch
     const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
     const serverBaseUrl = backendApiUrl.replace('/api', ''); // Remove /api for socket.io
@@ -78,10 +78,10 @@ export function useSessionCheck() {
       } catch (e) {
         console.warn('Failed to clear cookies:', e);
       }
-      
+
       // Dispatch logout action
       dispatch(logout());
-      
+
       // Call server logout endpoint to clear server-side cookies
       try {
         const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
@@ -94,13 +94,13 @@ export function useSessionCheck() {
       } catch (e) {
         // Ignore errors - client-side cleanup is done
       }
-      
+
       // Show toast
-      const message = reason === 'deleted' 
+      const message = reason === 'deleted'
         ? 'Your account was deleted. For your security, you have been logged out.'
         : 'Your session has expired. Please log in again.';
       toast.error(message, { duration: 5000 });
-      
+
       // Redirect to login
       setTimeout(() => {
         window.location.href = '/login';
@@ -110,7 +110,7 @@ export function useSessionCheck() {
     // Setup websocket listener if available
     // Note: Socket.io is optional - polling will handle session checks if socket fails
     const socketRef = { current: null as any };
-    
+
     // Skip socket connection entirely if socket.io might not be available
     // Socket is purely optional - polling provides the same functionality
     // Uncomment below if socket.io support is confirmed on backend
@@ -205,32 +205,42 @@ export function useSessionCheck() {
             localStorage.removeItem('_freshRegistration');
           }
         }
-        
+
         const res = await fetch(`${backendApiUrl}/session/check-valid`, {
           credentials: 'include',
-          headers: { 
+          headers: {
             'Authorization': token ? `Bearer ${token}` : '',
             'Content-Type': 'application/json'
           }
+        }).catch(err => {
+          // Handle network errors (server down) gracefully
+          console.warn('[Session Check] Backend unreachable:', err.message);
+          return null;
         });
-        
+
+        if (!res) {
+          // Network error - retry later
+          timer = setTimeout(poll, 30000);
+          return;
+        }
+
         if (res.status === 401 || res.status === 403) {
           handleLogout('expired');
           return;
         }
-        
+
         timer = setTimeout(poll, 30000); // Poll every 30 seconds
       } catch (e) {
-        // On network error, retry after delay
+        // On other errors, retry after delay
         timer = setTimeout(poll, 30000);
       }
     };
-    
+
     // Start polling after a short delay (longer for fresh registrations)
     const freshRegistrationTime = localStorage.getItem('_freshRegistration');
     const initialDelay = freshRegistrationTime ? 10000 : 5000; // 10s for fresh reg, 5s otherwise
     timer = setTimeout(poll, initialDelay);
-    
+
     // Cleanup
     return () => {
       if (timer) clearTimeout(timer);
@@ -240,7 +250,7 @@ export function useSessionCheck() {
           socketRef.current.off('account-deleted');
           socketRef.current.disconnect();
           socketRef.current = null;
-        } catch {}
+        } catch { }
       }
     };
   }, [dispatch]);

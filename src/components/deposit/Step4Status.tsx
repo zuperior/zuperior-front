@@ -91,7 +91,7 @@ export function Step4Status({
   onClose,
   accountNumber,
 }: {
-  statusData: PaymentStatusData;
+  statusData: PaymentStatusData & { invoice_id?: string }; // Add invoice_id for Unipayment
   onRetry: () => void;
   onClose: () => void;
   amount: string;
@@ -104,6 +104,8 @@ export function Step4Status({
   const [orderAmount, setOrderAmount] = useState("");
   const [hasFetchedCheckoutInfo, setHasFetchedCheckoutInfo] = useState(false);
   const [isProcessingDeposit, setIsProcessingDeposit] = useState(false);
+  // ✅ ADD: Processing stage state for better UX
+  const [processingStage, setProcessingStage] = useState<'payment_received' | 'updating_mt5' | 'completed' | null>(null);
 
   const dispatch = useAppDispatch();
   const hasCalledDeposit = useRef(false);
@@ -170,7 +172,8 @@ export function Step4Status({
           const isPartial = checkoutStatus === 'paid_partial' || checkoutStatus === 'paid-partial';
           console.log(`✅ [STEP4] Payment status is "${checkoutStatus}" (${isPartial ? 'PARTIAL' : 'FULL'}) - processing deposit...`);
           
-          // Set processing state BEFORE showing success
+          // ✅ STEP 1: Show "Payment Received"
+          setProcessingStage('payment_received');
           setIsProcessingDeposit(true);
           
           // Extract receive_amount from payment_detail
@@ -190,15 +193,27 @@ export function Step4Status({
             setOrderAmount(originalOrderAmount);
           }
           
+          // Show "Payment Received" message
+          toast.success("Payment Received", {
+            description: isPartial 
+              ? `Payment of ${receiveAmount} ${data?.data?.order_currency || 'USDT'} received (partial payment)`
+              : `Payment of ${receiveAmount} ${data?.data?.order_currency || 'USDT'} received`,
+            duration: 3000,
+          });
+          
+          // Wait a moment before showing next stage
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          // ✅ STEP 2: Show "Updating MT5 Account"
+          setProcessingStage('updating_mt5');
+          toast.loading("Updating MT5 Account", {
+            description: "Crediting your MT5 account. Please wait...",
+            duration: 30000,
+            id: "updating-mt5",
+          });
+          
           // Manually trigger callback to process the payment
           try {
-            const loadingMessage = isPartial 
-              ? `Processing partial deposit (${receiveAmount} of ${orderAmount})...`
-              : "Processing deposit...";
-            toast.loading(loadingMessage, {
-              description: "Crediting your MT5 account. Please wait...",
-              duration: 10000,
-            });
 
             const callbackResponse = await fetch("/api/cregis/payment-callback", {
               method: "POST",
@@ -245,8 +260,11 @@ export function Step4Status({
                     if (verifyData.success && verifyData.data?.status === 'completed') {
                       console.log('✅ [STEP4] Deposit confirmed as completed in database');
                       verified = true;
+                      
+                      // ✅ STEP 3: Show "Successful Payment"
+                      setProcessingStage('completed');
                       setDepositCompleted(true);
-                      toast.dismiss("processing-deposit");
+                      toast.dismiss("updating-mt5");
                       
                       const isPartial = verifyData.data?.isPartialPayment || verifyData.data?.cregisStatus === 'paid_partial';
                       const partialAmt = verifyData.data?.partialAmount || verifyData.data?.amount;
@@ -255,14 +273,14 @@ export function Step4Status({
                         ? `Your partial payment of ${partialAmt} ${verifyData.data?.currency || statusData.order_currency || 'USD'} (of ${origAmt} ${verifyData.data?.currency || statusData.order_currency || 'USD'} requested) has been processed and credited to your MT5 account.`
                         : "Your payment has been processed and credited to your MT5 account.";
                       
-                      toast.success("Payment Successful", {
+                      toast.success("Successful Payment", {
                         description: successMessage,
                         duration: 5000,
                       });
                       hasShownStatusToast.current = true;
                       break;
                     } else if (verifyData.success && verifyData.data?.status === 'approved') {
-                      // Still processing, wait and retry
+                      // Still processing, keep showing "Updating MT5 Account"
                       console.log(`⏳ [STEP4] Deposit status: ${verifyData.data.status}, waiting...`);
                       await new Promise(resolve => setTimeout(resolve, 1000));
                       continue;
@@ -281,13 +299,14 @@ export function Step4Status({
               if (!verified) {
                 console.warn('⚠️ [STEP4] Could not verify deposit completion after 10 attempts');
                 // Assume success if callback succeeded (backend might still be processing)
+                setProcessingStage('completed');
                 setDepositCompleted(true);
-                toast.dismiss("processing-deposit");
+                toast.dismiss("updating-mt5");
                 const origAmt = orderAmount || statusData.order_amount;
                 const successMessage = isPartial && receiveAmount && origAmt
                   ? `Your partial payment of ${receiveAmount} ${statusData.order_currency || 'USD'} (of ${origAmt} ${statusData.order_currency || 'USD'} requested) has been processed. Please check your account balance.`
                   : "Your payment has been processed. Please check your account balance.";
-                toast.success("Payment Successful", {
+                toast.success("Successful Payment", {
                   description: successMessage,
                   duration: 5000,
                 });
@@ -296,21 +315,23 @@ export function Step4Status({
             } else {
               const errorText = await callbackResponse.text();
               console.error('❌ [STEP4] Callback processing failed:', errorText);
-              toast.dismiss();
+              toast.dismiss("updating-mt5");
               toast.error("Deposit Processing Failed", {
                 description: "Payment was successful but deposit processing failed. Please contact support.",
                 duration: 6000,
               });
               setError("Deposit processing failed");
+              setProcessingStage(null);
             }
           } catch (callbackError) {
             console.error('❌ [STEP4] Error triggering callback:', callbackError);
-            toast.dismiss();
+            toast.dismiss("updating-mt5");
             toast.error("Deposit Processing Error", {
               description: "An error occurred while processing your deposit. Please contact support.",
               duration: 6000,
             });
             setError("Callback processing error");
+            setProcessingStage(null);
           } finally {
             setIsProcessingDeposit(false);
           }
@@ -349,12 +370,24 @@ export function Step4Status({
       }
     };
 
-    if (statusData.cregis_id && !hasFetchedCheckoutInfo) {
-      fetchCheckoutInfo();
-    } else if (!statusData.cregis_id) {
+    // ✅ FIX: Handle both Cregis and Unipayment
+    const paymentId = statusData.cregis_id || statusData.invoice_id;
+    const isUnipayment = !!statusData.invoice_id && !statusData.cregis_id;
+    
+    if (paymentId && !hasFetchedCheckoutInfo) {
+      if (isUnipayment) {
+        // For Unipayment, trigger webhook processing directly
+        console.log('🔔 [STEP4] Unipayment payment detected, triggering webhook processing...');
+        setHasFetchedCheckoutInfo(true);
+        // Unipayment webhook should already be processed, but we can trigger status check
+      } else {
+        // For Cregis, fetch checkout info
+        fetchCheckoutInfo();
+      }
+    } else if (!paymentId) {
       setHasFetchedCheckoutInfo(true);
     }
-  }, [statusData.cregis_id, hasFetchedCheckoutInfo]);
+  }, [statusData.cregis_id, statusData.invoice_id, hasFetchedCheckoutInfo]);
 
   const handleDeposit = useCallback(async () => {
     if (!receivedAmount || receivedAmount === "0") {
@@ -411,7 +444,7 @@ export function Step4Status({
     }
   }, [accountNumber, receivedAmount, statusData.cregis_id, onClose]);
 
-  // Manually trigger callback processing when payment is detected as "paid" or "partial_paid"
+  // ✅ FIX: Manually trigger callback processing for both Cregis and Unipayment
   useEffect(() => {
     const triggerCallback = async () => {
       const isPaidStatus = 
@@ -422,16 +455,20 @@ export function Step4Status({
         statusData.event_type === "success" ||
         statusData.event_type === "confirmed";
       
+      const paymentId = statusData.cregis_id || statusData.invoice_id;
+      const isUnipayment = !!statusData.invoice_id && !statusData.cregis_id;
+      
       if (
         isPaidStatus &&
         !depositCompleted &&
-        statusData.cregis_id &&
+        paymentId &&
         hasFetchedCheckoutInfo
       ) {
         const isPartial = statusData.event_type === "partial_paid" || statusData.event_type === "paid_partial";
-        console.log(`✅ [STEP4] Payment successful (${isPartial ? 'PARTIAL' : 'FULL'}). Triggering callback processing...`);
+        console.log(`✅ [STEP4] Payment successful (${isPartial ? 'PARTIAL' : 'FULL'}) - ${isUnipayment ? 'Unipayment' : 'Cregis'}. Triggering callback processing...`);
         console.log('📊 [STEP4] Payment details:', {
-          cregis_id: statusData.cregis_id,
+          paymentId,
+          isUnipayment,
           event_type: statusData.event_type,
           received_amount: receivedAmount,
           order_amount: statusData.order_amount,
@@ -439,36 +476,126 @@ export function Step4Status({
         });
 
         try {
-          // Manually trigger the callback endpoint to process the payment
-          const callbackResponse = await fetch("/api/cregis/payment-callback", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              cregis_id: statusData.cregis_id,
-              status: statusData.event_type, // Use actual status (paid or paid_partial)
-              event_type: statusData.event_type,
-              order_amount: statusData.order_amount || receivedAmount,
-              order_currency: statusData.order_currency || "USDT",
-              received_amount: receivedAmount || statusData.order_amount,
-              pay_amount: receivedAmount || statusData.order_amount,
-              payment_detail: statusData.payment_detail || [],
-            }),
-          });
-
-          if (callbackResponse.ok) {
-            const callbackData = await callbackResponse.json();
-            console.log('✅ [STEP4] Callback processed successfully:', callbackData);
+          if (isUnipayment) {
+            // ✅ STEP 1: Show "Payment Received" for Unipayment
+            setProcessingStage('payment_received');
+            setIsProcessingDeposit(true);
             
-            // Wait a moment for backend to process, then check if deposit was completed
-            setTimeout(() => {
-              console.log('✅ [STEP4] Callback webhook should have processed the deposit. Please check your account balance.');
-            }, 2000);
+            toast.success("Payment Received", {
+              description: isPartial 
+                ? `Payment of ${receivedAmount || statusData.paid_amount} ${statusData.order_currency || 'USD'} received (partial payment)`
+                : `Payment of ${receivedAmount || statusData.paid_amount} ${statusData.order_currency || 'USD'} received`,
+              duration: 3000,
+            });
+            
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            // ✅ STEP 2: Show "Updating MT5 Account" for Unipayment
+            setProcessingStage('updating_mt5');
+            toast.loading("Updating MT5 Account", {
+              description: "Crediting your MT5 account. Please wait...",
+              duration: 30000,
+              id: "updating-mt5-unipayment",
+            });
+            
+            // For Unipayment, webhook should already be processed, but verify deposit status
+            const token = localStorage.getItem('userToken');
+            let verified = false;
+            
+            for (let attempt = 0; attempt < 10; attempt++) {
+              try {
+                const verifyResponse = await fetch(
+                  `${process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api'}/deposit/by-invoice-id/${statusData.invoice_id}`,
+                  {
+                    headers: {
+                      'Authorization': `Bearer ${token}`,
+                    },
+                  }
+                );
+                
+                if (verifyResponse.ok) {
+                  const verifyData = await verifyResponse.json();
+                  console.log(`📊 [STEP4] Unipayment verification attempt ${attempt + 1}:`, verifyData);
+                  
+                  if (verifyData.success && verifyData.data?.status === 'completed') {
+                    console.log('✅ [STEP4] Unipayment deposit confirmed as completed in database');
+                    verified = true;
+                    setProcessingStage('completed');
+                    setDepositCompleted(true);
+                    toast.dismiss("updating-mt5-unipayment");
+                    
+                    toast.success("Successful Payment", {
+                      description: "Your payment has been processed and credited to your MT5 account.",
+                      duration: 5000,
+                    });
+                    hasShownStatusToast.current = true;
+                    break;
+                  } else if (verifyData.success && verifyData.data?.status === 'approved') {
+                    // Still processing, wait and retry
+                    console.log(`⏳ [STEP4] Unipayment deposit status: ${verifyData.data.status}, waiting...`);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    continue;
+                  }
+                }
+              } catch (verifyError) {
+                console.warn(`⚠️ [STEP4] Unipayment verification attempt ${attempt + 1} failed:`, verifyError);
+              }
+              
+              if (attempt < 9) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+              }
+            }
+            
+            if (!verified) {
+              console.warn('⚠️ [STEP4] Could not verify Unipayment deposit completion after 10 attempts');
+              setProcessingStage('completed');
+              setDepositCompleted(true);
+              toast.dismiss("updating-mt5-unipayment");
+              toast.success("Successful Payment", {
+                description: "Your payment has been processed. Please check your account balance.",
+                duration: 5000,
+              });
+              hasShownStatusToast.current = true;
+            }
           } else {
-            const errorText = await callbackResponse.text();
-            console.error('❌ [STEP4] Callback processing failed:', errorText);
+            // Cregis callback processing (existing code)
+            const callbackResponse = await fetch("/api/cregis/payment-callback", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                cregis_id: statusData.cregis_id,
+                status: statusData.event_type,
+                event_type: statusData.event_type,
+                order_amount: statusData.order_amount || receivedAmount,
+                order_currency: statusData.order_currency || "USDT",
+                received_amount: receivedAmount || statusData.order_amount,
+                pay_amount: receivedAmount || statusData.order_amount,
+                payment_detail: statusData.payment_detail || [],
+              }),
+            });
+
+            if (callbackResponse.ok) {
+              const callbackData = await callbackResponse.json();
+              console.log('✅ [STEP4] Cregis callback processed successfully:', callbackData);
+              
+              setTimeout(() => {
+                console.log('✅ [STEP4] Callback webhook should have processed the deposit. Please check your account balance.');
+              }, 2000);
+            } else {
+              const errorText = await callbackResponse.text();
+              console.error('❌ [STEP4] Cregis callback processing failed:', errorText);
+            }
           }
         } catch (callbackError) {
           console.error('❌ [STEP4] Error triggering callback:', callbackError);
+          if (isUnipayment) {
+            toast.dismiss("updating-mt5-unipayment");
+            setProcessingStage(null);
+          }
+        } finally {
+          if (isUnipayment) {
+            setIsProcessingDeposit(false);
+          }
         }
       }
     };
@@ -477,6 +604,7 @@ export function Step4Status({
   }, [
     statusData.event_type,
     statusData.cregis_id,
+    statusData.invoice_id,
     depositCompleted,
     receivedAmount,
     accountNumber,
@@ -510,16 +638,38 @@ Time: ${new Date(statusData.timestamp * 1000).toLocaleString()}`;
       });
   };
 
-  // Use processing config if deposit is being processed
-  const config = isProcessingDeposit 
-    ? {
-        icon: <Clock className="h-8 w-8 text-blue-500" />,
-        title: "Processing Deposit",
+  // ✅ FIX: Use processing stage config for better UX
+  const getProcessingConfig = () => {
+    if (processingStage === 'payment_received') {
+      return {
+        icon: <Check className="h-8 w-8 text-green-500 animate-pulse" />,
+        title: "Payment Received",
+        description: "Payment confirmed by Cregis. Processing deposit...",
+        color: "text-green-500",
+        bgColor: "bg-green-500/10",
+      };
+    } else if (processingStage === 'updating_mt5') {
+      return {
+        icon: <RefreshCw className="h-8 w-8 text-blue-500 animate-spin" />,
+        title: "Updating MT5 Account",
         description: "Crediting your MT5 account. Please wait...",
         color: "text-blue-500",
         bgColor: "bg-blue-500/10",
-      }
-    : (statusConfig[statusData.event_type] || statusConfig.pending);
+      };
+    } else if (processingStage === 'completed') {
+      return {
+        icon: <Check className="h-8 w-8 text-green-500" />,
+        title: "Successful Payment",
+        description: "Your payment has been processed and credited to your MT5 account.",
+        color: "text-green-500",
+        bgColor: "bg-green-500/10",
+      };
+    }
+    return null;
+  };
+
+  const processingConfig = getProcessingConfig();
+  const config = processingConfig || (statusConfig[statusData.event_type] || statusConfig.pending);
 
   const formattedDate = statusData.timestamp
     ? new Date(statusData.timestamp * 1000).toLocaleString()
@@ -537,13 +687,23 @@ Time: ${new Date(statusData.timestamp * 1000).toLocaleString()}`;
       </h2>
       <p
         className={`mb-6 ${
-          depositCompleted ? "text-green-500" : "text-gray-300"
+          depositCompleted || processingStage === 'completed' 
+            ? "text-green-500" 
+            : processingStage === 'updating_mt5'
+            ? "text-blue-500"
+            : processingStage === 'payment_received'
+            ? "text-green-500"
+            : "text-gray-300"
         }`}
       >
-        {isProcessing && !depositCompleted
+        {processingStage === 'payment_received'
+          ? "Payment confirmed by Cregis. Processing deposit..."
+          : processingStage === 'updating_mt5'
+          ? "Crediting your MT5 account. Please wait..."
+          : processingStage === 'completed' || depositCompleted
+          ? "Your payment has been processed and credited to your MT5 account."
+          : isProcessing && !depositCompleted
           ? "Processing your deposit..."
-          : depositCompleted
-          ? "Deposit completed successfully!"
           : config.description}
       </p>
 
