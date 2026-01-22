@@ -19,11 +19,13 @@ export async function POST(req: NextRequest) {
       mt5AccountId: string;
       accountType?: string;
       network?: string;
+      cryptoSymbol?: string;
       successUrl?: string;
       cancelUrl?: string;
+      inrAmount?: string;
     };
 
-    const { amount, currency = 'USD', paymentMethod, mt5AccountId, accountType, network, successUrl, cancelUrl } = body;
+    const { amount, currency = 'USD', paymentMethod, mt5AccountId, accountType, network, cryptoSymbol, successUrl, cancelUrl } = body;
 
     // Validate required fields
     if (!amount || !paymentMethod || !mt5AccountId) {
@@ -103,19 +105,27 @@ export async function POST(req: NextRequest) {
     const unipaymentMethod = paymentMethodMap[paymentMethod] || paymentMethod;
 
     // Create invoice via Unipayment API
+    // ✅ FIX: Use correct field names (price_amount, price_currency, payment_method_type)
     const invoicePayload: any = {
       app_id: UNIPAYMENT_APP_ID,
-      amount: parseFloat(amount),
-      currency: currency.toUpperCase(),
-      payment_method: unipaymentMethod,
-      success_url: defaultSuccessUrl,
-      cancel_url: defaultCancelUrl,
-      notify_url: notifyUrl,
+      price_amount: parseFloat(amount), // Unipayment expects price_amount, not amount
+      price_currency: currency.toUpperCase(), // Unipayment expects price_currency, not currency
+      payment_method_type: unipaymentMethod, // Unipayment expects payment_method_type, not payment_method
       order_id: `deposit_${mt5AccountId}_${Date.now()}`,
-      description: `Deposit to MT5 Account ${mt5AccountId}`,
+      notify_url: notifyUrl,
+      redirect_url: defaultSuccessUrl, // Unipayment uses redirect_url, not success_url
+      host_to_host_mode: paymentMethod === 'crypto' && network ? true : false, // Required for crypto to get payment details
     };
+    
+    // Add optional fields
+    if (defaultCancelUrl) {
+      invoicePayload.cancel_url = defaultCancelUrl;
+    }
+    if (mt5AccountId) {
+      invoicePayload.description = `Deposit to MT5 Account ${mt5AccountId}`;
+    }
 
-    // ✅ FIX: Map network to Unipayment format (they expect NETWORK_* format)
+    // ✅ FIX: Add network and pay_currency for crypto payments (both required)
     // Unipayment expects: NETWORK_TRX, NETWORK_ETH, NETWORK_BSC, NETWORK_BTC, NETWORK_SOL
     if (paymentMethod === 'crypto' && network) {
       // Map common network formats to Unipayment format (matching backend service)
@@ -138,7 +148,34 @@ export async function POST(req: NextRequest) {
       
       const mappedNetwork = networkMap[network.toUpperCase()] || network.toUpperCase();
       invoicePayload.network = mappedNetwork;
-      console.log('🌐 [Unipayment] Network mapping:', { original: network, mapped: mappedNetwork });
+      
+      // ✅ FIX: Determine pay_currency based on cryptoSymbol or network (required for crypto)
+      let payCurrency: string | undefined;
+      if (body.cryptoSymbol) {
+        payCurrency = body.cryptoSymbol.toUpperCase();
+      } else {
+        // Fallback: determine pay_currency based on network
+        if (mappedNetwork === 'NETWORK_BTC') {
+          payCurrency = 'BTC';
+        } else if (mappedNetwork === 'NETWORK_ETH' || mappedNetwork === 'NETWORK_BSC' || mappedNetwork === 'NETWORK_TRX') {
+          payCurrency = 'USDT'; // Default to USDT for these networks
+        } else if (mappedNetwork === 'NETWORK_SOL') {
+          payCurrency = 'SOL';
+        } else {
+          payCurrency = 'USDT'; // Default fallback
+        }
+      }
+      
+      if (payCurrency) {
+        invoicePayload.pay_currency = payCurrency;
+      }
+      
+      console.log('🌐 [Unipayment] Crypto payment:', { 
+        originalNetwork: network, 
+        mappedNetwork, 
+        payCurrency,
+        cryptoSymbol: body.cryptoSymbol 
+      });
     }
 
     console.log('📤 [Unipayment] Creating invoice:', invoicePayload);
