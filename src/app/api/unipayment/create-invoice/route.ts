@@ -115,14 +115,35 @@ export async function POST(req: NextRequest) {
       description: `Deposit to MT5 Account ${mt5AccountId}`,
     };
 
-    // Add network for crypto payments
+    // ✅ FIX: Map network to Unipayment format (they expect lowercase or specific format)
+    // Unipayment expects: trc20, bep20, erc20, btc, eth, sol (lowercase)
     if (paymentMethod === 'crypto' && network) {
-      invoicePayload.network = network;
+      // Map common network formats to Unipayment format
+      const networkMap: Record<string, string> = {
+        'TRC20': 'trc20',
+        'BEP20': 'bep20',
+        'ERC20': 'erc20',
+        'BTC': 'btc',
+        'ETH': 'eth',
+        'SOL': 'sol',
+        // Also handle if already lowercase
+        'trc20': 'trc20',
+        'bep20': 'bep20',
+        'erc20': 'erc20',
+        'btc': 'btc',
+        'eth': 'eth',
+        'sol': 'sol',
+      };
+      
+      const mappedNetwork = networkMap[network.toUpperCase()] || network.toLowerCase();
+      invoicePayload.network = mappedNetwork;
+      console.log('🌐 [Unipayment] Network mapping:', { original: network, mapped: mappedNetwork });
     }
 
     console.log('📤 [Unipayment] Creating invoice:', invoicePayload);
 
-    const invoiceResponse = await fetch(`${UNIPAYMENT_API_URL}/api/v2.0/invoices`, {
+    // ✅ FIX: Use correct Unipayment API endpoint (v1.0, not v2.0)
+    const invoiceResponse = await fetch(`${UNIPAYMENT_API_URL}/v1.0/invoices`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -143,20 +164,47 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const invoiceData = await invoiceResponse.json();
+    const invoiceResponseData = await invoiceResponse.json();
 
-    console.log('✅ [Unipayment] Invoice created:', invoiceData);
+    console.log('✅ [Unipayment] Invoice created:', invoiceResponseData);
 
+    // ✅ FIX: Unipayment API returns { code: "OK", msg: "", data: {...} } structure
+    // Extract invoice data from response
+    let invoiceData = invoiceResponseData;
+    if (invoiceResponseData.code === 'OK' && invoiceResponseData.data) {
+      invoiceData = invoiceResponseData.data;
+    }
+
+    // Extract crypto address and QR code from host_to_host_data if available
+    let cryptoAddress = invoiceData.address || invoiceData.crypto_address;
+    let qrCode = invoiceData.qr_code || invoiceData.qrCode;
+    
+    if (invoiceData.host_to_host_data) {
+      const hostData = invoiceData.host_to_host_data;
+      if (hostData.address) {
+        cryptoAddress = hostData.address;
+      }
+      if (hostData.qr_code) {
+        qrCode = hostData.qr_code;
+      }
+    }
+
+    // ✅ FIX: Extract all fields including payAmount and payCurrency for crypto payments
     const invoiceResult = {
-      invoiceId: invoiceData.id,
-      invoiceUrl: invoiceData.invoice_url,
+      invoiceId: invoiceData.invoice_id || invoiceData.id,
+      invoiceUrl: invoiceData.invoice_url || invoiceData.invoiceUrl,
       status: invoiceData.status,
-      amount: invoiceData.amount,
-      currency: invoiceData.currency,
-      paymentMethod: invoiceData.payment_method,
-      qrCode: invoiceData.qr_code,
-      cryptoAddress: invoiceData.crypto_address,
-      expiresAt: invoiceData.expires_at,
+      amount: invoiceData.price_amount || invoiceData.amount,
+      currency: invoiceData.price_currency || invoiceData.currency,
+      paymentMethod: invoiceData.payment_method || invoiceData.paymentMethod || paymentMethod,
+      qrCode: qrCode,
+      cryptoAddress: cryptoAddress,
+      expiresAt: invoiceData.expiration_time || invoiceData.expires_at || invoiceData.expiresAt,
+      // For crypto payments, include pay amount and currency
+      payAmount: invoiceData.pay_amount || invoiceData.payAmount || (paymentMethod === 'crypto' ? (invoiceData.price_amount || invoiceData.amount) : undefined),
+      payCurrency: invoiceData.pay_currency || invoiceData.payCurrency || (paymentMethod === 'crypto' ? (invoiceData.price_currency || invoiceData.currency) : undefined),
+      priceAmount: invoiceData.price_amount || invoiceData.amount, // Original order amount
+      priceCurrency: invoiceData.price_currency || invoiceData.currency, // Original order currency
     };
 
     // Create deposit record in backend

@@ -111,8 +111,10 @@ export async function createInvoice({
       };
     }
 
-    // Call backend API route (which calls Unipayment API)
-    const response = await fetch(`${BACKEND_API_URL}/unipayment/create-invoice`, {
+    // ✅ FIX: Call Next.js API route (which proxies to backend and handles Unipayment API)
+    // The Next.js route at /api/unipayment/create-invoice handles the Unipayment API call
+    // and creates the deposit record in the backend
+    const response = await fetch('/api/unipayment/create-invoice', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
