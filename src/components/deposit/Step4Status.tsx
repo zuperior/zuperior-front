@@ -685,8 +685,75 @@ Time: ${new Date(statusData.timestamp * 1000).toLocaleString()}`;
     ? new Date(statusData.timestamp * 1000).toLocaleString()
     : "N/A";
 
+  // Determine current step for progress indicator
+  const getCurrentStep = () => {
+    if (processingStage === 'payment_received') return 1;
+    if (processingStage === 'updating_mt5') return 2;
+    if (processingStage === 'completed' || depositCompleted) return 3;
+    // Default: if payment is detected but no processing stage set yet
+    if (statusData.event_type === 'paid' || statusData.event_type === 'paid_partial' || statusData.event_type === 'partial_paid' || statusData.event_type === 'complete') return 1;
+    return 0;
+  };
+
+  const currentStep = getCurrentStep();
+  const isUnipayment = !!statusData.invoice_id && !statusData.cregis_id;
+  
+  // Show step indicator if payment is in progress or completed
+  const shouldShowSteps = processingStage || depositCompleted || 
+    statusData.event_type === 'paid' || 
+    statusData.event_type === 'paid_partial' || 
+    statusData.event_type === 'partial_paid' ||
+    statusData.event_type === 'complete';
+
   return (
     <div className="w-full px-6 text-center">
+      {/* Progress Steps Indicator */}
+      {shouldShowSteps && (
+        <div className="mb-6">
+          <div className="flex items-center justify-center space-x-2 w-full max-w-md mx-auto">
+            {[
+              { num: 1, label: "Payment Received" },
+              { num: 2, label: "Updating MT5" },
+              { num: 3, label: "Completed" }
+            ].map((step, index) => (
+              <React.Fragment key={step.num}>
+                <div className="flex flex-col items-center">
+                  <div
+                    className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                      currentStep >= step.num
+                        ? "bg-[#9F8BCF]"
+                        : "bg-[#594B7A]"
+                    }`}
+                  >
+                    {currentStep > step.num ? (
+                      <Check className="h-4 w-4 text-white" />
+                    ) : (
+                      <span className="text-sm font-medium text-white">{step.num}</span>
+                    )}
+                  </div>
+                  <span className={`text-xs mt-1 ${
+                    currentStep >= step.num
+                      ? "text-[#9F8BCF]"
+                      : "text-gray-500"
+                  }`}>
+                    {step.label}
+                  </span>
+                </div>
+                {index < 2 && (
+                  <div
+                    className={`h-[4px] flex-1 mx-2 ${
+                      currentStep > step.num
+                        ? "bg-[#6B5993]"
+                        : "bg-[#392F4F]"
+                    }`}
+                  />
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div
         className={`mx-auto w-16 h-16 ${config.bgColor} rounded-full flex items-center justify-center mb-4`}
       >
