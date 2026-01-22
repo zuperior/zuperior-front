@@ -177,11 +177,15 @@ export function Step4Status({
           setIsProcessingDeposit(true);
           
           // Extract receive_amount from payment_detail
+          // ✅ PRIORITY: Use pay_amount from ROOT level first (authoritative for partial/over payments)
+          // Then fallback to payment_detail, then received_amount, then order_amount
           const receiveAmount = 
-            data?.data?.payment_detail?.[0]?.receive_amount ||
-            data?.data?.payment_detail?.[0]?.pay_amount ||
-            data?.data?.received_amount ||
-            data?.data?.order_amount;
+            data?.data?.pay_amount ||  // PRIORITY 1: Root level pay_amount (most authoritative)
+            data?.pay_amount ||        // Alternative root path
+            data?.data?.payment_detail?.[0]?.pay_amount ||  // PRIORITY 2: payment_detail[0].pay_amount
+            data?.data?.payment_detail?.[0]?.receive_amount ||  // PRIORITY 3: payment_detail[0].receive_amount
+            data?.data?.received_amount ||  // PRIORITY 4: Root received_amount
+            data?.data?.order_amount;  // PRIORITY 5: Fallback to order_amount
           
           const originalOrderAmount = data?.data?.order_amount || statusData.order_amount;
           
@@ -225,7 +229,7 @@ export function Step4Status({
                 order_amount: originalOrderAmount,
                 order_currency: data?.data?.order_currency || statusData.order_currency || "USDT",
                 received_amount: receiveAmount || originalOrderAmount,
-                pay_amount: receiveAmount || originalOrderAmount,
+                pay_amount: receiveAmount || originalOrderAmount,  // Use pay_amount as receive_amount (they should be the same)
                 payment_detail: data?.data?.payment_detail || [],
               }),
             });
@@ -337,15 +341,18 @@ export function Step4Status({
           }
         }
         
+        // ✅ PRIORITY: Use pay_amount from ROOT level first (authoritative for partial/over payments)
         // Try multiple paths for receive_amount (partial amount paid)
         const payAmount = 
-          data?.data?.payment_detail?.[0]?.receive_amount ||
-          data?.data?.payment_detail?.[0]?.pay_amount ||
+          data?.data?.pay_amount ||  // PRIORITY 1: Root level pay_amount (most authoritative)
+          data?.pay_amount ||        // Alternative root path
+          data?.data?.payment_detail?.[0]?.pay_amount ||  // PRIORITY 2: payment_detail[0].pay_amount
+          data?.data?.payment_detail?.[0]?.receive_amount ||  // PRIORITY 3: payment_detail[0].receive_amount
           data?.data?.payment_info?.[0]?.receive_amount ||
           data?.data?.payment_info?.[0]?.amount ||
-          data?.data?.received_amount ||
+          data?.data?.received_amount ||  // PRIORITY 4: Root received_amount
           data?.received_amount ||
-          data?.data?.order_amount;
+          data?.data?.order_amount;  // PRIORITY 5: Fallback to order_amount
 
         // Get original order amount
         const originalOrderAmount = data?.data?.order_amount || statusData.order_amount;
