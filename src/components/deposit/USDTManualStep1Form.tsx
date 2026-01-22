@@ -35,6 +35,7 @@ export function USDTManualStep1Form({
   nextStep,
   fixedRate,
   showInrConversion,
+  paymentMethod,
 }: {
   amount: string;
   setAmount: (amount: string) => void;
@@ -45,6 +46,7 @@ export function USDTManualStep1Form({
   nextStep: () => void;
   fixedRate?: number;
   showInrConversion?: boolean;
+  paymentMethod?: string | null;
 }) {
   const [step, setStep] = useState<"unverified" | "partial" | "verified" | "">(
     ""
@@ -116,7 +118,12 @@ export function USDTManualStep1Form({
       setLoadingLimits(true);
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
-        const response = await fetch(`/api/mt5/deposit-limits/${selectedAccount}`, {
+        // Include payment method as query parameter if available
+        const url = paymentMethod 
+          ? `/api/mt5/deposit-limits/${selectedAccount}?paymentMethod=${encodeURIComponent(paymentMethod)}`
+          : `/api/mt5/deposit-limits/${selectedAccount}`;
+        console.log('🔍 [USDTManualStep1Form] Fetching deposit limits:', { selectedAccount, paymentMethod, url });
+        const response = await fetch(url, {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         });
         const data = await response.json();
@@ -126,7 +133,6 @@ export function USDTManualStep1Form({
             minLimit: data.data.minLimit,
             maxLimit: data.data.maxLimit,
           });
-          console.log('📊 Deposit limits fetched:', data.data);
         } else {
           setDepositLimits(null);
           console.warn('⚠️ No deposit limits found for account:', selectedAccount);
@@ -140,7 +146,7 @@ export function USDTManualStep1Form({
     };
 
     fetchDepositLimits();
-  }, [selectedAccount]);
+  }, [selectedAccount, paymentMethod]);
 
   // REMOVED: Startup deposit allowance calculation
   // The maximum deposit limit from database should NOT be reduced by current balance

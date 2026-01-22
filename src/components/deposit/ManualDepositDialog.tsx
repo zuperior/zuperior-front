@@ -175,6 +175,13 @@ export function ManualDepositDialog({
   const renderStepContent = () => {
     switch (step) {
       case 1:
+        // Determine payment method key from crypto ID
+        const getPaymentMethodKey = () => {
+          if (selectedCrypto?.id === 'USDT-TRC20') return 'cregis_usdt_trc20';
+          if (selectedCrypto?.id === 'USDT-BEP20') return 'cregis_usdt_bep20';
+          return null;
+        };
+        
         return (
           <USDTManualStep1Form
             amount={amount}
@@ -184,6 +191,7 @@ export function ManualDepositDialog({
             accounts={filteredAccounts}
             lifetimeDeposit={lifetimeDeposit}
             nextStep={() => setStep(2)}
+            paymentMethod={getPaymentMethodKey()}
           />
         );
       case 2:

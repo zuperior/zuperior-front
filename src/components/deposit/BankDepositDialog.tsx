@@ -181,6 +181,7 @@ export function BankDepositDialog({
             nextStep={() => setStep(2)}
             fixedRate={bank?.fixedRate || 92.00}
             showInrConversion={true}
+            paymentMethod={methodKey || undefined}
           />
         );
       case 2:

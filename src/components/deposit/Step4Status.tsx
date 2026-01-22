@@ -49,11 +49,18 @@ const statusConfig: StatusConfigType = {
     bgColor: "bg-green-500/10",
   },
   overpaid: {
-    icon: <AlertTriangle className="h-8 w-8 text-purple-500" />,
-    title: "Overpayment Detected",
-    description: "You paid more than the required amount",
-    color: "text-purple-500",
-    bgColor: "bg-purple-500/10",
+    icon: <Check className="h-8 w-8 text-green-500" />,
+    title: "Payment Successful",
+    description: "Your payment has been processed successfully (overpaid amount credited)",
+    color: "text-green-500",
+    bgColor: "bg-green-500/10",
+  },
+  paid_over: {
+    icon: <Check className="h-8 w-8 text-green-500" />,
+    title: "Payment Successful",
+    description: "Your payment has been processed successfully (overpaid amount credited)",
+    color: "text-green-500",
+    bgColor: "bg-green-500/10",
   },
   refunded: {
     icon: <Check className="h-8 w-8 text-blue-500" />,
@@ -124,6 +131,8 @@ export function Step4Status({
       const isPaidStatus = statusData.event_type === "paid" || 
                           statusData.event_type === "partial_paid" ||
                           statusData.event_type === "paid_partial" ||
+                          statusData.event_type === "paid_over" ||
+                          statusData.event_type === "overpaid" ||
                           statusData.event_type === "complete";
       if (!isPaidStatus) {
         toast[statusData.event_type === "expired" ? "error" : "info"](
@@ -164,13 +173,19 @@ export function Step4Status({
         const checkoutStatus = data?.data?.status || data?.status;
         console.log('📊 [STEP4] Checkout status:', checkoutStatus);
         
-        const isPaidStatus = checkoutStatus === 'paid' || checkoutStatus === 'paid_partial' || 
-                            checkoutStatus === 'complete' || checkoutStatus === 'success' ||
+        const isPaidStatus = checkoutStatus === 'paid' || 
+                            checkoutStatus === 'paid_partial' || 
+                            checkoutStatus === 'paid_over' ||
+                            checkoutStatus === 'paid-over' ||
+                            checkoutStatus === 'overpaid' ||
+                            checkoutStatus === 'complete' || 
+                            checkoutStatus === 'success' ||
                             checkoutStatus === 'paid-partial';
         
         if (isPaidStatus) {
           const isPartial = checkoutStatus === 'paid_partial' || checkoutStatus === 'paid-partial';
-          console.log(`✅ [STEP4] Payment status is "${checkoutStatus}" (${isPartial ? 'PARTIAL' : 'FULL'}) - processing deposit...`);
+          const isOverpaid = checkoutStatus === 'paid_over' || checkoutStatus === 'paid-over' || checkoutStatus === 'overpaid';
+          console.log(`✅ [STEP4] Payment status is "${checkoutStatus}" (${isPartial ? 'PARTIAL' : isOverpaid ? 'OVERPAID' : 'FULL'}) - processing deposit...`);
           
           // ✅ STEP 1: Show "Payment Received"
           setProcessingStage('payment_received');
@@ -201,6 +216,8 @@ export function Step4Status({
           toast.success("Payment Received", {
             description: isPartial 
               ? `Payment of ${receiveAmount} ${data?.data?.order_currency || 'USDT'} received (partial payment)`
+              : isOverpaid
+              ? `Payment of ${receiveAmount} ${data?.data?.order_currency || 'USDT'} received (overpaid - full amount credited)`
               : `Payment of ${receiveAmount} ${data?.data?.order_currency || 'USDT'} received`,
             duration: 3000,
           });
@@ -224,7 +241,7 @@ export function Step4Status({
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 cregis_id: statusData.cregis_id,
-                status: checkoutStatus, // Use actual status (paid or paid_partial)
+                status: checkoutStatus, // Use actual status (paid, paid_partial, or paid_over)
                 event_type: checkoutStatus,
                 order_amount: originalOrderAmount,
                 order_currency: data?.data?.order_currency || statusData.order_currency || "USDT",
@@ -271,11 +288,16 @@ export function Step4Status({
                       toast.dismiss("updating-mt5");
                       
                       const isPartial = verifyData.data?.isPartialPayment || verifyData.data?.cregisStatus === 'paid_partial';
+                      const isOverpaid = verifyData.data?.cregisStatus === 'paid_over' || verifyData.data?.cregisStatus === 'overpaid';
                       const partialAmt = verifyData.data?.partialAmount || verifyData.data?.amount;
                       const origAmt = orderAmount || statusData.order_amount;
-                      const successMessage = isPartial && partialAmt && origAmt
-                        ? `Your partial payment of ${partialAmt} ${verifyData.data?.currency || statusData.order_currency || 'USD'} (of ${origAmt} ${verifyData.data?.currency || statusData.order_currency || 'USD'} requested) has been processed and credited to your MT5 account.`
-                        : "Your payment has been processed and credited to your MT5 account.";
+                      let successMessage = "Your payment has been processed and credited to your MT5 account.";
+                      
+                      if (isPartial && partialAmt && origAmt) {
+                        successMessage = `Your partial payment of ${partialAmt} ${verifyData.data?.currency || statusData.order_currency || 'USD'} (of ${origAmt} ${verifyData.data?.currency || statusData.order_currency || 'USD'} requested) has been processed and credited to your MT5 account.`;
+                      } else if (isOverpaid && partialAmt && origAmt) {
+                        successMessage = `Your payment of ${partialAmt} ${verifyData.data?.currency || statusData.order_currency || 'USD'} (overpaid - full amount credited) has been processed and credited to your MT5 account.`;
+                      }
                       
                       toast.success("Successful Payment", {
                         description: successMessage,
@@ -458,6 +480,8 @@ export function Step4Status({
         statusData.event_type === "paid" || 
         statusData.event_type === "partial_paid" ||
         statusData.event_type === "paid_partial" ||
+        statusData.event_type === "paid_over" ||
+        statusData.event_type === "overpaid" ||
         statusData.event_type === "complete" || 
         statusData.event_type === "success" ||
         statusData.event_type === "confirmed";
@@ -472,7 +496,8 @@ export function Step4Status({
         hasFetchedCheckoutInfo
       ) {
         const isPartial = statusData.event_type === "partial_paid" || statusData.event_type === "paid_partial";
-        console.log(`✅ [STEP4] Payment successful (${isPartial ? 'PARTIAL' : 'FULL'}) - ${isUnipayment ? 'Unipayment' : 'Cregis'}. Triggering callback processing...`);
+        const isOverpaid = statusData.event_type === "paid_over" || statusData.event_type === "overpaid";
+        console.log(`✅ [STEP4] Payment successful (${isPartial ? 'PARTIAL' : isOverpaid ? 'OVERPAID' : 'FULL'}) - ${isUnipayment ? 'Unipayment' : 'Cregis'}. Triggering callback processing...`);
         console.log('📊 [STEP4] Payment details:', {
           paymentId,
           isUnipayment,
@@ -691,7 +716,12 @@ Time: ${new Date(statusData.timestamp * 1000).toLocaleString()}`;
     if (processingStage === 'updating_mt5') return 2;
     if (processingStage === 'completed' || depositCompleted) return 3;
     // Default: if payment is detected but no processing stage set yet
-    if (statusData.event_type === 'paid' || statusData.event_type === 'paid_partial' || statusData.event_type === 'partial_paid' || statusData.event_type === 'complete') return 1;
+    if (statusData.event_type === 'paid' || 
+        statusData.event_type === 'paid_partial' || 
+        statusData.event_type === 'paid_over' ||
+        statusData.event_type === 'overpaid' ||
+        statusData.event_type === 'partial_paid' || 
+        statusData.event_type === 'complete') return 1;
     return 0;
   };
 
@@ -702,6 +732,8 @@ Time: ${new Date(statusData.timestamp * 1000).toLocaleString()}`;
   const shouldShowSteps = processingStage || depositCompleted || 
     statusData.event_type === 'paid' || 
     statusData.event_type === 'paid_partial' || 
+    statusData.event_type === 'paid_over' ||
+    statusData.event_type === 'overpaid' ||
     statusData.event_type === 'partial_paid' ||
     statusData.event_type === 'complete';
 
@@ -795,11 +827,15 @@ Time: ${new Date(statusData.timestamp * 1000).toLocaleString()}`;
             <p className="text-white">
               {(() => {
                 const isPartial = statusData.event_type === 'partial_paid' || statusData.event_type === 'paid_partial';
+                const isOverpaid = statusData.event_type === 'paid_over' || statusData.event_type === 'overpaid';
                 const partialAmount = receivedAmount || statusData.paid_amount || statusData.order_amount;
                 const originalAmount = statusData.order_amount;
                 
                 if (isPartial && partialAmount && originalAmount && parseFloat(partialAmount) < parseFloat(originalAmount)) {
                   return `${partialAmount} ${statusData.order_currency} (of ${originalAmount} ${statusData.order_currency} requested)`;
+                }
+                if (isOverpaid && partialAmount && originalAmount && parseFloat(partialAmount) > parseFloat(originalAmount)) {
+                  return `${partialAmount} ${statusData.order_currency} (overpaid - full amount credited)`;
                 }
                 return `${receivedAmount || statusData.paid_amount || statusData.order_amount} ${statusData.order_currency}`;
               })()}
