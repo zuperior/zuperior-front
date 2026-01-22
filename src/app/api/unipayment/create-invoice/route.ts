@@ -115,27 +115,28 @@ export async function POST(req: NextRequest) {
       description: `Deposit to MT5 Account ${mt5AccountId}`,
     };
 
-    // ✅ FIX: Map network to Unipayment format (they expect lowercase or specific format)
-    // Unipayment expects: trc20, bep20, erc20, btc, eth, sol (lowercase)
+    // ✅ FIX: Map network to Unipayment format (they expect NETWORK_* format)
+    // Unipayment expects: NETWORK_TRX, NETWORK_ETH, NETWORK_BSC, NETWORK_BTC, NETWORK_SOL
     if (paymentMethod === 'crypto' && network) {
-      // Map common network formats to Unipayment format
+      // Map common network formats to Unipayment format (matching backend service)
       const networkMap: Record<string, string> = {
-        'TRC20': 'trc20',
-        'BEP20': 'bep20',
-        'ERC20': 'erc20',
-        'BTC': 'btc',
-        'ETH': 'eth',
-        'SOL': 'sol',
-        // Also handle if already lowercase
-        'trc20': 'trc20',
-        'bep20': 'bep20',
-        'erc20': 'erc20',
-        'btc': 'btc',
-        'eth': 'eth',
-        'sol': 'sol',
+        'TRC20': 'NETWORK_TRX',
+        'TRX': 'NETWORK_TRX',
+        'ERC20': 'NETWORK_ETH',
+        'ETH': 'NETWORK_ETH',
+        'BEP20': 'NETWORK_BSC',
+        'BSC': 'NETWORK_BSC',
+        'BTC': 'NETWORK_BTC',
+        'SOL': 'NETWORK_SOL',
+        // Also handle if already in correct format
+        'NETWORK_TRX': 'NETWORK_TRX',
+        'NETWORK_ETH': 'NETWORK_ETH',
+        'NETWORK_BSC': 'NETWORK_BSC',
+        'NETWORK_BTC': 'NETWORK_BTC',
+        'NETWORK_SOL': 'NETWORK_SOL',
       };
       
-      const mappedNetwork = networkMap[network.toUpperCase()] || network.toLowerCase();
+      const mappedNetwork = networkMap[network.toUpperCase()] || network.toUpperCase();
       invoicePayload.network = mappedNetwork;
       console.log('🌐 [Unipayment] Network mapping:', { original: network, mapped: mappedNetwork });
     }
