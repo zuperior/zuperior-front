@@ -134,10 +134,77 @@ export function UnipaymentDialog({
   const [depositLimits, setDepositLimits] = useState<{
     minLimit: number | null;
     maxLimit: number | null;
+    source: 'group' | 'payment_method';
   } | null>(null);
   const [loadingLimits, setLoadingLimits] = useState(false);
   
-  // Fetch deposit limits when account is selected
+  // State for payment method limits (fallback)
+  const [paymentMethodLimits, setPaymentMethodLimits] = useState<{
+    minLimit: number | null;
+    maxLimit: number | null;
+  } | null>(null);
+  
+  // ✅ FIX: Fetch payment method limits when dialog opens
+  useEffect(() => {
+    const fetchPaymentMethodLimits = async () => {
+      try {
+        const response = await fetch('/api/deposit-payment-methods', { cache: 'no-store' });
+        const data = await response.json();
+        
+        if (data.ok && Array.isArray(data.methods)) {
+          // Map payment method to method_key
+          const methodKeyMap: Record<string, string> = {
+            'card': 'unipayment_card',
+            'crypto': 'unipayment_crypto',
+            'google_apple_pay': 'unipayment_google_apple_pay',
+            'upi': 'unipayment_upi',
+          };
+          
+          const methodKey = methodKeyMap[paymentMethod] || `unipayment_${paymentMethod}`;
+          const method = data.methods.find((m: any) => m.method_key === methodKey);
+          
+          if (method) {
+            const parsedMinLimit = method.min_limit !== undefined && method.min_limit !== null ? Number(method.min_limit) : null;
+            const parsedMaxLimit = method.max_limit !== undefined && method.max_limit !== null ? Number(method.max_limit) : null;
+            
+            setPaymentMethodLimits({
+              minLimit: parsedMinLimit,
+              maxLimit: parsedMaxLimit,
+            });
+            console.log('📊 Payment method limits fetched:', {
+              methodKey,
+              rawMethod: method,
+              min_limit: method.min_limit,
+              max_limit: method.max_limit,
+              parsedMinLimit,
+              parsedMaxLimit,
+              metadata: method.metadata,
+            });
+          } else {
+            console.warn('⚠️ Payment method not found:', {
+              methodKey,
+              availableMethods: data.methods?.map((m: any) => ({
+                key: m.method_key,
+                hasMinLimit: m.min_limit !== undefined,
+                hasMaxLimit: m.max_limit !== undefined,
+              })) || [],
+            });
+            setPaymentMethodLimits(null);
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error fetching payment method limits:', error);
+        setPaymentMethodLimits(null);
+      }
+    };
+    
+    if (open) {
+      fetchPaymentMethodLimits();
+    }
+  }, [open, paymentMethod]);
+  
+  // ✅ FIX: Fetch deposit limits when account is selected (from group_management)
+  // If group limits are null, fallback to payment method limits
   useEffect(() => {
     const fetchDepositLimits = async () => {
       if (!selectedAccount) {
@@ -159,60 +226,145 @@ export function UnipaymentDialog({
         });
         const data = await response.json();
 
-        if (data.success && data.data) {
-          // Always set depositLimits object, even if values are null
-          // This ensures we can distinguish between "no limits found" vs "limits are null/unlimited"
-          setDepositLimits({
-            minLimit: data.data.minLimit,
-            maxLimit: data.data.maxLimit,
-          });
-          console.log('📊 Deposit limits fetched for Unipayment:', {
-            accountId: accountNumber,
-            accountGroup: data.data.group,
-            accountPackage: data.data.package,
-            minLimit: data.data.minLimit,
-            maxLimit: data.data.maxLimit,
-            matchedBy: data.data.matchedBy,
-            searchValue: data.data.searchValue,
-            dedicatedName: data.data.dedicatedName,
-            matchedGroup: data.data.matchedGroup,
-            message: data.data.message
-          });
+        // ✅ FIX: Always re-fetch payment method limits to ensure we have the latest data
+        // This handles cases where limits might be updated or parsed from metadata
+        let currentPaymentMethodLimits = paymentMethodLimits;
+        try {
+          const pmResponse = await fetch('/api/deposit-payment-methods', { cache: 'no-store' });
+          const pmData = await pmResponse.json();
           
-          // Log warning if limits are null
-          if (data.data.minLimit === null && data.data.maxLimit === null) {
-            if (data.data.matchedBy) {
-              console.warn('⚠️ Account matched but limits are NULL in database:', {
-                accountId: accountNumber,
-                accountGroup: data.data.group,
-                matchedBy: data.data.matchedBy,
-                dedicatedName: data.data.dedicatedName,
-                matchedGroup: data.data.matchedGroup,
-                message: 'Please configure min_limit and max_limit in group_management table for this group'
+          if (pmData.ok && Array.isArray(pmData.methods)) {
+            const methodKeyMap: Record<string, string> = {
+              'card': 'unipayment_card',
+              'crypto': 'unipayment_crypto',
+              'google_apple_pay': 'unipayment_google_apple_pay',
+              'upi': 'unipayment_upi',
+            };
+            
+            const methodKey = methodKeyMap[paymentMethod] || `unipayment_${paymentMethod}`;
+            const method = pmData.methods.find((m: any) => m.method_key === methodKey);
+            
+            if (method) {
+              const fetchedLimits = {
+                minLimit: method.min_limit !== undefined && method.min_limit !== null ? Number(method.min_limit) : null,
+                maxLimit: method.max_limit !== undefined && method.max_limit !== null ? Number(method.max_limit) : null,
+              };
+              
+              // Use fetched limits if available, otherwise keep existing
+              if (fetchedLimits.minLimit !== null || fetchedLimits.maxLimit !== null) {
+                currentPaymentMethodLimits = fetchedLimits;
+              }
+              
+              console.log('📊 Payment method limits fetched during account selection:', {
+                methodKey,
+                methodData: {
+                  min_limit: method.min_limit,
+                  max_limit: method.max_limit,
+                  metadata: method.metadata,
+                },
+                parsedLimits: currentPaymentMethodLimits,
               });
             } else {
-              console.warn('⚠️ No group match found for account:', {
-                accountId: accountNumber,
-                accountGroup: data.data.group,
-                accountPackage: data.data.package,
-                message: data.data.message || 'No matching group found in group_management table'
+              console.warn('⚠️ Payment method not found in API response:', {
+                methodKey,
+                availableMethods: pmData.methods?.map((m: any) => m.method_key) || [],
               });
             }
           }
+        } catch (pmError) {
+          console.warn('⚠️ Could not fetch payment method limits during account selection, using existing:', {
+            error: pmError,
+            existingLimits: currentPaymentMethodLimits,
+          });
+          // Keep using existing limits if fetch fails
+        }
+
+        if (data.success && data.data) {
+          const groupMinLimit = data.data.minLimit;
+          const groupMaxLimit = data.data.maxLimit;
+          
+          // ✅ FIX: Use group limits if available, otherwise fallback to payment method limits
+          // Handle partial limits: if group has min but not max, use payment method's max, and vice versa
+          // This ensures we always show complete limits when possible
+          const finalMinLimit = (groupMinLimit !== null && groupMinLimit !== undefined) 
+            ? groupMinLimit 
+            : (currentPaymentMethodLimits?.minLimit ?? null);
+          const finalMaxLimit = (groupMaxLimit !== null && groupMaxLimit !== undefined) 
+            ? groupMaxLimit 
+            : (currentPaymentMethodLimits?.maxLimit ?? null);
+          
+          console.log('🔍 [Unipayment] Limit resolution details:', {
+            groupMinLimit,
+            groupMaxLimit,
+            paymentMethodMinLimit: currentPaymentMethodLimits?.minLimit,
+            paymentMethodMaxLimit: currentPaymentMethodLimits?.maxLimit,
+            finalMinLimit,
+            finalMaxLimit,
+            willUsePaymentMethodMax: (groupMaxLimit === null || groupMaxLimit === undefined) && currentPaymentMethodLimits?.maxLimit !== null,
+          });
+          
+          // Determine source: if either limit comes from group, source is 'group', otherwise 'payment_method'
+          const limitSource = (groupMinLimit !== null || groupMaxLimit !== null) ? 'group' : 'payment_method';
+          
+          setDepositLimits({
+            minLimit: finalMinLimit,
+            maxLimit: finalMaxLimit,
+            source: limitSource,
+          });
+          
+          console.log('📊 Deposit limits resolved for Unipayment:', {
+            accountId: accountNumber,
+            accountGroup: data.data.group,
+            accountPackage: data.data.package,
+            groupMinLimit,
+            groupMaxLimit,
+            paymentMethodMinLimit: currentPaymentMethodLimits?.minLimit,
+            paymentMethodMaxLimit: currentPaymentMethodLimits?.maxLimit,
+            finalMinLimit,
+            finalMaxLimit,
+            source: limitSource,
+            fallbackUsed: {
+              min: (groupMinLimit === null || groupMinLimit === undefined) && paymentMethodLimits?.minLimit !== null,
+              max: (groupMaxLimit === null || groupMaxLimit === undefined) && currentPaymentMethodLimits?.maxLimit !== null,
+            },
+          });
+          
+          // Log warning if both group and payment method limits are null
+          if (finalMinLimit === null && finalMaxLimit === null) {
+            console.warn('⚠️ No deposit limits found (neither group nor payment method):', {
+              accountId: accountNumber,
+              accountGroup: data.data.group,
+              hasGroupLimits: groupMinLimit !== null || groupMaxLimit !== null,
+              hasPaymentMethodLimits: currentPaymentMethodLimits?.minLimit !== null || currentPaymentMethodLimits?.maxLimit !== null,
+            });
+          }
         } else {
-          setDepositLimits(null);
-          console.warn('⚠️ No deposit limits found for account:', accountNumber, data);
+          // If group limits not found, use payment method limits as fallback
+          setDepositLimits(currentPaymentMethodLimits ? {
+            minLimit: currentPaymentMethodLimits.minLimit,
+            maxLimit: currentPaymentMethodLimits.maxLimit,
+            source: 'payment_method',
+          } : null);
+          console.warn('⚠️ No group deposit limits found, using payment method limits as fallback:', {
+            accountNumber,
+            paymentMethodLimits: currentPaymentMethodLimits,
+          });
         }
       } catch (error) {
         console.error('❌ Error fetching deposit limits:', error);
-        setDepositLimits(null);
+        // On error, still try to use payment method limits
+        setDepositLimits(currentPaymentMethodLimits ? {
+          minLimit: currentPaymentMethodLimits.minLimit,
+          maxLimit: currentPaymentMethodLimits.maxLimit,
+          source: 'payment_method',
+        } : null);
       } finally {
         setLoadingLimits(false);
       }
     };
 
     fetchDepositLimits();
-  }, [selectedAccount]);
+  }, [selectedAccount, paymentMethodLimits]);
   
   // Update network when currentSelectedCrypto changes
   useEffect(() => {
@@ -1186,6 +1338,7 @@ function UnipaymentStep1Form({
   depositLimits: {
     minLimit: number | null;
     maxLimit: number | null;
+    source?: 'group' | 'payment_method';
   } | null;
   fixedRate: number;
 }) {
@@ -1594,7 +1747,7 @@ function UnipaymentStep1Form({
                     }}
                     title={hasLimits ? `Click to set maximum amount (${limits.max})` : "Limits not configured"}
                   >
-                    Deposit limit: {limitText}
+                    Selected Account limit is {limitText}
                   </p>
                   {usdAmountFromInr && parseFloat(amount) > 0 && (
                     <p className="text-xs mt-1 text-gray-400">
@@ -1613,7 +1766,7 @@ function UnipaymentStep1Form({
                   }}
                   title={hasLimits ? `Click to set maximum amount (${limits.max})` : "Limits not configured"}
                 >
-                  Deposit limit: {limitText}
+                  Selected Account limit is {limitText}
                 </p>
               );
             })()}

@@ -640,11 +640,14 @@ Time: ${new Date(statusData.timestamp * 1000).toLocaleString()}`;
 
   // ✅ FIX: Use processing stage config for better UX
   const getProcessingConfig = () => {
+    const isUnipayment = !!statusData.invoice_id && !statusData.cregis_id;
+    const paymentProvider = isUnipayment ? 'Unipayment' : 'Cregis';
+    
     if (processingStage === 'payment_received') {
       return {
         icon: <Check className="h-8 w-8 text-green-500 animate-pulse" />,
         title: "Payment Received",
-        description: "Payment confirmed by Cregis. Processing deposit...",
+        description: `Payment confirmed by ${paymentProvider}. Processing deposit...`,
         color: "text-green-500",
         bgColor: "bg-green-500/10",
       };
@@ -697,7 +700,11 @@ Time: ${new Date(statusData.timestamp * 1000).toLocaleString()}`;
         }`}
       >
         {processingStage === 'payment_received'
-          ? "Payment confirmed by Cregis. Processing deposit..."
+          ? (() => {
+              const isUnipayment = !!statusData.invoice_id && !statusData.cregis_id;
+              const paymentProvider = isUnipayment ? 'Unipayment' : 'Cregis';
+              return `Payment confirmed by ${paymentProvider}. Processing deposit...`;
+            })()
           : processingStage === 'updating_mt5'
           ? "Crediting your MT5 account. Please wait..."
           : processingStage === 'completed' || depositCompleted
