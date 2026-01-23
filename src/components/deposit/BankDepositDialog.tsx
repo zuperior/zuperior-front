@@ -195,6 +195,10 @@ export function BankDepositDialog({
     const formData = new FormData();
     formData.append('mt5AccountId', selectedAccount);
     formData.append('amount', amount);
+    // Pass payment method type (UPI or bank_transfer)
+    formData.append('paymentMethod', gatewayType === 'upi' ? 'UPI' : 'Bank Transfer');
+    // Pass methodKey to identify which gateway was used
+    if (methodKey) formData.append('methodKey', methodKey);
     if (transactionId) formData.append('transactionHash', transactionId);
     if (proofFile) formData.append('proofFile', proofFile);
 

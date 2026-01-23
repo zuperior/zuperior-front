@@ -28,12 +28,16 @@ export async function POST(request: NextRequest) {
     
     const mt5AccountId = formData.get('mt5AccountId');
     const amount = formData.get('amount');
+    const paymentMethod = formData.get('paymentMethod');
+    const methodKey = formData.get('methodKey');
     const transactionHash = formData.get('transactionHash');
     const proofFile = formData.get('proofFile') as File;
 
     console.log('📊 Received deposit data:');
     console.log('   - MT5 Account ID:', mt5AccountId);
     console.log('   - Amount:', amount);
+    console.log('   - Payment Method:', paymentMethod || '(not provided)');
+    console.log('   - Method Key:', methodKey || '(not provided)');
     console.log('   - Transaction Hash:', transactionHash || '(not provided)');
     console.log('   - Proof File:', proofFile ? proofFile.name : '(not provided)');
     console.log('');
@@ -43,6 +47,12 @@ export async function POST(request: NextRequest) {
     const backendFormData = new FormData();
     backendFormData.append('mt5AccountId', mt5AccountId as string);
     backendFormData.append('amount', amount as string);
+    if (paymentMethod) {
+      backendFormData.append('paymentMethod', paymentMethod as string);
+    }
+    if (methodKey) {
+      backendFormData.append('methodKey', methodKey as string);
+    }
     if (transactionHash) {
       backendFormData.append('transactionHash', transactionHash as string);
     }
