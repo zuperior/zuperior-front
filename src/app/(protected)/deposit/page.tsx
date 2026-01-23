@@ -629,10 +629,37 @@ export default function DepositPage() {
     return <CardLoader message="Loading deposit options..." />;
   }
 
+  // Helper function to format limits from min/max values
+  const formatLimits = (minLimit: number | null | undefined, maxLimit: number | null | undefined): string => {
+    if (minLimit !== null && minLimit !== undefined && maxLimit !== null && maxLimit !== undefined) {
+      // Format with commas for thousands
+      const formattedMin = minLimit.toLocaleString('en-US', { maximumFractionDigits: 0 });
+      const formattedMax = maxLimit.toLocaleString('en-US', { maximumFractionDigits: 0 });
+      return `$${formattedMin}-$${formattedMax}`;
+    }
+    if (minLimit !== null && minLimit !== undefined) {
+      const formattedMin = minLimit.toLocaleString('en-US', { maximumFractionDigits: 0 });
+      return `$${formattedMin}+`;
+    }
+    if (maxLimit !== null && maxLimit !== undefined) {
+      const formattedMax = maxLimit.toLocaleString('en-US', { maximumFractionDigits: 0 });
+      return `Up to $${formattedMax}`;
+    }
+    return "Not set";
+  };
+
   // Helper to get metadata for payment methods
-  // First checks metadata from payment method, then falls back to hardcoded values
+  // First checks database limits (min_limit/max_limit), then metadata, then falls back to hardcoded values
   const getPaymentMethodMetadata = (id: string, type: string, paymentMethod?: any) => {
-    // First, check if metadata exists in the payment method object
+    // First priority: Check if paymentMethod has min_limit and max_limit from database
+    let limitsFromDb: string | null = null;
+    if (paymentMethod && ((paymentMethod.min_limit !== null && paymentMethod.min_limit !== undefined) || 
+        (paymentMethod.max_limit !== null && paymentMethod.max_limit !== undefined))) {
+      limitsFromDb = formatLimits(paymentMethod.min_limit, paymentMethod.max_limit);
+    }
+
+    // Second priority: Check if metadata exists in the payment method object
+    let metadataFromJson: any = {};
     if (paymentMethod?.metadata) {
       let metadata = paymentMethod.metadata;
       
@@ -645,34 +672,39 @@ export default function DepositPage() {
         }
       }
       
-      // If metadata has the fields we need, use them (even if empty, to allow override)
-      const result: any = {};
-      if (metadata.processingTime !== undefined) {
-        result.processingTime = metadata.processingTime;
-      }
-      if (metadata.fee !== undefined) {
-        result.fee = metadata.fee;
-      }
-      if (metadata.limits !== undefined) {
-        result.limits = metadata.limits;
-      }
-      if (metadata.recommended !== undefined) {
-        result.recommended = metadata.recommended;
-      }
-      
-      // If we have at least one metadata field, use it and fill in defaults for missing ones
-      if (Object.keys(result).length > 0) {
-        return {
-          processingTime: result.processingTime || "Instant",
-          fee: result.fee || "0%",
-          limits: result.limits || "50 - 10,000 USD",
-          // Handle recommended: use explicit false if set, otherwise default to false
-          recommended: result.recommended === true || result.recommended === 'true' || result.recommended === 1
-        };
-      }
+      metadataFromJson = metadata;
     }
     
-    // Fallback to hardcoded values based on ID and type
+    // Build result object, prioritizing database limits over metadata limits
+    const result: any = {};
+    if (metadataFromJson.processingTime !== undefined) {
+      result.processingTime = metadataFromJson.processingTime;
+    }
+    if (metadataFromJson.fee !== undefined) {
+      result.fee = metadataFromJson.fee;
+    }
+    // Use database limits if available, otherwise use metadata limits, otherwise fallback
+    if (limitsFromDb && limitsFromDb !== "Not set") {
+      result.limits = limitsFromDb;
+    } else if (metadataFromJson.limits !== undefined) {
+      result.limits = metadataFromJson.limits;
+    }
+    if (metadataFromJson.recommended !== undefined) {
+      result.recommended = metadataFromJson.recommended;
+    }
+    
+    // If we have at least one metadata field, use it and fill in defaults for missing ones
+    if (Object.keys(result).length > 0 || limitsFromDb) {
+      return {
+        processingTime: result.processingTime || "Instant",
+        fee: result.fee || "0%",
+        limits: result.limits || limitsFromDb || "Not set",
+        // Handle recommended: use explicit false if set, otherwise default to false
+        recommended: result.recommended === true || result.recommended === 'true' || result.recommended === 1
+      };
+    }
+    
+    // Fallback to hardcoded values based on ID and type (only if no database limits)
     const normalizedId = (id || '').toUpperCase();
     const normalizedType = (type || '').toLowerCase();
     

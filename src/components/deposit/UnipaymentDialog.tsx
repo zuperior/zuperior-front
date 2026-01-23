@@ -203,12 +203,31 @@ export function UnipaymentDialog({
     }
   }, [open, paymentMethod]);
   
+  // Initialize deposit limits with payment method limits when dialog opens (before account selection)
+  useEffect(() => {
+    if (!selectedAccount && paymentMethodLimits) {
+      setDepositLimits({
+        minLimit: paymentMethodLimits.minLimit,
+        maxLimit: paymentMethodLimits.maxLimit,
+        source: 'payment_method',
+      });
+      console.log('📊 [UnipaymentDialog] Initialized deposit limits with payment method limits:', paymentMethodLimits);
+    } else if (!selectedAccount) {
+      setDepositLimits(null);
+    }
+  }, [selectedAccount, paymentMethodLimits]);
+
   // ✅ FIX: Fetch deposit limits when account is selected (from group_management)
   // If group limits are null, fallback to payment method limits
   useEffect(() => {
     const fetchDepositLimits = async () => {
       if (!selectedAccount) {
-        setDepositLimits(null);
+        // Use payment method limits when no account is selected
+        setDepositLimits(paymentMethodLimits ? {
+          minLimit: paymentMethodLimits.minLimit,
+          maxLimit: paymentMethodLimits.maxLimit,
+          source: 'payment_method',
+        } : null);
         return;
       }
 

@@ -30,11 +30,16 @@ export function Step1Form({
   selectedAccount,
   setSelectedAccount,
   lifetimeDeposit,
+  paymentMethodLimits,
 }: Step1FormProps & {
   accounts: TpAccountSnapshot[];
   selectedAccount: string;
   setSelectedAccount: (account: string) => void;
   lifetimeDeposit: number;
+  paymentMethodLimits?: {
+    minLimit: number | null;
+    maxLimit: number | null;
+  } | null;
 }) {
   const [step, setStep] = useState<"unverified" | "partial" | "verified" | "">(
     ""
@@ -82,18 +87,27 @@ export function Step1Form({
     (account) => (account.acc).toString() === selectedAccountNumber
   );
 
-  // State for deposit limits from group_management
+  // State for deposit limits - initially use payment method limits, then merge with account group limits
   const [depositLimits, setDepositLimits] = useState<{
     minLimit: number | null;
     maxLimit: number | null;
   } | null>(null);
   const [loadingLimits, setLoadingLimits] = useState(false);
 
-  // Fetch deposit limits when account is selected
+  // Initialize with payment method limits when dialog opens
+  useEffect(() => {
+    if (paymentMethodLimits && !selectedAccountNumber) {
+      setDepositLimits(paymentMethodLimits);
+      console.log('📊 Initialized with payment method limits:', paymentMethodLimits);
+    }
+  }, [paymentMethodLimits, selectedAccountNumber]);
+
+  // Fetch deposit limits when account is selected and merge with payment method limits
   useEffect(() => {
     const fetchDepositLimits = async () => {
       if (!selectedAccountNumber) {
-        setDepositLimits(null);
+        // Reset to payment method limits when no account is selected
+        setDepositLimits(paymentMethodLimits || null);
         return;
       }
 
@@ -106,25 +120,42 @@ export function Step1Form({
         const data = await response.json();
 
         if (data.success && data.data) {
+          const groupMinLimit = data.data.minLimit;
+          const groupMaxLimit = data.data.maxLimit;
+          
+          // Merge: Use group limits if available, otherwise fallback to payment method limits
+          const finalMinLimit = (groupMinLimit !== null && groupMinLimit !== undefined) 
+            ? groupMinLimit 
+            : (paymentMethodLimits?.minLimit ?? null);
+          const finalMaxLimit = (groupMaxLimit !== null && groupMaxLimit !== undefined) 
+            ? groupMaxLimit 
+            : (paymentMethodLimits?.maxLimit ?? null);
+          
           setDepositLimits({
-            minLimit: data.data.minLimit,
-            maxLimit: data.data.maxLimit,
+            minLimit: finalMinLimit,
+            maxLimit: finalMaxLimit,
           });
-          console.log('📊 Deposit limits fetched:', data.data);
+          console.log('📊 Deposit limits merged:', {
+            groupLimits: { minLimit: groupMinLimit, maxLimit: groupMaxLimit },
+            paymentMethodLimits: paymentMethodLimits,
+            finalLimits: { minLimit: finalMinLimit, maxLimit: finalMaxLimit }
+          });
         } else {
-          setDepositLimits(null);
-          console.warn('⚠️ No deposit limits found for account:', selectedAccountNumber);
+          // If no group limits found, use payment method limits
+          setDepositLimits(paymentMethodLimits || null);
+          console.warn('⚠️ No deposit limits found for account, using payment method limits:', selectedAccountNumber);
         }
       } catch (error) {
         console.error('❌ Error fetching deposit limits:', error);
-        setDepositLimits(null);
+        // On error, fallback to payment method limits
+        setDepositLimits(paymentMethodLimits || null);
       } finally {
         setLoadingLimits(false);
       }
     };
 
     fetchDepositLimits();
-  }, [selectedAccountNumber]);
+  }, [selectedAccountNumber, paymentMethodLimits]);
 
   // REMOVED: Startup deposit allowance calculation
   // The maximum deposit limit from database should NOT be reduced by current balance

@@ -33,6 +33,10 @@ export function ManualDepositDialog({
   const [transactionId, setTransactionId] = useState<string>("");
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [depositRequestId, setDepositRequestId] = useState<string>("");
+  const [paymentMethodLimits, setPaymentMethodLimits] = useState<{
+    minLimit: number | null;
+    maxLimit: number | null;
+  } | null>(null);
 
   const dispatch = useDispatch<AppDispatch>();
   const mt5Accounts = useSelector((state: RootState) => state.mt5.accounts);
@@ -62,6 +66,49 @@ export function ManualDepositDialog({
       return;
     }
   }, [open, resetAllStates]);
+
+  // Fetch payment method limits when dialog opens
+  useEffect(() => {
+    const fetchPaymentMethodLimits = async () => {
+      if (!open || !selectedCrypto) return;
+      
+      try {
+        // Determine payment method key based on selected crypto
+        let methodKey: string | null = null;
+        if (selectedCrypto.id === 'USDT-TRC20') {
+          methodKey = 'cregis_usdt_trc20';
+        } else if (selectedCrypto.id === 'USDT-BEP20') {
+          methodKey = 'cregis_usdt_bep20';
+        }
+        
+        if (!methodKey) return;
+        
+        const response = await fetch('/api/deposit-payment-methods', { cache: 'no-store' });
+        const data = await response.json();
+        
+        if (data.ok && Array.isArray(data.methods)) {
+          const method = data.methods.find((m: any) => m.method_key === methodKey);
+          if (method) {
+            setPaymentMethodLimits({
+              minLimit: method.min_limit !== undefined && method.min_limit !== null ? Number(method.min_limit) : null,
+              maxLimit: method.max_limit !== undefined && method.max_limit !== null ? Number(method.max_limit) : null,
+            });
+            console.log('📊 Payment method limits fetched for ManualDepositDialog:', {
+              methodKey,
+              limits: {
+                minLimit: method.min_limit,
+                maxLimit: method.max_limit,
+              }
+            });
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error fetching payment method limits:', error);
+      }
+    };
+    
+    fetchPaymentMethodLimits();
+  }, [open, selectedCrypto]);
 
   // Fetch MT5 accounts from DB when dialog opens
   useEffect(() => {
@@ -192,6 +239,7 @@ export function ManualDepositDialog({
             lifetimeDeposit={lifetimeDeposit}
             nextStep={() => setStep(2)}
             paymentMethod={getPaymentMethodKey()}
+            paymentMethodLimits={paymentMethodLimits}
           />
         );
       case 2:
