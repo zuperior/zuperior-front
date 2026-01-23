@@ -16,19 +16,19 @@ import { useFetchUserData } from "@/hooks/useFetchUserData";
 
 
 export function DashboardContent() {
-  // Get user data from localStorage
-  const getUserData = () => {
+  const [name, setName] = useState("User");
+  const [newAccountDialogOpen, setNewAccountDialogOpen] = useState(false);
+
+  // Get user data from localStorage (client-side only to avoid hydration mismatch)
+  useEffect(() => {
     try {
       const userStr = localStorage.getItem('user');
-      return userStr ? JSON.parse(userStr) : null;
+      const userData = userStr ? JSON.parse(userStr) : null;
+      setName(userData?.name || "User");
     } catch {
-      return null;
+      setName("User");
     }
-  };
-
-  const userData = getUserData();
-  const name = userData?.name || "User";
-  const [newAccountDialogOpen, setNewAccountDialogOpen] = useState(false);
+  }, []);
 
   // Get verification status from Redux state
   const verificationStatus = useAppSelector((state) => state.kyc.verificationStatus);
