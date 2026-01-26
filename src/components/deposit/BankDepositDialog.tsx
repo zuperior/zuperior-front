@@ -35,10 +35,47 @@ export function BankDepositDialog({
   const [depositRequestId, setDepositRequestId] = useState("");
   const [bank, setBank] = useState<any>(null);
   const [upi, setUpi] = useState<any>(null);
+  const [paymentMethodLimits, setPaymentMethodLimits] = useState<{
+    minLimit: number | null;
+    maxLimit: number | null;
+  } | null>(null);
 
   const dispatch = useDispatch<AppDispatch>();
   const mt5Accounts = useSelector((state: RootState) => state.mt5.accounts);
   const filteredAccounts = mt5Accounts.filter(acc => String(acc.accountId || '').trim() && String(acc.accountId).trim() !== '0');
+
+  // Fetch payment method limits when dialog opens
+  useEffect(() => {
+    const fetchPaymentMethodLimits = async () => {
+      if (!open || !methodKey) return;
+      
+      try {
+        const response = await fetch('/api/deposit-payment-methods', { cache: 'no-store' });
+        const data = await response.json();
+        
+        if (data.ok && Array.isArray(data.methods)) {
+          const method = data.methods.find((m: any) => m.method_key === methodKey);
+          if (method) {
+            setPaymentMethodLimits({
+              minLimit: method.min_limit !== undefined && method.min_limit !== null ? Number(method.min_limit) : null,
+              maxLimit: method.max_limit !== undefined && method.max_limit !== null ? Number(method.max_limit) : null,
+            });
+            console.log('📊 Payment method limits fetched for BankDepositDialog:', {
+              methodKey,
+              limits: {
+                minLimit: method.min_limit,
+                maxLimit: method.max_limit,
+              }
+            });
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error fetching payment method limits:', error);
+      }
+    };
+    
+    fetchPaymentMethodLimits();
+  }, [open, methodKey]);
 
   useEffect(() => {
     if (open && mt5Accounts.length === 0) dispatch(fetchUserAccountsFromDb() as any);
@@ -158,6 +195,10 @@ export function BankDepositDialog({
     const formData = new FormData();
     formData.append('mt5AccountId', selectedAccount);
     formData.append('amount', amount);
+    // Pass payment method type (UPI or bank_transfer)
+    formData.append('paymentMethod', gatewayType === 'upi' ? 'UPI' : 'Bank Transfer');
+    // Pass methodKey to identify which gateway was used
+    if (methodKey) formData.append('methodKey', methodKey);
     if (transactionId) formData.append('transactionHash', transactionId);
     if (proofFile) formData.append('proofFile', proofFile);
 
@@ -179,8 +220,10 @@ export function BankDepositDialog({
             accounts={filteredAccounts}
             lifetimeDeposit={lifetimeDeposit}
             nextStep={() => setStep(2)}
-            fixedRate={bank?.fixedRate || 92.00}
+            fixedRate={bank?.fixedRate || upi?.fixedRate || 92.00}
             showInrConversion={true}
+            paymentMethod={methodKey || undefined}
+            paymentMethodLimits={paymentMethodLimits}
           />
         );
       case 2:

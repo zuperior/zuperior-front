@@ -7,6 +7,7 @@ import { TextAnimate } from "@/components/ui/text-animate";
 import { DepositDialog } from "@/components/deposit/DepositDialog";
 import { BankDepositDialog } from "@/components/deposit/BankDepositDialog";
 import { UnipaymentDialog } from "@/components/deposit/UnipaymentDialog";
+import { DigiPay247Dialog } from "@/components/deposit/DigiPay247Dialog";
 import { store } from "@/store";
 import { useAppDispatch } from "@/store/hooks";
 import { fetchAccessToken } from "@/store/slices/accessCodeSlice";
@@ -40,6 +41,12 @@ export default function DepositPage() {
   const [unipaymentUpiOpen, setUnipaymentUpiOpen] = useState(false);
   const [unipaymentDisplayNames, setUnipaymentDisplayNames] = useState<Record<string, string>>({});
   const [manualDepositDialogs, setManualDepositDialogs] = useState<Record<string, boolean>>({});
+  const [digipay247UpiOpen, setDigipay247UpiOpen] = useState(false);
+
+  // Debug: Monitor DigiPay247 dialog state
+  useEffect(() => {
+    console.log('[Deposit Page] digipay247UpiOpen state changed:', digipay247UpiOpen);
+  }, [digipay247UpiOpen]);
   const dispatch = useAppDispatch();
   const [lifetimeDeposit, setLifetimeDeposit] = useState<number>(0);
   const [isLoadingCrypto, setIsLoadingCrypto] = useState(true);
@@ -388,6 +395,22 @@ export default function DepositPage() {
       console.log('[Deposit Page] Unipayment UPI:', { method_key: 'unipayment_upi', display_name: method?.display_name, icon_path: method?.icon_path, resolved_icon: icon });
       items.push({ type: 'unipayment', method: 'upi', data: { id: 'UNIPAYMENT_UPI', name: displayName, icon }, paymentMethod: method });
     }
+    // Add DigiPay247 UPI if enabled (only once, check for duplicates)
+    if (isMethodEnabled('digipay247_upi')) {
+      // Check if DigiPay247 UPI is already in items to prevent duplicates
+      const alreadyAdded = items.some(item => item.type === 'digipay247' && item.data?.id === 'DIGIPAY247_UPI');
+      if (!alreadyAdded) {
+        const method = enabledPaymentMethods.find(m => m.method_key === 'digipay247_upi');
+        const icon = method?.icon_path 
+          ? resolveImagePath(method.icon_path, '/payment_method_images/pm_upi.png')
+          : resolveImagePath('/payment_method_images/pm_upi.png', '/payment_method_images/pm_upi.png');
+        const displayName = method?.display_name || 'DigiPay247 UPI';
+        console.log('[Deposit Page] DigiPay247 UPI:', { method_key: 'digipay247_upi', display_name: method?.display_name, icon_path: method?.icon_path, resolved_icon: icon });
+        items.push({ type: 'digipay247', method: 'upi', data: { id: 'DIGIPAY247_UPI', name: displayName, icon }, paymentMethod: method });
+      } else {
+        console.log('[Deposit Page] DigiPay247 UPI already added, skipping duplicate');
+      }
+    }
     
     // Add bank transfer if enabled in deposit_payment_methods
     // Note: We show it if enabled, even if manual gateway isn't configured yet
@@ -566,6 +589,7 @@ export default function DepositPage() {
       if (item.type === 'bank_transfer') return 'bank_transfer';
       if (item.type === 'crypto' && item.data?.id === 'USDT-TRC20') return 'cregis_usdt_trc20';
       if (item.type === 'crypto' && item.data?.id === 'USDT-BEP20') return 'cregis_usdt_bep20';
+      if (item.type === 'digipay247') return 'digipay247_upi';
       return item.method_key || item.data?.id;
     }));
     
@@ -575,7 +599,7 @@ export default function DepositPage() {
       if (processedMethodKeys.has(key)) return false;
       // Skip if it's a method we explicitly handle above
       if (['unipayment_crypto', 'unipayment_card', 'unipayment_google_apple_pay', 'unipayment_upi',
-           'bank_transfer', 'wire_transfer', 'cregis_usdt_trc20', 'cregis_usdt_bep20'].includes(key)) {
+           'bank_transfer', 'wire_transfer', 'cregis_usdt_trc20', 'cregis_usdt_bep20', 'digipay247_upi'].includes(key)) {
         return false;
       }
       // Skip if it's a manual gateway (should have been processed above)
@@ -614,14 +638,24 @@ export default function DepositPage() {
     }
     
     console.log('[Deposit Page] Final filtered items count:', items.length);
-    console.log('[Deposit Page] Final filtered items:', items.map(i => ({ 
+    // Remove duplicates - keep only the first occurrence of each unique item
+    const uniqueItems = items.filter((item, index, self) => {
+      // For DigiPay247, check by type and data.id
+      if (item.type === 'digipay247') {
+        return index === self.findIndex(i => i.type === 'digipay247' && i.data?.id === item.data?.id);
+      }
+      // For other items, check by type and method
+      return index === self.findIndex(i => i.type === item.type && i.method === item.method && i.data?.id === item.data?.id);
+    });
+    
+    console.log('[Deposit Page] Final filtered items (after deduplication):', uniqueItems.map(i => ({ 
       type: i.type, 
       method: i.method, 
       method_key: i.method_key,
       name: i.data?.name 
     })));
     
-    return items;
+    return uniqueItems;
   }, [cryptocurrencies, bankTransferAvailable, enabledPaymentMethods, manualGateways]);
 
   // Show loading state while fetching crypto data and payment methods
@@ -629,10 +663,37 @@ export default function DepositPage() {
     return <CardLoader message="Loading deposit options..." />;
   }
 
+  // Helper function to format limits from min/max values
+  const formatLimits = (minLimit: number | null | undefined, maxLimit: number | null | undefined): string => {
+    if (minLimit !== null && minLimit !== undefined && maxLimit !== null && maxLimit !== undefined) {
+      // Format with commas for thousands
+      const formattedMin = minLimit.toLocaleString('en-US', { maximumFractionDigits: 0 });
+      const formattedMax = maxLimit.toLocaleString('en-US', { maximumFractionDigits: 0 });
+      return `$${formattedMin}-$${formattedMax}`;
+    }
+    if (minLimit !== null && minLimit !== undefined) {
+      const formattedMin = minLimit.toLocaleString('en-US', { maximumFractionDigits: 0 });
+      return `$${formattedMin}+`;
+    }
+    if (maxLimit !== null && maxLimit !== undefined) {
+      const formattedMax = maxLimit.toLocaleString('en-US', { maximumFractionDigits: 0 });
+      return `Up to $${formattedMax}`;
+    }
+    return "Not set";
+  };
+
   // Helper to get metadata for payment methods
-  // First checks metadata from payment method, then falls back to hardcoded values
+  // First checks database limits (min_limit/max_limit), then metadata, then falls back to hardcoded values
   const getPaymentMethodMetadata = (id: string, type: string, paymentMethod?: any) => {
-    // First, check if metadata exists in the payment method object
+    // First priority: Check if paymentMethod has min_limit and max_limit from database
+    let limitsFromDb: string | null = null;
+    if (paymentMethod && ((paymentMethod.min_limit !== null && paymentMethod.min_limit !== undefined) || 
+        (paymentMethod.max_limit !== null && paymentMethod.max_limit !== undefined))) {
+      limitsFromDb = formatLimits(paymentMethod.min_limit, paymentMethod.max_limit);
+    }
+
+    // Second priority: Check if metadata exists in the payment method object
+    let metadataFromJson: any = {};
     if (paymentMethod?.metadata) {
       let metadata = paymentMethod.metadata;
       
@@ -645,34 +706,39 @@ export default function DepositPage() {
         }
       }
       
-      // If metadata has the fields we need, use them (even if empty, to allow override)
-      const result: any = {};
-      if (metadata.processingTime !== undefined) {
-        result.processingTime = metadata.processingTime;
-      }
-      if (metadata.fee !== undefined) {
-        result.fee = metadata.fee;
-      }
-      if (metadata.limits !== undefined) {
-        result.limits = metadata.limits;
-      }
-      if (metadata.recommended !== undefined) {
-        result.recommended = metadata.recommended;
-      }
-      
-      // If we have at least one metadata field, use it and fill in defaults for missing ones
-      if (Object.keys(result).length > 0) {
-        return {
-          processingTime: result.processingTime || "Instant",
-          fee: result.fee || "0%",
-          limits: result.limits || "50 - 10,000 USD",
-          // Handle recommended: use explicit false if set, otherwise default to false
-          recommended: result.recommended === true || result.recommended === 'true' || result.recommended === 1
-        };
-      }
+      metadataFromJson = metadata;
     }
     
-    // Fallback to hardcoded values based on ID and type
+    // Build result object, prioritizing database limits over metadata limits
+    const result: any = {};
+    if (metadataFromJson.processingTime !== undefined) {
+      result.processingTime = metadataFromJson.processingTime;
+    }
+    if (metadataFromJson.fee !== undefined) {
+      result.fee = metadataFromJson.fee;
+    }
+    // Use database limits if available, otherwise use metadata limits, otherwise fallback
+    if (limitsFromDb && limitsFromDb !== "Not set") {
+      result.limits = limitsFromDb;
+    } else if (metadataFromJson.limits !== undefined) {
+      result.limits = metadataFromJson.limits;
+    }
+    if (metadataFromJson.recommended !== undefined) {
+      result.recommended = metadataFromJson.recommended;
+    }
+    
+    // If we have at least one metadata field, use it and fill in defaults for missing ones
+    if (Object.keys(result).length > 0 || limitsFromDb) {
+      return {
+        processingTime: result.processingTime || "Instant",
+        fee: result.fee || "0%",
+        limits: result.limits || limitsFromDb || "Not set",
+        // Handle recommended: use explicit false if set, otherwise default to false
+        recommended: result.recommended === true || result.recommended === 'true' || result.recommended === 1
+      };
+    }
+    
+    // Fallback to hardcoded values based on ID and type (only if no database limits)
     const normalizedId = (id || '').toUpperCase();
     const normalizedType = (type || '').toLowerCase();
     
@@ -808,6 +874,24 @@ export default function DepositPage() {
                 />
               );
             }
+            if (item.type === 'digipay247') {
+              const metadata = getPaymentMethodMetadata(item.data.id, item.type, item.paymentMethod);
+              const handleClick = () => {
+                console.log('[Deposit Page] DigiPay247 card clicked, opening dialog');
+                console.log('[Deposit Page] Current digipay247UpiOpen state:', digipay247UpiOpen);
+                setDigipay247UpiOpen(true);
+                console.log('[Deposit Page] Set digipay247UpiOpen to true');
+              };
+              return (
+                <MemoizedPaymentMethodCard
+                  key={item.data.id}
+                  onOpenNewAccount={handleClick}
+                  icon={item.data.icon}
+                  name={item.data.name}
+                  {...metadata}
+                />
+              );
+            }
             // Handle manual gateway methods
             if (item.type === 'manual' || item.type === 'manual_upi' || item.type === 'manual_crypto' || item.type === 'manual_bank_transfer') {
               const metadata = getPaymentMethodMetadata(item.data.id, item.type, item.paymentMethod);
@@ -859,6 +943,17 @@ export default function DepositPage() {
         />
         
         {/* Unipayment Dialogs */}
+        {/* DigiPay247 Dialog */}
+        <DigiPay247Dialog
+          open={digipay247UpiOpen}
+          onOpenChange={setDigipay247UpiOpen}
+          lifetimeDeposit={lifetimeDeposit}
+          displayName={(() => {
+            const digipay247Method = enabledPaymentMethods.find(m => m.method_key === 'digipay247_upi');
+            return digipay247Method?.display_name || 'DigiPay247 UPI';
+          })()}
+        />
+        
         <UnipaymentDialog
           open={unipaymentCryptoOpen}
           onOpenChange={setUnipaymentCryptoOpen}
@@ -962,9 +1057,14 @@ function PaymentMethodCard({
     target.style.display = 'none';
   };
 
+  const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    console.log('[PaymentMethodCard] Card clicked, calling onOpenNewAccount');
+    onOpenNewAccount();
+  };
+
   return (
     <div
-      onClick={onOpenNewAccount}
+      onClick={handleCardClick}
       className="group relative flex flex-col justify-between rounded-xl bg-white dark:bg-[#0d0414] border border-gray-200 dark:border-gray-800 p-6 cursor-pointer transition-all hover:shadow-lg hover:border-purple-500/50 dark:hover:border-purple-500/50"
     >
       <div className="flex justify-between items-start mb-6">

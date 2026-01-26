@@ -35,6 +35,8 @@ export function USDTManualStep1Form({
   nextStep,
   fixedRate,
   showInrConversion,
+  paymentMethod,
+  paymentMethodLimits,
 }: {
   amount: string;
   setAmount: (amount: string) => void;
@@ -45,6 +47,11 @@ export function USDTManualStep1Form({
   nextStep: () => void;
   fixedRate?: number;
   showInrConversion?: boolean;
+  paymentMethod?: string | null;
+  paymentMethodLimits?: {
+    minLimit: number | null;
+    maxLimit: number | null;
+  } | null;
 }) {
   const [step, setStep] = useState<"unverified" | "partial" | "verified" | "">(
     ""
@@ -98,49 +105,80 @@ export function USDTManualStep1Form({
     (account) => account.accountId === selectedAccount
   );
 
-  // State for deposit limits from group_management
+  // State for deposit limits - initially use payment method limits, then merge with account group limits
   const [depositLimits, setDepositLimits] = useState<{
     minLimit: number | null;
     maxLimit: number | null;
   } | null>(null);
   const [loadingLimits, setLoadingLimits] = useState(false);
 
-  // Fetch deposit limits when account is selected
+  // Initialize with payment method limits when dialog opens
+  useEffect(() => {
+    if (paymentMethodLimits && !selectedAccount) {
+      setDepositLimits(paymentMethodLimits);
+      console.log('📊 [USDTManualStep1Form] Initialized with payment method limits:', paymentMethodLimits);
+    }
+  }, [paymentMethodLimits, selectedAccount]);
+
+  // Fetch deposit limits when account is selected and merge with payment method limits
   useEffect(() => {
     const fetchDepositLimits = async () => {
       if (!selectedAccount) {
-        setDepositLimits(null);
+        // Reset to payment method limits when no account is selected
+        setDepositLimits(paymentMethodLimits || null);
         return;
       }
 
       setLoadingLimits(true);
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
-        const response = await fetch(`/api/mt5/deposit-limits/${selectedAccount}`, {
+        // Include payment method as query parameter if available
+        const url = paymentMethod 
+          ? `/api/mt5/deposit-limits/${selectedAccount}?paymentMethod=${encodeURIComponent(paymentMethod)}`
+          : `/api/mt5/deposit-limits/${selectedAccount}`;
+        console.log('🔍 [USDTManualStep1Form] Fetching deposit limits:', { selectedAccount, paymentMethod, url });
+        const response = await fetch(url, {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         });
         const data = await response.json();
 
         if (data.success && data.data) {
+          const groupMinLimit = data.data.minLimit;
+          const groupMaxLimit = data.data.maxLimit;
+          
+          // Merge: Use group limits if available, otherwise fallback to payment method limits
+          const finalMinLimit = (groupMinLimit !== null && groupMinLimit !== undefined) 
+            ? groupMinLimit 
+            : (paymentMethodLimits?.minLimit ?? null);
+          const finalMaxLimit = (groupMaxLimit !== null && groupMaxLimit !== undefined) 
+            ? groupMaxLimit 
+            : (paymentMethodLimits?.maxLimit ?? null);
+          
           setDepositLimits({
-            minLimit: data.data.minLimit,
-            maxLimit: data.data.maxLimit,
+            minLimit: finalMinLimit,
+            maxLimit: finalMaxLimit,
           });
-          console.log('📊 Deposit limits fetched:', data.data);
+          console.log('📊 [USDTManualStep1Form] Deposit limits merged:', {
+            groupLimits: { minLimit: groupMinLimit, maxLimit: groupMaxLimit },
+            paymentMethodLimits: paymentMethodLimits,
+            finalLimits: { minLimit: finalMinLimit, maxLimit: finalMaxLimit }
+          });
         } else {
-          setDepositLimits(null);
-          console.warn('⚠️ No deposit limits found for account:', selectedAccount);
+          // If no group limits found, use payment method limits
+          setDepositLimits(paymentMethodLimits || null);
+          console.warn('⚠️ No deposit limits found for account, using payment method limits:', selectedAccount);
         }
       } catch (error) {
         console.error('❌ Error fetching deposit limits:', error);
-        setDepositLimits(null);
+        // On error, fallback to payment method limits
+        setDepositLimits(paymentMethodLimits || null);
       } finally {
         setLoadingLimits(false);
       }
     };
 
     fetchDepositLimits();
-  }, [selectedAccount]);
+  }, [selectedAccount, paymentMethod, paymentMethodLimits]);
 
   // REMOVED: Startup deposit allowance calculation
   // The maximum deposit limit from database should NOT be reduced by current balance
