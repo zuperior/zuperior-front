@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogHeader, VisuallyHidden } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,6 @@ import type { RootState, AppDispatch } from "../../store";
 import { fetchUserAccountsFromDb } from "../../store/slices/mt5AccountSlice";
 import { createPayment } from "@/lib/digipay247.service";
 import { MT5Account } from "@/store/slices/mt5AccountSlice";
-import { Upload, FileText, ExternalLink, Loader2 } from "lucide-react";
 
 interface NewAccountDialogProps {
   open: boolean;
@@ -43,13 +42,6 @@ export function DigiPay247Dialog({
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
-  const [depositId, setDepositId] = useState<string | null>(null);
-  const [transactionId, setTransactionId] = useState<string | null>(null);
-  const [utrTransactionId, setUtrTransactionId] = useState(""); // UTR/Transaction ID from user
-  const [proofFile, setProofFile] = useState<File | null>(null);
-  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState<any>(null);
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [depositLimits, setDepositLimits] = useState<{
     minLimit: number | null;
     maxLimit: number | null;
@@ -216,146 +208,9 @@ export function DigiPay247Dialog({
       setSelectedAccount("");
       setError(null);
       setPaymentUrl(null);
-      setDepositId(null);
-      setTransactionId(null);
-      setUtrTransactionId("");
-      setProofFile(null);
       setIsProcessing(false);
-      setIsCheckingStatus(false);
-      setPaymentStatus(null);
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-        pollingIntervalRef.current = null;
-      }
     }
   }, [open]);
-
-  // Check payment status from API
-  const checkPaymentStatus = useCallback(async () => {
-    if (!depositId) return null;
-
-    try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
-      if (!token) return null;
-
-      const response = await fetch(`/api/digipay247/status/${depositId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) return null;
-
-      const data = await response.json();
-      if (data.success && data.data) {
-        return data.data;
-      }
-    } catch (error) {
-      console.error('❌ [DigiPay247] Error checking status:', error);
-    }
-    return null;
-  }, [depositId]);
-
-  // Start status polling
-  const startStatusPolling = useCallback(() => {
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-    }
-
-    const pollStatus = async () => {
-      const status = await checkPaymentStatus();
-      if (status) {
-        const digipay247Status = status.digipay247Deposit?.status || status.deposit?.status;
-        
-        // If status is completed or failed, stop polling
-        if (digipay247Status === 'completed' || digipay247Status === 'failed' || 
-            status.deposit?.status === 'completed' || status.deposit?.status === 'rejected') {
-          setPaymentStatus(status);
-          setIsCheckingStatus(false);
-          setStep(4);
-          if (pollingIntervalRef.current) {
-            clearInterval(pollingIntervalRef.current);
-            pollingIntervalRef.current = null;
-          }
-        }
-      }
-    };
-
-    // Check immediately
-    pollStatus();
-    
-    // Then poll every 3 seconds
-    pollingIntervalRef.current = setInterval(pollStatus, 3000);
-  }, [checkPaymentStatus]);
-
-  // Cleanup polling on unmount
-  useEffect(() => {
-    return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-    };
-  }, []);
-
-  // Handle proof submission
-  const handleSubmitProof = async () => {
-    if (!utrTransactionId.trim()) {
-      setError("Please enter UTR/Transaction ID");
-      return;
-    }
-
-    if (!depositId) {
-      setError("Deposit ID not found");
-      return;
-    }
-
-    setIsProcessing(true);
-    setError(null);
-
-    try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
-      if (!token) {
-        throw new Error("Authentication required");
-      }
-
-      const formData = new FormData();
-      formData.append('depositId', depositId);
-      formData.append('utrTransactionId', utrTransactionId);
-      if (proofFile) {
-        formData.append('proofFile', proofFile);
-      }
-
-      const response = await fetch('/api/digipay247/submit-proof', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to submit proof');
-      }
-
-      const data = await response.json();
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to submit proof');
-      }
-
-      console.log('✅ [DigiPay247] Proof submitted successfully');
-      setStep(3);
-      setIsCheckingStatus(true);
-      
-      // Start polling for status
-      startStatusPolling();
-    } catch (err) {
-      console.error('❌ [DigiPay247] Error submitting proof:', err);
-      setError(err instanceof Error ? err.message : "Failed to submit proof");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
 
   const handleContinue = async () => {
     if (!inrAmount) {
@@ -413,7 +268,7 @@ export function DigiPay247Dialog({
       }
 
       if (!result.data.paymentUrl) {
-        throw new Error("Payment URL not received from SecurePayee");
+        throw new Error("Payment URL not received from DigiPay247");
       }
 
       console.log('✅ [DigiPay247] Payment request created:', {
@@ -423,12 +278,10 @@ export function DigiPay247Dialog({
       });
 
       setPaymentUrl(result.data.paymentUrl);
-      setDepositId(result.data.depositId);
-      setTransactionId(result.data.transactionId);
       setStep(2);
 
       // Redirect to payment URL
-      window.open(result.data.paymentUrl, '_blank');
+      window.location.href = result.data.paymentUrl;
     } catch (err) {
       console.error('❌ [DigiPay247] Error creating payment:', err);
       setError(err instanceof Error ? err.message : "Failed to create payment request");
@@ -453,13 +306,13 @@ export function DigiPay247Dialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] p-0 gap-0">
         <VisuallyHidden>
-          <DialogTitle>{displayName || 'SecurePayee UPI Deposit'}</DialogTitle>
+          <DialogTitle>{displayName || 'DigiPay247 UPI Deposit'}</DialogTitle>
         </VisuallyHidden>
         
         {/* Header with spacing */}
         <DialogHeader className="px-6 sm:px-8 pt-6 sm:pt-8 pb-4">
           <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white">
-            {displayName || 'SecurePayee UPI Deposit'}
+            {displayName || 'DigiPay247 UPI Deposit'}
           </h2>
         </DialogHeader>
 
@@ -478,7 +331,6 @@ export function DigiPay247Dialog({
                 fixedRate={fixedRate}
                 nextStep={handleContinue}
                 error={error}
-                isProcessing={isProcessing}
               />
             </div>
           </div>
@@ -486,85 +338,25 @@ export function DigiPay247Dialog({
 
         {step === 2 && (
           <div className="px-6 sm:px-8 pb-6 sm:pb-8">
-            <div className="space-y-6">
-              <div className="text-center py-4">
-                <p className="text-lg mb-4 text-gray-900 dark:text-white">
-                  SecurePayee payment page opened in new tab
-                </p>
-                {paymentUrl && (
+            <div className="space-y-6 text-center py-6">
+              <p className="text-lg mb-6 text-gray-900 dark:text-white">
+                Redirecting to DigiPay247 payment page...
+              </p>
+              {paymentUrl && (
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    If you are not redirected automatically, click the button below:
+                  </p>
                   <a
                     href={paymentUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all shadow-lg font-medium"
+                    className="inline-block px-8 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all shadow-lg font-medium"
                   >
-                    <ExternalLink className="w-4 h-4" />
                     Open Payment Page
                   </a>
-                )}
-              </div>
-              
-              <DigiPay247Step2ProofForm
-                utrTransactionId={utrTransactionId}
-                setUtrTransactionId={setUtrTransactionId}
-                proofFile={proofFile}
-                setProofFile={setProofFile}
-                onSubmit={handleSubmitProof}
-                isProcessing={isProcessing}
-                error={error}
-              />
-            </div>
-          </div>
-        )}
-
-        {step === 3 && (
-          <div className="px-6 sm:px-8 pb-6 sm:pb-8">
-            <div className="space-y-6 text-center py-8">
-              <Loader2 className="w-12 h-12 animate-spin mx-auto text-purple-600" />
-              <p className="text-lg text-gray-900 dark:text-white">
-                Checking payment status...
-              </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Please wait while we verify your payment
-              </p>
-            </div>
-          </div>
-        )}
-
-        {step === 4 && paymentStatus && (
-          <div className="px-6 sm:px-8 pb-6 sm:pb-8">
-            <div className="space-y-6 text-center py-8">
-              <div className={`w-16 h-16 rounded-full mx-auto flex items-center justify-center ${
-                paymentStatus.digipay247Deposit?.status === 'completed' || paymentStatus.deposit?.status === 'completed'
-                  ? 'bg-green-100 dark:bg-green-900' 
-                  : 'bg-red-100 dark:bg-red-900'
-              }`}>
-                {(paymentStatus.digipay247Deposit?.status === 'completed' || paymentStatus.deposit?.status === 'completed') ? (
-                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                ) : (
-                  <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                )}
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                {paymentStatus.digipay247Deposit?.status === 'completed' || paymentStatus.deposit?.status === 'completed' 
-                  ? 'Payment Completed' 
-                  : 'Payment Failed'}
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {paymentStatus.digipay247Deposit?.status === 'completed' || paymentStatus.deposit?.status === 'completed'
-                  ? 'Your deposit has been processed successfully' 
-                  : 'Your payment could not be processed'}
-              </p>
-              <Button
-                onClick={() => onOpenChange(false)}
-                className="w-full bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:bg-[#9d6ad9]"
-              >
-                Close
-              </Button>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -585,7 +377,6 @@ function DigiPay247Step1Form({
   fixedRate,
   nextStep,
   error,
-  isProcessing,
 }: {
   inrAmount: string;
   setInrAmount: (value: string) => void;
@@ -601,7 +392,6 @@ function DigiPay247Step1Form({
   fixedRate: number;
   nextStep: () => void;
   error: string | null;
-  isProcessing: boolean;
 }) {
   const getAccountPackage = (account: MT5Account): string => {
     const raw = account.package || 'Standard';
@@ -759,172 +549,9 @@ function DigiPay247Step1Form({
       <Button
         className="w-full cursor-pointer bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:bg-[#9d6ad9]"
         onClick={nextStep}
-        disabled={accounts.length === 0 || !selectedAccount || !inrAmount || isProcessing}
+        disabled={accounts.length === 0 || !selectedAccount || !inrAmount}
       >
-        {isProcessing ? (
-          <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Processing...
-          </>
-        ) : (
-          'Continue'
-        )}
-      </Button>
-    </div>
-  );
-}
-
-
-// DigiPay247 Step 2 Proof Form Component
-function DigiPay247Step2ProofForm({
-  utrTransactionId,
-  setUtrTransactionId,
-  proofFile,
-  setProofFile,
-  onSubmit,
-  isProcessing,
-  error,
-}: {
-  utrTransactionId: string;
-  setUtrTransactionId: (id: string) => void;
-  proofFile: File | null;
-  setProofFile: (file: File | null) => void;
-  onSubmit: () => void;
-  isProcessing: boolean;
-  error: string | null;
-}) {
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // Validate file type (images and PDFs)
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
-      if (!allowedTypes.includes(file.type)) {
-        toast.error("Invalid file type", {
-          description: "Please upload only images (JPEG, PNG) or PDF files"
-        });
-        return;
-      }
-
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("File too large", {
-          description: "File size must be less than 5MB"
-        });
-        return;
-      }
-
-      setProofFile(file);
-      toast.success("File uploaded successfully");
-    }
-  };
-
-  const handleFileUpload = () => {
-    fileInputRef.current?.click();
-  };
-
-  const removeFile = () => {
-    setProofFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-    toast.info("File removed");
-  };
-
-  return (
-    <div className="w-full">
-      <h3 className="text-xl font-bold text-center mb-6 text-gray-900 dark:text-white">
-        Enter Payment Details
-      </h3>
-
-      {/* UTR/Transaction ID Field */}
-      <div className="mb-6">
-        <Label className="text-sm dark:text-white/75 text-black mb-1">
-          UTR / Transaction ID *
-        </Label>
-        <Input
-          placeholder="Enter UTR or Transaction ID"
-          value={utrTransactionId}
-          onChange={(e) => setUtrTransactionId(e.target.value)}
-          className="dark:text-white/75 text-black border-[#362e36] p-5 focus-visible:ring-blue-600 w-full"
-        />
-        <p className="text-xs text-gray-500 mt-1">
-          Enter the UTR number or transaction ID from your payment
-        </p>
-      </div>
-
-      {/* Payment Proof Upload */}
-      <div className="mb-6">
-        <Label className="text-sm dark:text-white/75 text-black mb-1">
-          Payment Screenshot (Optional)
-        </Label>
-        <div className="space-y-3">
-          {!proofFile ? (
-            <div
-              className="border-2 border-dashed border-[#362e36] dark:border-[#362e36] rounded-lg p-6 text-center cursor-pointer hover:border-[#8046c9] transition-colors"
-              onClick={handleFileUpload}
-            >
-              <Upload className="mx-auto h-8 w-8 text-[#945393] mb-2" />
-              <p className="text-sm dark:text-white/75 text-black">
-                Click to upload payment screenshot
-              </p>
-              <p className="text-xs text-[#945393] mt-1">
-                Images (JPEG, PNG) or PDF files up to 5MB
-              </p>
-            </div>
-          ) : (
-            <div className="border border-[#362e36] dark:border-[#362e36] rounded-lg p-4 flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <FileText className="h-6 w-6 text-[#8046c9]" />
-                <div>
-                  <p className="text-sm font-medium dark:text-white/75 text-black">{proofFile.name}</p>
-                  <p className="text-xs text-[#945393]">
-                    {(proofFile.size / 1024 / 1024).toFixed(2)} MB
-                  </p>
-                </div>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={removeFile}
-                className="text-red-600 hover:text-red-700 border-red-300"
-              >
-                Remove
-              </Button>
-            </div>
-          )}
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*,.pdf"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-        </div>
-      </div>
-
-      {/* Error Message */}
-      {error && (
-        <p className="text-xs mb-4 text-red-500">{error}</p>
-      )}
-
-      {/* Submit Button */}
-      <Button
-        className="w-full cursor-pointer bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:bg-[#9d6ad9]"
-        onClick={onSubmit}
-        disabled={isProcessing || !utrTransactionId.trim()}
-      >
-        {isProcessing ? (
-          <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Submitting...
-          </>
-        ) : (
-          'Submit Payment Proof'
-        )}
+        Continue
       </Button>
     </div>
   );

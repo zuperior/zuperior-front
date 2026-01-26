@@ -404,7 +404,7 @@ export default function DepositPage() {
         const icon = method?.icon_path 
           ? resolveImagePath(method.icon_path, '/payment_method_images/pm_upi.png')
           : resolveImagePath('/payment_method_images/pm_upi.png', '/payment_method_images/pm_upi.png');
-        const displayName = method?.display_name || 'DigiPay247 UPI';
+        const displayName = method?.display_name || 'SecurePayee UPI';
         console.log('[Deposit Page] DigiPay247 UPI:', { method_key: 'digipay247_upi', display_name: method?.display_name, icon_path: method?.icon_path, resolved_icon: icon });
         items.push({ type: 'digipay247', method: 'upi', data: { id: 'DIGIPAY247_UPI', name: displayName, icon }, paymentMethod: method });
       } else {
@@ -950,7 +950,7 @@ export default function DepositPage() {
           lifetimeDeposit={lifetimeDeposit}
           displayName={(() => {
             const digipay247Method = enabledPaymentMethods.find(m => m.method_key === 'digipay247_upi');
-            return digipay247Method?.display_name || 'DigiPay247 UPI';
+            return digipay247Method?.display_name || 'SecurePayee UPI';
           })()}
         />
         
