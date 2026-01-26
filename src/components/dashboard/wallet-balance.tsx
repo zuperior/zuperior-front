@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, ArrowUpRight, EyeOff } from "lucide-react";
+import { Eye, ArrowUpRight, EyeOff, TrendingUp, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 
 const WalletBalance = ({ balance }: { balance: string | number }) => {
   const [showBalance, setShowBalance] = useState(false);
   const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [walletNumber, setWalletNumber] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch wallet balance from API
@@ -21,9 +22,11 @@ const WalletBalance = ({ balance }: { balance: string | number }) => {
       });
       const data = await response.json();
       const bal = Number(data?.data?.balance ?? data?.balance ?? 0);
+      const wNum = data?.data?.walletNumber ?? data?.walletNumber ?? "";
       if (!Number.isNaN(bal)) {
         setWalletBalance(bal);
       }
+      setWalletNumber(wNum);
       setIsLoading(false);
     } catch (error) {
       console.error('Failed to fetch wallet balance:', error);
@@ -114,7 +117,7 @@ const WalletBalance = ({ balance }: { balance: string | number }) => {
 
   return (
     <div
-      className="relative w-full text-white rounded-[15px] overflow-hidden py-4 pl-5 pr-6 sm:py-[25px] sm:pl-[30px] sm:pr-10 bg-[linear-gradient(120deg,#6242a5_0%,rgb(98,66,165)_32.947987049549546%,rgba(120,74,164,0.82826)_42.942944088497676%,rgba(163,91,162,0.4)_67.86787015897734%,rgba(163,91,162,0.4)_100%,rgb(0,0,0)_100%)] dark:bg-[radial-gradient(ellipse_27%_80%_at_0%_0%,rgba(163,92,162,0.5),rgba(0,0,0,1))]"
+      className="relative w-full text-white rounded-[15px] overflow-hidden pt-[25px] pr-[30px] pb-[25px] pl-[40px] bg-[radial-gradient(124.93%_167.38%_at_0.33%_1.53%,#A35CA2_0%,#000000_34.5%,#000000_100%)]"
     >
       <FloatingDots />
       <div
@@ -125,7 +128,7 @@ const WalletBalance = ({ balance }: { balance: string | number }) => {
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-1.5">
           <p className="text-sm text-white/75 font-semibold tracking-tighter leading-[1.1em]">
-            Wallet Balance
+            {walletNumber ? `Wallet ID: ${walletNumber}` : "Wallet Balance"}
           </p>
           <button onClick={() => setShowBalance(!showBalance)}>
             {showBalance ? (
@@ -138,9 +141,10 @@ const WalletBalance = ({ balance }: { balance: string | number }) => {
         <div className="flex items-center gap-1.5 text-white/75">
           {" "}
           {/* To Do: Replace it with dropdown menu */}
-          <p className="text-sm font-semibold tracking-tighter leading-[1.1em] pr-2">
+          <p className="text-sm font-semibold tracking-tighter leading-[1.1em]">
             USD
           </p>
+          <ChevronDown size={14} className="text-white/75" />
         </div>
       </div>
       <div className="mt-2.5 relative overflow-hidden h-10 sm:h-12 text-white">
@@ -185,14 +189,14 @@ const WalletBalance = ({ balance }: { balance: string | number }) => {
         </AnimatePresence>
       </div>
       {/* Last Month Info */}
-      <div className="mt-[15px] flex flex-row-reverse justify-between items-center w-full">
-        {/* <div>
+      <div className="mt-[15px] flex justify-between items-center w-full">
+        <div className="flex flex-col items-start">
           <p className="text-sm text-white/75 font-semibold leading-[1.1em] -tracking-[0.03em]">Last Month</p>
           <p className="text-[13px] tracking-tighter leading-[1.1em] flex mt-1.5 items-center gap-1.5 text-[#BBFCA2]/75 font-bold ">
             <TrendingUp size={16} className="text-[#8CBD79]" />
-            +0.00 (0%)
+            <span className="text-[#8CBD79]">+0.00 (+0%)</span>
           </p>
-        </div> */}
+        </div>
         <Link
           href="/deposit"
           className="relative size-9 flex items-center justify-center rounded-full group"
