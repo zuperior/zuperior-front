@@ -145,12 +145,18 @@ export async function POST(request: Request) {
         backendUrl: BACKEND_API_URL
       });
       
+      // Preserve Shufti Pro error details if available
+      const errorMessage = errorData.message || errorData.error?.message || errorData.error || 'Failed to submit document for verification';
+      const errorDetails = errorData.details || errorData.error || `Backend returned ${response.status}`;
+      
       return NextResponse.json(
         {
-          error: errorData.message || errorData.error || 'Failed to submit document for verification',
+          error: errorMessage,
           success: false,
-          details: errorData.details || errorData.error || `Backend returned ${response.status}`,
-          status: response.status
+          details: errorDetails,
+          event: errorData.event || errorData.data?.event,
+          status: response.status,
+          reference: errorData.data?.reference || body.reference
         },
         { status: response.status }
       );

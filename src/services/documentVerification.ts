@@ -15,7 +15,13 @@ const fileToBase64 = (file: File) =>
   new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
+    reader.onload = () => {
+      const result = reader.result as string;
+      // Strip the data URL prefix (e.g., "data:image/jpeg;base64,") to get just the base64 string
+      // Shufti Pro API expects only the base64 encoded string without the prefix
+      const base64String = result.includes(',') ? result.split(',')[1] : result;
+      resolve(base64String);
+    };
     reader.onerror = (error) => reject(error);
   });
 

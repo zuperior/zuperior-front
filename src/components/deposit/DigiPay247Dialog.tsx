@@ -123,6 +123,7 @@ export function DigiPay247Dialog({
     }
   }, [inrAmount, fixedRate]);
 
+
   // Initialize deposit limits with payment method limits when dialog opens
   useEffect(() => {
     if (!selectedAccount && paymentMethodLimits) {
@@ -358,22 +359,20 @@ export function DigiPay247Dialog({
   };
 
   const handleContinue = async () => {
-    if (!inrAmount) {
-      setError("Please enter an amount in INR");
+    if (!amount && !inrAmount) {
+      setError("Please enter an amount in USD or INR");
       return;
     }
 
-    const inrValue = parseFloat(inrAmount);
-    if (isNaN(inrValue) || inrValue <= 0) {
-      setError("Please enter a valid amount");
-      return;
-    }
-
-    // Convert INR to USD for validation
-    const amountValue = parseFloat(amount);
+    // Use USD amount if available, otherwise convert from INR
+    let amountValue = parseFloat(amount);
     if (isNaN(amountValue) || amountValue <= 0) {
-      setError("Please enter a valid amount");
-      return;
+      const inrValue = parseFloat(inrAmount);
+      if (isNaN(inrValue) || inrValue <= 0) {
+        setError("Please enter a valid amount");
+        return;
+      }
+      amountValue = inrValue / fixedRate;
     }
 
     // Validate against limits (limits are in USD)
@@ -399,10 +398,22 @@ export function DigiPay247Dialog({
     setError(null);
 
     try {
+      // Ensure amount is set (convert from INR if needed)
+      let finalAmount = amount;
+      if (!finalAmount || parseFloat(finalAmount) <= 0) {
+        const inrValue = parseFloat(inrAmount);
+        if (!isNaN(inrValue) && inrValue > 0) {
+          finalAmount = (inrValue / fixedRate).toFixed(2);
+          setAmount(finalAmount); // Update state for consistency
+        } else {
+          throw new Error("Please enter a valid amount");
+        }
+      }
+
       const [accountNumber, accountType] = selectedAccount.split("|");
 
       const result = await createPayment({
-        amount,
+        amount: finalAmount,
         currency: 'USD',
         mt5AccountId: accountNumber,
         accountType,
@@ -451,23 +462,51 @@ export function DigiPay247Dialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] p-0 gap-0">
+      <DialogContent className="max-w-[95vw] sm:max-w-[95%] lg:max-w-2xl gap-4 bg-background shadow-lg border-2 border-transparent p-6 text-white rounded-[18px] flex flex-col items-center w-full max-h-[90vh] overflow-y-auto [background:linear-gradient(#fff,#fff)_padding-box,conic-gradient(from_var(--border-angle),#ddd,#f6e6fc,theme(colors.purple.400/48%))_border-box] dark:[background:linear-gradient(#070206,#030103)_padding-box,conic-gradient(from_var(--border-angle),#030103,#030103,color-mix(in_oklab,oklch(71.4%_0.203_305.504)_48%,transparent))_border-box] animate-border">
         <VisuallyHidden>
           <DialogTitle>{displayName || 'SecurePayee UPI Deposit'}</DialogTitle>
         </VisuallyHidden>
         
-        {/* Header with spacing */}
-        <DialogHeader className="px-6 sm:px-8 pt-6 sm:pt-8 pb-4">
-          <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white">
-            {displayName || 'SecurePayee UPI Deposit'}
-          </h2>
+        {/* Progress Indicator */}
+        <DialogHeader className="w-full py-3">
+          <div className="flex items-center justify-between w-full pt-2">
+            <div className="flex items-center space-x-2 w-full mx-10">
+              {[1, 2, 3, 4].map((num) => (
+                <React.Fragment key={num}>
+                  <div
+                    className={`flex h-8 w-8 px-4 mx-0 items-center justify-center rounded-full ${
+                      step >= num ? "bg-[#9F8BCF]" : "bg-[#594B7A]"
+                    }`}
+                  >
+                    <span className="text-sm font-medium">{num}</span>
+                  </div>
+                  {num !== 4 && (
+                    <div
+                      className={`h-[4px] w-full mx-0 ${
+                        step > num ? "bg-[#6B5993]" : "bg-[#392F4F]"
+                      }`}
+                    />
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
         </DialogHeader>
+        
+        {/* Payment Method Label */}
+        <div className="pt-2 pb-4">
+          <h2 className="text-2xl text-center font-bold dark:text-white/75 text-black">
+            {displayName || 'UPI'}
+          </h2>
+        </div>
 
         {/* Content area with proper spacing */}
         {step === 1 && (
-          <div className="px-6 sm:px-8 pb-6 sm:pb-8">
+          <div className="w-full">
             <div className="space-y-6">
               <DigiPay247Step1Form
+                amount={amount}
+                setAmount={setAmount}
                 inrAmount={inrAmount}
                 setInrAmount={setInrAmount}
                 usdAmountFromInr={usdAmountFromInr}
@@ -485,7 +524,7 @@ export function DigiPay247Dialog({
         )}
 
         {step === 2 && (
-          <div className="px-6 sm:px-8 pb-6 sm:pb-8">
+          <div className="w-full">
             <div className="space-y-6">
               <div className="text-center py-4">
                 <p className="text-lg mb-4 text-gray-900 dark:text-white">
@@ -518,7 +557,7 @@ export function DigiPay247Dialog({
         )}
 
         {step === 3 && (
-          <div className="px-6 sm:px-8 pb-6 sm:pb-8">
+          <div className="w-full">
             <div className="space-y-6 text-center py-8">
               <Loader2 className="w-12 h-12 animate-spin mx-auto text-purple-600" />
               <p className="text-lg text-gray-900 dark:text-white">
@@ -532,7 +571,7 @@ export function DigiPay247Dialog({
         )}
 
         {step === 4 && paymentStatus && (
-          <div className="px-6 sm:px-8 pb-6 sm:pb-8">
+          <div className="w-full">
             <div className="space-y-6 text-center py-8">
               <div className={`w-16 h-16 rounded-full mx-auto flex items-center justify-center ${
                 paymentStatus.digipay247Deposit?.status === 'completed' || paymentStatus.deposit?.status === 'completed'
@@ -573,8 +612,10 @@ export function DigiPay247Dialog({
   );
 }
 
-// DigiPay247 Step 1 Form Component (UPI with INR input)
+// DigiPay247 Step 1 Form Component (UPI with USD and INR inputs)
 function DigiPay247Step1Form({
+  amount,
+  setAmount,
   inrAmount,
   setInrAmount,
   usdAmountFromInr,
@@ -587,6 +628,8 @@ function DigiPay247Step1Form({
   error,
   isProcessing,
 }: {
+  amount: string;
+  setAmount: (value: string) => void;
   inrAmount: string;
   setInrAmount: (value: string) => void;
   usdAmountFromInr: string;
@@ -635,38 +678,82 @@ function DigiPay247Step1Form({
     };
   };
 
+  const handleUsdAmountChange = (value: string) => {
+    // Allow decimals for USD - allow free typing without conversion
+    if (!/^\d*\.?\d*$/.test(value)) return;
+    setAmount(value);
+    toast.dismiss();
+    
+    // Clear INR if USD is empty or just a dot
+    if (value === "" || value === ".") {
+      setInrAmount("");
+    }
+  };
+
+  const handleUsdBlur = () => {
+    // When USD field loses focus, format it properly
+    const usdNum = parseFloat(amount);
+    if (!isNaN(usdNum) && usdNum > 0) {
+      setAmount(usdNum.toFixed(2));
+      const inrValue = Math.round(usdNum * fixedRate);
+      setInrAmount(inrValue.toString());
+      
+      // Validate against limits
+      if (depositLimits) {
+        const minLimit = depositLimits.minLimit;
+        const maxLimit = depositLimits.maxLimit;
+        
+        if (minLimit !== null && minLimit !== undefined && usdNum < minLimit) {
+          const minInr = minLimit * fixedRate;
+          toast.error(`Minimum deposit for this account is ₹${minInr.toLocaleString('en-IN', { maximumFractionDigits: 0 })} INR ($${minLimit} USD)`);
+        } else if (maxLimit !== null && maxLimit !== undefined && usdNum > maxLimit) {
+          const maxInr = maxLimit * fixedRate;
+          toast.error(`Maximum deposit for this account is ₹${maxInr.toLocaleString('en-IN', { maximumFractionDigits: 0 })} INR ($${maxLimit} USD)`);
+        }
+      }
+    }
+  };
+
   const handleInrAmountChange = (value: string) => {
-    // For INR, only allow integers (no decimals)
+    // For INR, only allow integers (no decimals) - allow free typing without conversion
     if (!/^\d*$/.test(value)) return;
     setInrAmount(value);
     toast.dismiss();
     
-    const inrNum = parseFloat(value);
-    if (isNaN(inrNum) || inrNum <= 0) return;
-    
-    // Validate against limits (convert INR to USD for comparison)
-    if (!depositLimits) {
-      toast.error("Deposit limits not configured for this account");
-      return;
+    // Clear USD if INR is empty
+    if (value === "") {
+      setAmount("");
     }
-    
-    const usdValue = inrNum / fixedRate;
-    const minLimit = depositLimits.minLimit;
-    const maxLimit = depositLimits.maxLimit;
-    
-    if (minLimit !== null && minLimit !== undefined && usdValue < minLimit) {
-      const minInr = minLimit * fixedRate;
-      toast.error(`Minimum deposit for this account is ₹${minInr.toLocaleString('en-IN', { maximumFractionDigits: 0 })} INR`);
-    } else if (maxLimit !== null && maxLimit !== undefined && usdValue > maxLimit) {
-      const maxInr = maxLimit * fixedRate;
-      toast.error(`Maximum deposit for this account is ₹${maxInr.toLocaleString('en-IN', { maximumFractionDigits: 0 })} INR`);
+  };
+
+  const handleInrBlur = () => {
+    // When INR field loses focus, format USD properly
+    const inrNum = parseFloat(inrAmount);
+    if (!isNaN(inrNum) && inrNum > 0) {
+      const usdValue = inrNum / fixedRate;
+      setAmount(usdValue.toFixed(2));
+      
+      // Validate against limits
+      if (depositLimits) {
+        const usdValueNum = parseFloat(usdValue.toFixed(2));
+        const minLimit = depositLimits.minLimit;
+        const maxLimit = depositLimits.maxLimit;
+        
+        if (minLimit !== null && minLimit !== undefined && usdValueNum < minLimit) {
+          const minInr = minLimit * fixedRate;
+          toast.error(`Minimum deposit for this account is ₹${minInr.toLocaleString('en-IN', { maximumFractionDigits: 0 })} INR ($${minLimit} USD)`);
+        } else if (maxLimit !== null && maxLimit !== undefined && usdValueNum > maxLimit) {
+          const maxInr = maxLimit * fixedRate;
+          toast.error(`Maximum deposit for this account is ₹${maxInr.toLocaleString('en-IN', { maximumFractionDigits: 0 })} INR ($${maxLimit} USD)`);
+        }
+      }
     }
   };
 
   const limits = getLimitMessage();
 
   return (
-    <div className="w-full px-6 py-4">
+    <div className="w-full">
       {/* Account Selection */}
       <div className="mb-6">
         <Label className="text-sm dark:text-white/75 text-black mb-3 block">Account</Label>
@@ -720,32 +807,55 @@ function DigiPay247Step1Form({
         </Select>
       </div>
 
-      {/* Amount Field - INR Input */}
+      {/* Amount Field - USD and INR Inputs */}
       <div className="mb-6">
         <Label className="text-sm dark:text-white/75 text-black mb-3 block">Amount</Label>
-        <div className="relative w-full">
-          <Input
-            value={inrAmount}
-            onChange={(e) => handleInrAmountChange(e.target.value)}
-            placeholder="Enter amount in INR"
-            className="dark:text-white/75 text-black pr-12 border-[#362e36] p-5 focus-visible:ring-blue-600 w-full"
-          />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 dark:text-white/75 text-black text-sm font-medium">
-            INR
-          </span>
+        <div className="space-y-3">
+          {/* USD Input */}
+          <div className="relative w-full">
+            <Input
+              value={amount}
+              onChange={(e) => handleUsdAmountChange(e.target.value)}
+              onBlur={handleUsdBlur}
+              placeholder="Enter amount in USD"
+              className="dark:text-white/75 text-black pr-12 border-[#362e36] p-5 focus-visible:ring-blue-600 w-full"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 dark:text-white/75 text-black text-sm font-medium">
+              USD
+            </span>
+          </div>
+          
+          {/* INR Input */}
+          <div className="relative w-full">
+            <Input
+              value={inrAmount}
+              onChange={(e) => handleInrAmountChange(e.target.value)}
+              onBlur={handleInrBlur}
+              placeholder="Enter amount in INR"
+              className="dark:text-white/75 text-black pr-12 border-[#362e36] p-5 focus-visible:ring-blue-600 w-full"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 dark:text-white/75 text-black text-sm font-medium">
+              INR
+            </span>
+          </div>
+          
+          {/* Exchange Rate Info */}
+          {amount && parseFloat(amount) > 0 && (
+            <p className="text-xs mt-1 text-gray-400 flex items-center gap-2">
+              <span>Exchange Rate:</span>
+              <span className="font-medium">1 USD = {fixedRate.toFixed(2)} INR</span>
+            </p>
+          )}
         </div>
-        
-        {/* USD Conversion Display */}
-        {usdAmountFromInr && parseFloat(inrAmount) > 0 && (
-          <p className="text-xs mt-2 text-gray-400">
-            ≈ ${usdAmountFromInr} USD
-          </p>
-        )}
         
         {/* Deposit Limits */}
         {limits.message !== 'Limits not configured' && (
-          <p className="text-xs mt-2 text-[#945393]">
-            Deposit limit: {limits.min} - {limits.max} INR
+          <p className="text-xs mt-2 text-[#945393] font-medium">
+            Deposit limit: {depositLimits?.minLimit !== null && depositLimits?.minLimit !== undefined 
+              ? `$${depositLimits.minLimit.toFixed(2)}` 
+              : 'Not set'} - {depositLimits?.maxLimit !== null && depositLimits?.maxLimit !== undefined 
+              ? `$${depositLimits.maxLimit.toFixed(2)}` 
+              : 'Not set'} ({limits.min} - {limits.max} INR)
           </p>
         )}
         
@@ -759,7 +869,7 @@ function DigiPay247Step1Form({
       <Button
         className="w-full cursor-pointer bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:bg-[#9d6ad9]"
         onClick={nextStep}
-        disabled={accounts.length === 0 || !selectedAccount || !inrAmount || isProcessing}
+        disabled={accounts.length === 0 || !selectedAccount || (!amount && !inrAmount) || isProcessing}
       >
         {isProcessing ? (
           <>
