@@ -19,6 +19,7 @@ import { fetchUserAccountsFromDb } from "../../store/slices/mt5AccountSlice";
 import { createPayment } from "@/lib/digipay247.service";
 import { MT5Account } from "@/store/slices/mt5AccountSlice";
 import { Upload, FileText, ExternalLink, Loader2 } from "lucide-react";
+import TradingLoader from "@/components/transactions/TradingLoader";
 
 interface NewAccountDialogProps {
   open: boolean;
@@ -69,11 +70,11 @@ export function DigiPay247Dialog({
   useEffect(() => {
     const fetchPaymentMethodData = async () => {
       if (!open) return;
-      
+
       try {
         const response = await fetch('/api/deposit-payment-methods', { cache: 'no-store' });
         const data = await response.json();
-        
+
         if (data.ok && Array.isArray(data.methods)) {
           const method = data.methods.find((m: any) => m.method_key === 'digipay247_upi');
           if (method) {
@@ -81,12 +82,12 @@ export function DigiPay247Dialog({
               minLimit: method.min_limit !== undefined && method.min_limit !== null ? Number(method.min_limit) : null,
               maxLimit: method.max_limit !== undefined && method.max_limit !== null ? Number(method.max_limit) : null,
             });
-            
+
             // Set fixed rate from payment method (default to 92.00)
             if (method.fixed_rate !== null && method.fixed_rate !== undefined) {
               setFixedRate(Number(method.fixed_rate));
             }
-            
+
             console.log('📊 Payment method data fetched for DigiPay247:', {
               methodKey: 'digipay247_upi',
               limits: {
@@ -101,7 +102,7 @@ export function DigiPay247Dialog({
         console.error('❌ Error fetching payment method data:', error);
       }
     };
-    
+
     fetchPaymentMethodData();
   }, [open]);
 
@@ -267,10 +268,10 @@ export function DigiPay247Dialog({
       const status = await checkPaymentStatus();
       if (status) {
         const digipay247Status = status.digipay247Deposit?.status || status.deposit?.status;
-        
+
         // If status is completed or failed, stop polling
-        if (digipay247Status === 'completed' || digipay247Status === 'failed' || 
-            status.deposit?.status === 'completed' || status.deposit?.status === 'rejected') {
+        if (digipay247Status === 'completed' || digipay247Status === 'failed' ||
+          status.deposit?.status === 'completed' || status.deposit?.status === 'rejected') {
           setPaymentStatus(status);
           setIsCheckingStatus(false);
           setStep(4);
@@ -284,7 +285,7 @@ export function DigiPay247Dialog({
 
     // Check immediately
     pollStatus();
-    
+
     // Then poll every 3 seconds
     pollingIntervalRef.current = setInterval(pollStatus, 3000);
   }, [checkPaymentStatus]);
@@ -347,7 +348,7 @@ export function DigiPay247Dialog({
       console.log('✅ [DigiPay247] Proof submitted successfully');
       setStep(3);
       setIsCheckingStatus(true);
-      
+
       // Start polling for status
       startStatusPolling();
     } catch (err) {
@@ -466,7 +467,7 @@ export function DigiPay247Dialog({
         <VisuallyHidden>
           <DialogTitle>{displayName || 'SecurePayee UPI Deposit'}</DialogTitle>
         </VisuallyHidden>
-        
+
         {/* Progress Indicator */}
         <DialogHeader className="w-full py-3">
           <div className="flex items-center justify-between w-full pt-2">
@@ -474,17 +475,15 @@ export function DigiPay247Dialog({
               {[1, 2, 3, 4].map((num) => (
                 <React.Fragment key={num}>
                   <div
-                    className={`flex h-8 w-8 px-4 mx-0 items-center justify-center rounded-full ${
-                      step >= num ? "bg-[#9F8BCF]" : "bg-[#594B7A]"
-                    }`}
+                    className={`flex h-8 w-8 px-4 mx-0 items-center justify-center rounded-full ${step >= num ? "bg-[#9F8BCF]" : "bg-[#594B7A]"
+                      }`}
                   >
                     <span className="text-sm font-medium">{num}</span>
                   </div>
                   {num !== 4 && (
                     <div
-                      className={`h-[4px] w-full mx-0 ${
-                        step > num ? "bg-[#6B5993]" : "bg-[#392F4F]"
-                      }`}
+                      className={`h-[4px] w-full mx-0 ${step > num ? "bg-[#6B5993]" : "bg-[#392F4F]"
+                        }`}
                     />
                   )}
                 </React.Fragment>
@@ -492,7 +491,7 @@ export function DigiPay247Dialog({
             </div>
           </div>
         </DialogHeader>
-        
+
         {/* Payment Method Label */}
         <div className="pt-2 pb-4">
           <h2 className="text-2xl text-center font-bold dark:text-white/75 text-black">
@@ -542,16 +541,23 @@ export function DigiPay247Dialog({
                   </a>
                 )}
               </div>
-              
-              <DigiPay247Step2ProofForm
-                utrTransactionId={utrTransactionId}
-                setUtrTransactionId={setUtrTransactionId}
-                proofFile={proofFile}
-                setProofFile={setProofFile}
-                onSubmit={handleSubmitProof}
-                isProcessing={isProcessing}
-                error={error}
-              />
+
+              <div className="w-full px-4">
+                <p className="text-sm text-center text-gray-500 mb-6">
+                  After completing the payment on the SecurePayee page, click the button below to verify your transaction.
+                </p>
+
+                <Button
+                  onClick={() => {
+                    setStep(3);
+                    setIsCheckingStatus(true);
+                    startStatusPolling();
+                  }}
+                  className="w-full bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:bg-[#9d6ad9] h-12 text-lg font-medium"
+                >
+                  I have transferred
+                </Button>
+              </div>
             </div>
           </div>
         )}
@@ -559,7 +565,7 @@ export function DigiPay247Dialog({
         {step === 3 && (
           <div className="w-full">
             <div className="space-y-6 text-center py-8">
-              <Loader2 className="w-12 h-12 animate-spin mx-auto text-purple-600" />
+              <TradingLoader />
               <p className="text-lg text-gray-900 dark:text-white">
                 Checking payment status...
               </p>
@@ -573,12 +579,11 @@ export function DigiPay247Dialog({
         {step === 4 && paymentStatus && (
           <div className="w-full">
             <div className="space-y-6 text-center py-8">
-              <div className={`w-16 h-16 rounded-full mx-auto flex items-center justify-center ${
-                paymentStatus.digipay247Deposit?.status === 'completed' || paymentStatus.deposit?.status === 'completed'
-                  ? 'bg-green-100 dark:bg-green-900' 
-                  : 'bg-red-100 dark:bg-red-900'
-              }`}>
-                {(paymentStatus.digipay247Deposit?.status === 'completed' || paymentStatus.deposit?.status === 'completed') ? (
+              <div className={`w-16 h-16 rounded-full mx-auto flex items-center justify-center ${paymentStatus.digipay247Deposit?.status === 'completed' || paymentStatus.deposit?.status === 'completed' || paymentStatus.status === 'completed'
+                ? 'bg-green-100 dark:bg-green-900'
+                : 'bg-red-100 dark:bg-red-900'
+                }`}>
+                {(paymentStatus.digipay247Deposit?.status === 'completed' || paymentStatus.deposit?.status === 'completed' || paymentStatus.status === 'completed') ? (
                   <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
@@ -589,13 +594,13 @@ export function DigiPay247Dialog({
                 )}
               </div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                {paymentStatus.digipay247Deposit?.status === 'completed' || paymentStatus.deposit?.status === 'completed' 
-                  ? 'Payment Completed' 
+                {paymentStatus.digipay247Deposit?.status === 'completed' || paymentStatus.deposit?.status === 'completed' || paymentStatus.status === 'completed'
+                  ? 'Payment Completed'
                   : 'Payment Failed'}
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                {paymentStatus.digipay247Deposit?.status === 'completed' || paymentStatus.deposit?.status === 'completed'
-                  ? 'Your deposit has been processed successfully' 
+                {paymentStatus.digipay247Deposit?.status === 'completed' || paymentStatus.deposit?.status === 'completed' || paymentStatus.status === 'completed'
+                  ? 'Your deposit has been processed successfully'
                   : 'Your payment could not be processed'}
               </p>
               <Button
@@ -659,18 +664,18 @@ function DigiPay247Step1Form({
     if (!depositLimits) {
       return { min: 'N/A', max: 'N/A', message: 'Limits not configured' };
     }
-    
+
     const minLimit = depositLimits.minLimit;
     const maxLimit = depositLimits.maxLimit;
-    
+
     if (minLimit === null && maxLimit === null) {
       return { min: 'N/A', max: 'N/A', message: 'Limits not configured in admin panel' };
     }
-    
+
     // Convert USD limits to INR
     const minInr = minLimit !== null && minLimit !== undefined ? minLimit * fixedRate : null;
     const maxInr = maxLimit !== null && maxLimit !== undefined ? maxLimit * fixedRate : null;
-    
+
     return {
       min: minInr !== null ? `₹${minInr.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : 'Not set',
       max: maxInr !== null ? `₹${maxInr.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : 'Not set',
@@ -683,7 +688,7 @@ function DigiPay247Step1Form({
     if (!/^\d*\.?\d*$/.test(value)) return;
     setAmount(value);
     toast.dismiss();
-    
+
     // Clear INR if USD is empty or just a dot
     if (value === "" || value === ".") {
       setInrAmount("");
@@ -697,12 +702,12 @@ function DigiPay247Step1Form({
       setAmount(usdNum.toFixed(2));
       const inrValue = Math.round(usdNum * fixedRate);
       setInrAmount(inrValue.toString());
-      
+
       // Validate against limits
       if (depositLimits) {
         const minLimit = depositLimits.minLimit;
         const maxLimit = depositLimits.maxLimit;
-        
+
         if (minLimit !== null && minLimit !== undefined && usdNum < minLimit) {
           const minInr = minLimit * fixedRate;
           toast.error(`Minimum deposit for this account is ₹${minInr.toLocaleString('en-IN', { maximumFractionDigits: 0 })} INR ($${minLimit} USD)`);
@@ -719,7 +724,7 @@ function DigiPay247Step1Form({
     if (!/^\d*$/.test(value)) return;
     setInrAmount(value);
     toast.dismiss();
-    
+
     // Clear USD if INR is empty
     if (value === "") {
       setAmount("");
@@ -732,13 +737,13 @@ function DigiPay247Step1Form({
     if (!isNaN(inrNum) && inrNum > 0) {
       const usdValue = inrNum / fixedRate;
       setAmount(usdValue.toFixed(2));
-      
+
       // Validate against limits
       if (depositLimits) {
         const usdValueNum = parseFloat(usdValue.toFixed(2));
         const minLimit = depositLimits.minLimit;
         const maxLimit = depositLimits.maxLimit;
-        
+
         if (minLimit !== null && minLimit !== undefined && usdValueNum < minLimit) {
           const minInr = minLimit * fixedRate;
           toast.error(`Minimum deposit for this account is ₹${minInr.toLocaleString('en-IN', { maximumFractionDigits: 0 })} INR ($${minLimit} USD)`);
@@ -824,7 +829,7 @@ function DigiPay247Step1Form({
               USD
             </span>
           </div>
-          
+
           {/* INR Input */}
           <div className="relative w-full">
             <Input
@@ -838,7 +843,7 @@ function DigiPay247Step1Form({
               INR
             </span>
           </div>
-          
+
           {/* Exchange Rate Info */}
           {amount && parseFloat(amount) > 0 && (
             <p className="text-xs mt-1 text-gray-400 flex items-center gap-2">
@@ -847,18 +852,18 @@ function DigiPay247Step1Form({
             </p>
           )}
         </div>
-        
+
         {/* Deposit Limits */}
         {limits.message !== 'Limits not configured' && (
           <p className="text-xs mt-2 text-[#945393] font-medium">
-            Deposit limit: {depositLimits?.minLimit !== null && depositLimits?.minLimit !== undefined 
-              ? `$${depositLimits.minLimit.toFixed(2)}` 
-              : 'Not set'} - {depositLimits?.maxLimit !== null && depositLimits?.maxLimit !== undefined 
-              ? `$${depositLimits.maxLimit.toFixed(2)}` 
-              : 'Not set'} ({limits.min} - {limits.max} INR)
+            Deposit limit: {depositLimits?.minLimit !== null && depositLimits?.minLimit !== undefined
+              ? `$${depositLimits.minLimit.toFixed(2)}`
+              : 'Not set'} - {depositLimits?.maxLimit !== null && depositLimits?.maxLimit !== undefined
+                ? `$${depositLimits.maxLimit.toFixed(2)}`
+                : 'Not set'} ({limits.min} - {limits.max} INR)
           </p>
         )}
-        
+
         {/* Error Message */}
         {error && (
           <p className="text-xs mt-2 text-red-500">{error}</p>
