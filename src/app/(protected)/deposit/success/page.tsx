@@ -10,7 +10,9 @@ function DepositSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [status, setStatus] = useState<'loading' | 'success' | 'failed'>('loading');
-  const [message, setMessage] = useState("Verifying payment...");
+  const [message, setMessage] = useState("Payment Successful! Verifying details...");
+  const [mt5Id, setMt5Id] = useState<string | null>(null);
+  const [depositData, setDepositData] = useState<any>(null);
 
   // DigiPay sends 'tr' (merchant_txn_id)
   const merchantTxnId = searchParams.get("tr") || searchParams.get("id");
@@ -18,7 +20,7 @@ function DepositSuccessContent() {
   useEffect(() => {
     let pollingInterval: NodeJS.Timeout;
     let attempts = 0;
-    const maxAttempts = 30; // Poll for 90 seconds (3s * 30)
+    const maxAttempts = 40; // Poll for 120 seconds (3s * 40)
 
     const checkStatus = async () => {
       try {
@@ -30,13 +32,14 @@ function DepositSuccessContent() {
           return;
         }
 
-        let depositId = null;
+        const backendBaseUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+        let depositId = depositData?.id;
 
-        // Step 1: Lookup Deposit ID if using merchantTxnId (tr)
-        if (merchantTxnId) {
+        // Step 1: Lookup Deposit ID if using merchantTxnId (tr) and we don't have it yet
+        if (merchantTxnId && !depositId) {
           try {
             // Try treating it as merchantTxnId first
-            const lookupRes = await fetch(`/api/deposit/digipay247/lookup/${merchantTxnId}`, {
+            const lookupRes = await fetch(`${backendBaseUrl}/deposit/digipay247/lookup/${merchantTxnId}`, {
               headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -44,7 +47,11 @@ function DepositSuccessContent() {
               const data = await lookupRes.json();
               if (data.success && data.depositId) {
                 depositId = data.depositId;
+                setMt5Id(data.mt5AccountId);
+                setMessage(`Payment Successful for Account ${data.mt5AccountId}! Verifying...`);
               }
+            } else {
+              console.error("Lookup failed with status:", lookupRes.status);
             }
           } catch (e) {
             console.error("Lookup error", e);
@@ -53,8 +60,8 @@ function DepositSuccessContent() {
 
         // If lookup failed, maybe the user passed ID directly?
         if (!depositId) {
-          // Can't proceed without ID
-          if (attempts > 5) { // Give it a few tries in case backend replication lag
+          // Keep trying for a bit in case of lag
+          if (attempts > 10) {
             setStatus('failed');
             setMessage("Could not find transaction details.");
             clearInterval(pollingInterval);
@@ -63,7 +70,7 @@ function DepositSuccessContent() {
         }
 
         // Step 2: Poll Status
-        const res = await fetch(`/api/deposit/digipay247/status/${depositId}`, {
+        const res = await fetch(`${backendBaseUrl}/deposit/digipay247/status/${depositId}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -74,34 +81,34 @@ function DepositSuccessContent() {
           const depStatus = data.data?.deposit?.status;
           const depAmount = data.data?.deposit?.amount;
           const depCurrency = data.data?.deposit?.currency || 'USD';
-
-          // Get MT5 Account ID from either lookup result or status result
-          const mt5AccountId = data.data?.deposit?.mt5Account?.accountId ||
+          const currentMt5Id = data.data?.deposit?.mt5Account?.accountId ||
             data.data?.deposit?.mt5AccountId ||
-            depositId;
+            mt5Id;
+
+          if (currentMt5Id) setMt5Id(currentMt5Id);
+          setDepositData(data.data?.deposit);
 
           if (depStatus === 'completed') {
-            setStatus('success');
-            setMessage("Deposit completed and funds credited to MT5!");
-            clearInterval(pollingInterval);
+            setMessage(`Crediting ${depCurrency} ${depAmount} into account ${currentMt5Id}...`);
+            // Show crediting message for a short time before final success
+            setTimeout(() => {
+              setStatus('success');
+              clearInterval(pollingInterval);
+            }, 2000);
+          } else if (depStatus === 'approved') {
+            setMessage(`Approved for ${currentMt5Id}! Processing credit...`);
           } else if (depStatus === 'rejected' || depStatus === 'failed') {
             setStatus('failed');
             setMessage("Payment failed or rejected.");
             clearInterval(pollingInterval);
-          } else if (depStatus === 'approved') {
-            const displayId = mt5AccountId ? `Account ${mt5AccountId}` : 'MT5 Account';
-
-            if (depAmount) {
-              setMessage(`Payment approved. Crediting ${depCurrency} ${depAmount} into ${displayId}...`);
-            } else {
-              setMessage(`Payment approved. Crediting into ${displayId}...`);
-            }
           } else {
-            setMessage("Processing payment status...");
+            // Still pending
+            const displayId = currentMt5Id ? `for account ${currentMt5Id}` : '';
+            setMessage(`Payment Successful ${displayId}! Awaiting approval...`);
           }
         }
       } catch (err) {
-        console.error(err);
+        console.error("Status check error:", err);
       }
 
       if (attempts >= maxAttempts && status === 'loading') {
@@ -120,7 +127,7 @@ function DepositSuccessContent() {
     }
 
     return () => clearInterval(pollingInterval);
-  }, [merchantTxnId]);
+  }, [merchantTxnId, depositData?.id]);
 
   if (status === 'loading') {
     return (
