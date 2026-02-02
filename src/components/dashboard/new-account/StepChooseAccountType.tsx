@@ -68,7 +68,18 @@ export const StepChooseAccountType: React.FC<StepChooseAccountTypeProps> = ({
         if (response.success && response.data) {
           console.log('✅ Groups received:', response.data);
           console.log('✅ First group leverage:', response.data[0]?.leverage);
-          setGroups(response.data);
+
+          // Sort groups: Startup first
+          const sortedGroups = [...response.data].sort((a, b) => {
+            const titleA = a.dedicated_name || a.group.split('\\').pop() || "Account";
+            const titleB = b.dedicated_name || b.group.split('\\').pop() || "Account";
+
+            if (titleA === "Startup") return -1;
+            if (titleB === "Startup") return 1;
+            return 0;
+          });
+
+          setGroups(sortedGroups);
         } else {
           console.error('❌ Invalid response format:', response);
           setGroups([]);
