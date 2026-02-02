@@ -75,6 +75,11 @@ function DepositSuccessContent() {
           const depAmount = data.data?.deposit?.amount;
           const depCurrency = data.data?.deposit?.currency || 'USD';
 
+          // Get MT5 Account ID from either lookup result or status result
+          const mt5AccountId = data.data?.deposit?.mt5Account?.accountId ||
+            data.data?.deposit?.mt5AccountId ||
+            depositId;
+
           if (depStatus === 'completed') {
             setStatus('success');
             setMessage("Deposit completed and funds credited to MT5!");
@@ -84,11 +89,12 @@ function DepositSuccessContent() {
             setMessage("Payment failed or rejected.");
             clearInterval(pollingInterval);
           } else if (depStatus === 'approved') {
-            // Backend logic will catch this on next poll and upgrade to completed
+            const displayId = mt5AccountId ? `Account ${mt5AccountId}` : 'MT5 Account';
+
             if (depAmount) {
-              setMessage(`Payment approved. Crediting ${depCurrency} ${depAmount} to MT5 account...`);
+              setMessage(`Payment approved. Crediting ${depCurrency} ${depAmount} into ${displayId}...`);
             } else {
-              setMessage("Payment approved. Crediting MT5 account...");
+              setMessage(`Payment approved. Crediting into ${displayId}...`);
             }
           } else {
             setMessage("Processing payment status...");
