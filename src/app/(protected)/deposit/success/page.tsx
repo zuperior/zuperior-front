@@ -94,7 +94,7 @@ function DepositSuccessContent() {
             setTimeout(() => {
               setStatus('success');
               clearInterval(pollingInterval);
-            }, 2000);
+            }, 500);
           } else if (depStatus === 'approved') {
             setMessage(`Approved for ${currentMt5Id}! Processing credit...`);
           } else if (depStatus === 'rejected' || depStatus === 'failed') {
@@ -120,7 +120,7 @@ function DepositSuccessContent() {
 
     if (merchantTxnId) {
       checkStatus(); // Initial check
-      pollingInterval = setInterval(checkStatus, 3000);
+      pollingInterval = setInterval(checkStatus, 2000);
     } else {
       setStatus('failed');
       setMessage("Invalid transaction parameters.");
@@ -130,10 +130,15 @@ function DepositSuccessContent() {
   }, [merchantTxnId, depositData?.id]);
 
   if (status === 'loading') {
+    const displayId = mt5Id || depositData?.mt5Account?.accountId || depositData?.mt5AccountId || '';
+    const displayMessage = message.includes('Approved for') || message.includes('Crediting') || message.includes('Successful for Account')
+      ? message.replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g, displayId)
+      : message;
+
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
         <TradingLoader />
-        <h2 className="text-2xl font-bold dark:text-white mt-4">{message}</h2>
+        <h2 className="text-2xl font-bold dark:text-white mt-4">{displayMessage}</h2>
         <p className="text-gray-500 dark:text-gray-400 max-w-md">
           Please do not close this window. We are verifying your payment with the gateway and crediting your trading account.
         </p>
