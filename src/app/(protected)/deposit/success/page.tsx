@@ -157,7 +157,7 @@ function DepositSuccessContent() {
           Your payment has been verified and the funds have been added to your MT5 account.
         </p>
         <div className="flex gap-4 mt-8">
-          <Button onClick={() => router.push('/dashboard')} variant="outline" className="min-w-[140px]">
+          <Button onClick={() => router.push('/')} variant="outline" className="min-w-[140px]">
             Dashboard
           </Button>
           <Button onClick={() => router.push('/transactions')} className="min-w-[140px] bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
@@ -181,7 +181,7 @@ function DepositSuccessContent() {
         <Button onClick={() => router.push('/deposit')} variant="outline">
           <ArrowLeft className="mr-2 h-4 w-4" /> Try Again
         </Button>
-        <Button onClick={() => router.push('/dashboard')} variant="default">
+        <Button onClick={() => router.push('/')} variant="default">
           Go to Dashboard
         </Button>
       </div>
