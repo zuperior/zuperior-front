@@ -9,40 +9,48 @@ export function AccountTypeCard({
   commission,
   description,
   accountType,
+  spreadLabel = "Low Spreads",
+  commissionLabel = "Commissions upto",
 }: {
   userRole: string;
   title: string;
   selected: boolean;
   onClick: () => void;
   leverage?: number | string | null;
-  minDeposit?: number | null;
-  spread?: number | null;
-  commission?: number | null;
+  minDeposit?: number | string | null;
+  spread?: number | string | null;
+  commission?: number | string | null;
   description?: string | null;
   accountType?: string;
+  spreadLabel?: string;
+  commissionLabel?: string;
 }) {
   // Format leverage display
   const formatLeverage = (lev: number | string | null | undefined): string => {
-    if (lev === null || lev === undefined || lev === 0) return "1:Unlimited";
+    if (lev === null || lev === undefined) return "1:Unlimited";
+    if (lev === 0) return "1:Unlimited";
     if (typeof lev === "string") return lev;
     return `1:${lev}`;
   };
 
   // Format min deposit
-  const formatMinDeposit = (deposit: number | null | undefined): string => {
-    if (!deposit) return "$10";
+  const formatMinDeposit = (deposit: number | string | null | undefined): string => {
+    if (deposit === null || deposit === undefined) return "$10";
+    if (typeof deposit === "string") return deposit;
     return `$${deposit.toFixed(0)}`;
   };
 
   // Format spread
-  const formatSpread = (spr: number | null | undefined): string => {
-    if (!spr) return "0.3 pips";
+  const formatSpread = (spr: number | string | null | undefined): string => {
+    if (spr === null || spr === undefined) return "0.3 pips";
+    if (typeof spr === "string") return spr;
     return `${spr} pips`;
   };
 
   // Format commission
-  const formatCommission = (comm: number | null | undefined): string => {
-    if (!comm) return "15%";
+  const formatCommission = (comm: number | string | null | undefined): string => {
+    if (comm === null || comm === undefined) return "15%";
+    if (typeof comm === "string") return comm;
     return `${comm}%`;
   };
   const roleMaskStyle = {
@@ -120,7 +128,7 @@ export function AccountTypeCard({
             </p>
             <div className="w-full h-px bg-gradient-to-r from-transparent via-purple-300 to-transparent dark:from-transparent dark:via-purple-700/50 dark:to-transparent" />
             <p className={`text-xs font-semibold text-gray-800 dark:text-gray-200`}>
-              Low Spreads{" "}
+              {spreadLabel}{" "}
               <span className="text-gray-700 dark:text-gray-300 ml-1 text-sm">{formatSpread(spread)}</span>
             </p>
             <div className="w-full h-px bg-gradient-to-r from-transparent via-purple-300 to-transparent dark:from-transparent dark:via-purple-700/50 dark:to-transparent" />
@@ -130,7 +138,7 @@ export function AccountTypeCard({
             </p>
             <div className="w-full h-px bg-gradient-to-r from-transparent via-purple-300 to-transparent dark:from-transparent dark:via-purple-700/50 dark:to-transparent" />
             <p className={`text-xs font-semibold text-gray-800 dark:text-gray-200`}>
-              Commissions upto{" "}
+              {commissionLabel}{" "}
               <span className="text-gray-900 dark:text-white ml-1 text-sm">{formatCommission(commission)}</span>
             </p>
           </div>
