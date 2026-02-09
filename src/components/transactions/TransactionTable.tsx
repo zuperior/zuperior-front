@@ -1,6 +1,6 @@
 import React from "react";
 import TradingLoader from "./TradingLoader";
-import { formatDate, getStatusColor } from "@/utils/formDate";
+import { formatDate, getStatusColor, formatStatusText } from "@/utils/formDate";
 import { ArrowDown, ArrowUpRight, ArrowLeftRight } from "lucide-react";
 import Image from "next/image";
 
@@ -36,19 +36,19 @@ const getArrowIcon = (type: string) => {
 // Helper function to extract crypto symbol from payment method
 const extractCryptoSymbol = (paymentMethod: string | undefined | null): string | null => {
   if (!paymentMethod) return null;
-  
+
   // Match pattern like "crypto-BTC", "crypto-USDT-BEP20", "crypto-ETH", etc.
   const newFormatMatch = paymentMethod.match(/^crypto-([A-Z]+)(?:-([A-Z0-9]+))?/i);
   if (newFormatMatch) {
     return newFormatMatch[1].toUpperCase(); // Return the crypto symbol (BTC, USDT, ETH, etc.)
   }
-  
+
   // Match pattern like "unipayment_crypto_btc (BTC)" - extract from parentheses
   const parenMatch = paymentMethod.match(/\(([A-Z]+)\)/);
   if (parenMatch) {
     return parenMatch[1];
   }
-  
+
   // Match pattern like "unipayment_crypto_btc", "unipayment_crypto_eth", etc.
   const underscoreMatch = paymentMethod.match(/unipayment_crypto_([a-z]+)/i);
   if (underscoreMatch) {
@@ -59,7 +59,7 @@ const extractCryptoSymbol = (paymentMethod: string | undefined | null): string |
     }
     return symbol;
   }
-  
+
   // Match Cregis format: cregis_usdt_trc20, cregis_usdt_bep20, etc.
   const cregisMatch = paymentMethod.match(/^cregis_([a-z]+)_([a-z0-9]+)$/i);
   if (cregisMatch) {
@@ -67,14 +67,14 @@ const extractCryptoSymbol = (paymentMethod: string | undefined | null): string |
     const network = cregisMatch[2].toUpperCase(); // TRC20, BEP20
     return currency; // Return the currency symbol
   }
-  
+
   return null;
 };
 
 // Helper function to get crypto icon path
 const getCryptoIcon = (symbol: string, paymentMethod?: string): string => {
   const upperSymbol = symbol.toUpperCase();
-  
+
   // Special handling for USDT based on network in payment method
   if (upperSymbol === 'USDT' && paymentMethod) {
     const lowerMethod = paymentMethod.toLowerCase();
@@ -86,7 +86,7 @@ const getCryptoIcon = (symbol: string, paymentMethod?: string): string => {
       return '/crypto_icon/USDT-ERC20.webp';
     }
   }
-  
+
   const iconMap: Record<string, string> = {
     'BTC': '/crypto_icon/btc.webp',
     'ETH': '/crypto_icon/ethereum.webp',
@@ -95,14 +95,14 @@ const getCryptoIcon = (symbol: string, paymentMethod?: string): string => {
     'USDC': '/crypto_icon/usdc.webp',
     'EURC': '/crypto_icon/eurc.webp',
   };
-  
+
   return iconMap[upperSymbol] || '/crypto_icon/btc.webp'; // Fallback icon
 };
 
 // Helper function to render payment method with crypto logo if applicable
 const renderPaymentMethod = (comment: string | undefined | null) => {
   if (!comment) return "-";
-  
+
   // Handle Cregis format: cregis_usdt_trc20 -> USDT TRC20
   const cregisMatch = comment.match(/^cregis_([a-z]+)_([a-z0-9]+)$/i);
   if (cregisMatch) {
@@ -111,7 +111,7 @@ const renderPaymentMethod = (comment: string | undefined | null) => {
     const displayText = `${currency} ${network}`; // USDT TRC20, USDT BEP20
     const cryptoSymbol = currency;
     const iconPath = getCryptoIcon(cryptoSymbol, comment);
-    
+
     return (
       <div className="flex items-center gap-2">
         <Image
@@ -125,14 +125,14 @@ const renderPaymentMethod = (comment: string | undefined | null) => {
       </div>
     );
   }
-  
+
   const cryptoSymbol = extractCryptoSymbol(comment);
-  
+
   if (cryptoSymbol) {
     const iconPath = getCryptoIcon(cryptoSymbol, comment);
     // Always display as "crypto (SYMBOL)" format for clarity, all uppercase
     const displayText = `CRYPTO (${cryptoSymbol})`;
-    
+
     return (
       <div className="flex items-center gap-2">
         <Image
@@ -146,7 +146,7 @@ const renderPaymentMethod = (comment: string | undefined | null) => {
       </div>
     );
   }
-  
+
   // If no crypto symbol found, return as-is (for non-crypto payments)
   return comment.toUpperCase();
 };
@@ -154,7 +154,7 @@ const renderPaymentMethod = (comment: string | undefined | null) => {
 // Helper function to get payment method as simple text (without icons) for display in transfer type column
 const getPaymentMethodText = (comment: string | undefined | null): string => {
   if (!comment) return "";
-  
+
   // Handle Cregis format: cregis_usdt_trc20 -> USDT TRC20
   const cregisMatch = comment.match(/^cregis_([a-z]+)_([a-z0-9]+)$/i);
   if (cregisMatch) {
@@ -162,12 +162,12 @@ const getPaymentMethodText = (comment: string | undefined | null): string => {
     const network = cregisMatch[2].toUpperCase();
     return `${currency} ${network}`;
   }
-  
+
   const cryptoSymbol = extractCryptoSymbol(comment);
   if (cryptoSymbol) {
     return `CRYPTO (${cryptoSymbol})`;
   }
-  
+
   // Return uppercase for non-crypto payments
   return comment.toUpperCase();
 };
@@ -237,7 +237,7 @@ export const TransactionsTable: React.FC<Props> = ({
                 <td className="px-2 py-[15px]">
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2 whitespace-nowrap">
-                      {getArrowIcon(tx.type)} 
+                      {getArrowIcon(tx.type)}
                       <span>{tx.type}</span>
                     </div>
                     {tx.comment && (
@@ -255,7 +255,7 @@ export const TransactionsTable: React.FC<Props> = ({
                     tx.status
                   )}`}
                 >
-                  {tx.status || "Success"}
+                  {formatStatusText(tx.status)}
                 </td>
               </tr>
             ))
@@ -322,7 +322,7 @@ export const TransactionsTable: React.FC<Props> = ({
                   )}
                 </div>
                 <p className={`text-xs mt-1 ${getStatusColor(tx.status)}`}>
-                  {tx.status || "Success"}
+                  {formatStatusText(tx.status)}
                 </p>
               </div>
             </div>

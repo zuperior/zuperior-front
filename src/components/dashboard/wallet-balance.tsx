@@ -117,7 +117,7 @@ const WalletBalance = ({ balance }: { balance: string | number }) => {
 
   return (
     <div
-      className="relative w-full text-white rounded-[15px] overflow-hidden pt-[25px] pr-[30px] pb-[25px] pl-[40px] bg-[radial-gradient(124.93%_167.38%_at_0.33%_1.53%,#A35CA2_0%,#000000_34.5%,#000000_100%)]"
+      className="relative w-full h-full text-white rounded-[15px] overflow-hidden pt-[25px] pr-[30px] pb-[25px] pl-[40px] bg-[radial-gradient(124.93%_167.38%_at_0.33%_1.53%,#A35CA2_0%,#000000_34.5%,#000000_100%)]"
     >
       <FloatingDots />
       <div
