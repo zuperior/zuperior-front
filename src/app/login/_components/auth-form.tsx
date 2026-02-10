@@ -3,6 +3,7 @@
 "use client";
 import { useState, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { registrationStep1Schema, loginSchema } from "./auth-schemas";
 import { ZodError } from "zod";
 import { AnimatePresence, motion } from "framer-motion";
@@ -60,7 +61,7 @@ const AuthForm = () => {
   const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
   const [twoFactorOtpKey, setTwoFactorOtpKey] = useState<string>("");
   const [twoFactorEmail, setTwoFactorEmail] = useState<string>("");
-  
+
   // Login loading state
   const [showLoginLoader, setShowLoginLoader] = useState(false);
   const [loginUserName, setLoginUserName] = useState<string>("");
@@ -141,7 +142,7 @@ const AuthForm = () => {
       // Verify auth data was stored before proceeding
       const storedToken = localStorage.getItem('userToken');
       const storedClientId = localStorage.getItem('clientId');
-      
+
       if (!storedToken || !storedClientId) {
         throw new Error("Failed to store authentication data");
       }
@@ -188,10 +189,10 @@ const AuthForm = () => {
       }, 500);
 
       toast.success("Account created! Welcome aboard.");
-      
+
       // Store a flag to indicate fresh registration (for session check delay)
       localStorage.setItem('_freshRegistration', Date.now().toString());
-      
+
       // Use replace instead of push to avoid back button issues
       // Add small delay to ensure localStorage is fully written and token is ready
       setTimeout(() => {
@@ -454,7 +455,7 @@ const AuthForm = () => {
   const handleLogin = async () => {
     try {
       setIsLoading(true);
-      
+
       // Extract name from email (before @) and capitalize first letter
       const emailName = loginEmail.trim().split('@')[0];
       const capitalizedName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
@@ -644,10 +645,23 @@ const AuthForm = () => {
 
   return (
     <div className="w-full max-w-md px-6 py-8 h-auto flex flex-col justify-center">
+      {/* Logo */}
+      <div className="flex justify-center mb-6">
+        <Image
+          src="/logo.png"
+          alt="Zuperior"
+          width={150}
+          height={150}
+          className="w-64 h-36 object-contain"
+          priority
+          quality={100}
+        />
+      </div>
+
       <h2 className="text-xl font-semibold mb-6 text-center text-gray-400">
         Let&apos;s become a Zuperior...
       </h2>
-      
+
       {/* Login Loader with Video - Only show when logging in (not creating account) */}
       {showLoginLoader && !isCreateAccount && !requiresTwoFactor && (
         <div className="flex flex-col items-center justify-center space-y-4 mb-6">
@@ -665,7 +679,7 @@ const AuthForm = () => {
           </p>
         </div>
       )}
-      
+
       {/* Forgot Password Loader with Video */}
       {isLoading && forgotMode && (
         <div className="flex flex-col items-center justify-center space-y-4 mb-6">
@@ -685,184 +699,183 @@ const AuthForm = () => {
           </p>
         </div>
       )}
-      
+
       {(!showLoginLoader || isCreateAccount) && !(isLoading && forgotMode) && (
         <>
           <AuthToggleTabs
-        isCreateAccount={isCreateAccount}
-        setIsCreateAccount={(val) => {
-          setIsCreateAccount(val);
-          setForgotMode(false);
-          setForgotPasswordStep("email");
-          setStep(1);
-          clearValidationErrors();
-        }}
-        setStep={setStep}
-        clearValidationErrors={clearValidationErrors}
-      />
+            isCreateAccount={isCreateAccount}
+            setIsCreateAccount={(val) => {
+              setIsCreateAccount(val);
+              setForgotMode(false);
+              setForgotPasswordStep("email");
+              setStep(1);
+              clearValidationErrors();
+            }}
+            setStep={setStep}
+            clearValidationErrors={clearValidationErrors}
+          />
 
-      <AnimatePresence mode="wait">
-        <motion.form
-          key={`${isCreateAccount}-${step}-${forgotMode}-${forgotPasswordStep}`}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.25 }}
-          className="space-y-4"
-          onSubmit={handleSubmit}
-        >
-          {isCreateAccount ? (
-            step === 1 ? (
-              <>
-                {referralCode && (
-                  <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-200">
-                    Referred by <span className="font-semibold">{referrerName || 'IB Partner'}</span>
-                    <span className="opacity-70"> ({referralCode})</span>
-                  </div>
-                )}
-                <RegisterStep1Form
-                  registerBuffer={registerBuffer}
-                  setRegisterBuffer={setRegisterBuffer}
-                  validationErrors={validationErrors}
-                  clearFieldError={clearFieldError}
-                  passwordVisible={passwordVisible}
-                  setPasswordVisible={setPasswordVisible}
-                />
-              </>
-            ) : (
-              <RegisterStep2OtpForm
-                otp={otp}
-                setOtp={setOtp}
-                resendCooldown={resendCooldown}
-                sendOtp={sendOtp}
-                validationErrors={validationErrors}
-                clearError={(f) => clearFieldError(f)}
-                onComplete={verifyAndRegister}
-                email={registerBuffer.email}
-              />
-            )
-          ) : (
-            <>
-              {/* Referral banner on login tab as informational if code present */}
-              {referralCode && (
-                <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-200 mb-2">
-                  Referred by <span className="font-semibold">{referrerName || 'IB Partner'}</span>
-                  <span className="opacity-70"> ({referralCode})</span>
-                </div>
-              )}
-              {requiresTwoFactor ? (
-                <TwoFactorVerification
-                  email={twoFactorEmail}
-                  otpKey={twoFactorOtpKey}
-                  onVerify={handleVerifyTwoFactor}
-                  onResend={handleResendTwoFactorOtp}
-                  onCancel={handleCancelTwoFactor}
-                />
-              ) : step === 1 && !forgotMode ? (
-                <LoginForm
-                  loginEmail={loginEmail}
-                  setLoginEmail={setLoginEmail}
-                  loginPassword={loginPassword}
-                  setLoginPassword={setLoginPassword}
-                  validationErrors={validationErrors}
-                  clearFieldError={clearFieldError}
-                  passwordVisible={passwordVisible}
-                  setPasswordVisible={setPasswordVisible}
-                  forgotMode={forgotMode}
-                  setForgotMode={(val) => {
-                    setForgotMode(val);
-                    if (val) {
-                      setForgotPasswordStep("email");
-                      setForgotPasswordOtp("");
-                      setNewPassword("");
-                      setConfirmPassword("");
-                    }
-                  }}
-                />
-              ) : null}
-              {forgotMode && forgotPasswordStep === "email" && (
-                <div>
-                  <input
-                    type="email"
-                    placeholder="Email"
-                    className={`w-full bg-[#1a1a1a] p-3 rounded text-white text-sm focus:outline-none ${
-                      validationErrors.email
-                        ? "border border-red-500/50 bg-red-500/5 shadow-lg shadow-red-500/20"
-                        : "border border-transparent focus:border-purple-500/50 focus:shadow-lg focus:shadow-purple-500/20"
-                    }`}
-                    value={loginEmail}
-                    onChange={(e) => {
-                      setLoginEmail(e.target.value);
-                      clearFieldError("email");
-                    }}
-                  />
-                  {validationErrors.email && (
-                    <p className="text-red-400 text-xs mt-1 animate-pulse">
-                      {validationErrors.email}
-                    </p>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setForgotMode(false);
-                      setForgotPasswordStep("email");
-                    }}
-                    className="text-sm text-blue-500 hover:underline cursor-pointer mt-2"
-                  >
-                    Back to Login
-                  </button>
-                </div>
-              )}
-              {forgotMode && forgotPasswordStep === "otp" && (
-                <RegisterStep2OtpForm
-                  otp={forgotPasswordOtp}
-                  setOtp={setForgotPasswordOtp}
-                  resendCooldown={resendCooldown}
-                  sendOtp={sendForgotPasswordOtp}
-                  validationErrors={validationErrors}
-                  clearError={(f) => clearFieldError(f)}
-                  onComplete={verifyForgotPasswordOtp}
-                  email={loginEmail}
-                />
-              )}
-              {forgotMode && forgotPasswordStep === "newPassword" && (
-                <>
-                  <ForgotPasswordNewPasswordForm
-                    newPassword={newPassword}
-                    setNewPassword={setNewPassword}
-                    confirmPassword={confirmPassword}
-                    setConfirmPassword={setConfirmPassword}
-                    passwordVisible={passwordVisible}
-                    setPasswordVisible={setPasswordVisible}
-                    confirmPasswordVisible={confirmPasswordVisible}
-                    setConfirmPasswordVisible={setConfirmPasswordVisible}
+          <AnimatePresence mode="wait">
+            <motion.form
+              key={`${isCreateAccount}-${step}-${forgotMode}-${forgotPasswordStep}`}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.25 }}
+              className="space-y-4"
+              onSubmit={handleSubmit}
+            >
+              {isCreateAccount ? (
+                step === 1 ? (
+                  <>
+                    {referralCode && (
+                      <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-200">
+                        Referred by <span className="font-semibold">{referrerName || 'IB Partner'}</span>
+                        <span className="opacity-70"> ({referralCode})</span>
+                      </div>
+                    )}
+                    <RegisterStep1Form
+                      registerBuffer={registerBuffer}
+                      setRegisterBuffer={setRegisterBuffer}
+                      validationErrors={validationErrors}
+                      clearFieldError={clearFieldError}
+                      passwordVisible={passwordVisible}
+                      setPasswordVisible={setPasswordVisible}
+                    />
+                  </>
+                ) : (
+                  <RegisterStep2OtpForm
+                    otp={otp}
+                    setOtp={setOtp}
+                    resendCooldown={resendCooldown}
+                    sendOtp={sendOtp}
                     validationErrors={validationErrors}
-                    clearFieldError={clearFieldError}
+                    clearError={(f) => clearFieldError(f)}
+                    onComplete={verifyAndRegister}
+                    email={registerBuffer.email}
                   />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setForgotPasswordStep("otp");
-                      setForgotPasswordOtp("");
-                    }}
-                    className="text-sm text-blue-500 hover:underline cursor-pointer"
-                  >
-                    Back to OTP
-                  </button>
+                )
+              ) : (
+                <>
+                  {/* Referral banner on login tab as informational if code present */}
+                  {referralCode && (
+                    <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-200 mb-2">
+                      Referred by <span className="font-semibold">{referrerName || 'IB Partner'}</span>
+                      <span className="opacity-70"> ({referralCode})</span>
+                    </div>
+                  )}
+                  {requiresTwoFactor ? (
+                    <TwoFactorVerification
+                      email={twoFactorEmail}
+                      otpKey={twoFactorOtpKey}
+                      onVerify={handleVerifyTwoFactor}
+                      onResend={handleResendTwoFactorOtp}
+                      onCancel={handleCancelTwoFactor}
+                    />
+                  ) : step === 1 && !forgotMode ? (
+                    <LoginForm
+                      loginEmail={loginEmail}
+                      setLoginEmail={setLoginEmail}
+                      loginPassword={loginPassword}
+                      setLoginPassword={setLoginPassword}
+                      validationErrors={validationErrors}
+                      clearFieldError={clearFieldError}
+                      passwordVisible={passwordVisible}
+                      setPasswordVisible={setPasswordVisible}
+                      forgotMode={forgotMode}
+                      setForgotMode={(val) => {
+                        setForgotMode(val);
+                        if (val) {
+                          setForgotPasswordStep("email");
+                          setForgotPasswordOtp("");
+                          setNewPassword("");
+                          setConfirmPassword("");
+                        }
+                      }}
+                    />
+                  ) : null}
+                  {forgotMode && forgotPasswordStep === "email" && (
+                    <div>
+                      <input
+                        type="email"
+                        placeholder="Email"
+                        className={`w-full bg-[#1a1a1a] p-3 rounded text-white text-sm focus:outline-none ${validationErrors.email
+                          ? "border border-red-500/50 bg-red-500/5 shadow-lg shadow-red-500/20"
+                          : "border border-transparent focus:border-purple-500/50 focus:shadow-lg focus:shadow-purple-500/20"
+                          }`}
+                        value={loginEmail}
+                        onChange={(e) => {
+                          setLoginEmail(e.target.value);
+                          clearFieldError("email");
+                        }}
+                      />
+                      {validationErrors.email && (
+                        <p className="text-red-400 text-xs mt-1 animate-pulse">
+                          {validationErrors.email}
+                        </p>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForgotMode(false);
+                          setForgotPasswordStep("email");
+                        }}
+                        className="text-sm text-blue-500 hover:underline cursor-pointer mt-2"
+                      >
+                        Back to Login
+                      </button>
+                    </div>
+                  )}
+                  {forgotMode && forgotPasswordStep === "otp" && (
+                    <RegisterStep2OtpForm
+                      otp={forgotPasswordOtp}
+                      setOtp={setForgotPasswordOtp}
+                      resendCooldown={resendCooldown}
+                      sendOtp={sendForgotPasswordOtp}
+                      validationErrors={validationErrors}
+                      clearError={(f) => clearFieldError(f)}
+                      onComplete={verifyForgotPasswordOtp}
+                      email={loginEmail}
+                    />
+                  )}
+                  {forgotMode && forgotPasswordStep === "newPassword" && (
+                    <>
+                      <ForgotPasswordNewPasswordForm
+                        newPassword={newPassword}
+                        setNewPassword={setNewPassword}
+                        confirmPassword={confirmPassword}
+                        setConfirmPassword={setConfirmPassword}
+                        passwordVisible={passwordVisible}
+                        setPasswordVisible={setPasswordVisible}
+                        confirmPasswordVisible={confirmPasswordVisible}
+                        setConfirmPasswordVisible={setConfirmPasswordVisible}
+                        validationErrors={validationErrors}
+                        clearFieldError={clearFieldError}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForgotPasswordStep("otp");
+                          setForgotPasswordOtp("");
+                        }}
+                        className="text-sm text-blue-500 hover:underline cursor-pointer"
+                      >
+                        Back to OTP
+                      </button>
+                    </>
+                  )}
                 </>
               )}
-            </>
-          )}
-          <SubmitButton
-            globalLoading={globalLoading}
-            loading={isLoading}
-            isCreateAccount={isCreateAccount}
-            step={forgotMode ? (forgotPasswordStep === "email" ? 1 : forgotPasswordStep === "otp" ? 2 : 3) : step}
-            isForgotPassword={forgotMode}
-            forgotPasswordStep={forgotMode ? forgotPasswordStep : undefined}
-          />
-        </motion.form>
-      </AnimatePresence>
+              <SubmitButton
+                globalLoading={globalLoading}
+                loading={isLoading}
+                isCreateAccount={isCreateAccount}
+                step={forgotMode ? (forgotPasswordStep === "email" ? 1 : forgotPasswordStep === "otp" ? 2 : 3) : step}
+                isForgotPassword={forgotMode}
+                forgotPasswordStep={forgotMode ? forgotPasswordStep : undefined}
+              />
+            </motion.form>
+          </AnimatePresence>
         </>
       )}
     </div>

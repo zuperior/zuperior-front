@@ -8,6 +8,7 @@ import { useEffect } from "react";
 import { persistReferralCode } from "@/utils/referrals";
 import { useAppSelector } from "@/store/hooks";
 import { useRouter } from "next/navigation";
+import { AuthFooter } from "@/components/AuthFooter";
 
 // Using images from public folder
 
@@ -34,8 +35,8 @@ export default function LoginPage() {
     { id: 2, src: "/signup.png" },
   ];
   return (
-    <div className="flex items-center justify-center h-screen bg-black">
-      <div className="flex h-[700px] lg:w-[900px] w-full items-center justify-center mx-auto">
+    <div className="min-h-screen overflow-y-auto bg-black py-8 lg:py-0 lg:flex lg:items-center lg:justify-center">
+      <div className="flex flex-col lg:flex-row lg:h-[700px] lg:w-[900px] w-full lg:items-center lg:justify-center mx-auto gap-8 lg:gap-0">
         <div className="hidden lg:flex w-1/2 items-center justify-center relative">
           <Swiper
             pagination={{ clickable: true }}
@@ -68,6 +69,9 @@ export default function LoginPage() {
           <AuthForm />
         </div>
       </div>
+
+      {/* Footer - Only visible on small screens */}
+      <AuthFooter />
     </div>
   );
 }
