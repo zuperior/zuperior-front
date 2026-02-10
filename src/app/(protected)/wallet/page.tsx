@@ -60,7 +60,7 @@ export default function WalletPage() {
           // Notify header/navbar to refresh without a full reload
           window.dispatchEvent(new CustomEvent('wallet:refresh', { detail: { balance: bal } }));
         }
-      } catch {}
+      } catch { }
     }
   };
   const loadTx = async () => {
@@ -71,10 +71,10 @@ export default function WalletPage() {
     if (j?.success) setWalletTx(j.data || []);
     setLoadingTx(false);
   };
-  useEffect(() => { 
+  useEffect(() => {
     dispatch(fetchUserAccountsFromDb() as any);
-    load(); 
-    loadTx(); 
+    load();
+    loadTx();
     const id = setInterval(() => { load(); }, 15000); // refresh wallet balance every 15s
     const onVis = () => { if (document.visibilityState === 'visible') { load(); loadTx(); } };
     document.addEventListener('visibilitychange', onVis);
@@ -156,7 +156,7 @@ export default function WalletPage() {
           <div>
             <WalletBalance balance={wallet?.balance ?? 0} />
           </div>
-          
+
           {/* Wallet Number Card with Icon */}
           <div className="rounded-[15px] border border-black/10 dark:border-white/10 bg-black/5 dark:bg-black/40 p-6 flex flex-col items-center justify-center text-center min-h-[140px]">
             <div className="mb-3">
@@ -192,18 +192,18 @@ export default function WalletPage() {
 
       {/* Marketing Banner */}
       <div className="relative overflow-hidden w-full rounded-[15px] dark:bg-black bg-[#FBFAFC] p-6 md:p-[50px] text-black dark:text-white">
-        <h2 className="text-[18px] md:text-[24px] font-medium tracking-tighter leading-7 capitalize z-10 bg-gradient-to-t from-[rgba(0,0,0,0.15)] to-[rgba(98,66,165,1)] text-transparent bg-clip-text dark:text-[#a14da0]">
+        <h2 className="text-[16px] md:text-[24px] font-medium tracking-tighter leading-6 md:leading-7 capitalize z-10 bg-gradient-to-t from-[rgba(0,0,0,0.15)] to-[rgba(98,66,165,1)] text-transparent bg-clip-text dark:text-[#a14da0] max-w-[55%] md:max-w-full">
           <span className="dark:text-white">
             Powerful Integrated Wallet <br />
             for Seamless Transfer Between Wallet and MT5
           </span>
         </h2>
 
-        <div className="absolute -top-10 -right-10 md:-top-16 md:-right-20 translate-y-1/4 pointer-events-none">
+        <div className="absolute top-1/2 -translate-y-1/2 right-2 md:-top-16 md:-right-20 md:translate-y-0 md:translate-y-1/4 pointer-events-none">
           <Image
             alt="Bitcoin loop"
             src={bitcoinLoop}
-            className="slow-spin h-42 w-42 md:h-60 md:w-60"
+            className="slow-spin h-24 w-24 md:h-60 md:w-60"
             width={240}
             height={240}
             unoptimized
@@ -218,7 +218,7 @@ export default function WalletPage() {
 
       {/* Transfer chooser cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <button onClick={()=>setOpenIn(true)} className="rounded-xl p-6 text-left bg-gradient-to-br from-[#1b1426] to-[#221a30] border border-[#2a2139] hover:opacity-90 relative group">
+        <button onClick={() => setOpenIn(true)} className="rounded-xl p-6 text-left bg-gradient-to-br from-[#1b1426] to-[#221a30] border border-[#2a2139] hover:opacity-90 relative group">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="text-sm text-white/70 mb-1">Transfer</div>
@@ -230,7 +230,7 @@ export default function WalletPage() {
             </div>
           </div>
         </button>
-        <button onClick={()=>setOpenOut(true)} className="rounded-xl p-6 text-left bg-gradient-to-br from-[#1b1426] to-[#221a30] border border-[#2a2139] hover:opacity-90 relative group">
+        <button onClick={() => setOpenOut(true)} className="rounded-xl p-6 text-left bg-gradient-to-br from-[#1b1426] to-[#221a30] border border-[#2a2139] hover:opacity-90 relative group">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="text-sm text-white/70 mb-1">Transfer</div>
@@ -244,8 +244,8 @@ export default function WalletPage() {
         </button>
       </div>
 
-      <WalletMoveDialog open={openIn} onOpenChange={(v)=>{ setOpenIn(v); if (!v) { load(); loadTx(); } }} direction="MT5_TO_WALLET" />
-      <WalletMoveDialog open={openOut} onOpenChange={(v)=>{ setOpenOut(v); if (!v) { load(); loadTx(); } }} direction="WALLET_TO_MT5" />
+      <WalletMoveDialog open={openIn} onOpenChange={(v) => { setOpenIn(v); if (!v) { load(); loadTx(); } }} direction="MT5_TO_WALLET" />
+      <WalletMoveDialog open={openOut} onOpenChange={(v) => { setOpenOut(v); if (!v) { load(); loadTx(); } }} direction="WALLET_TO_MT5" />
 
       <div className="rounded-[15px] bg-white dark:bg-gradient-to-r dark:from-[#15101d] dark:to-[#181422] border border-black/10 dark:border-none p-3">
         <h3 className="text-lg font-medium mb-3">Wallet Transactions</h3>
