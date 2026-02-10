@@ -1,10 +1,7 @@
 "use client";
 
 import tick from "@/assets/icons/tick.png";
-import userImage from "@/assets/icons/user.png";
-import userImageDark from "@/assets/icons/userDark.png";
 import Image from "next/image";
-import { useTheme } from "next-themes";
 import { TextAnimate } from "@/components/ui/text-animate";
 import { CopyButton } from "@/components/CopyButton";
 import { memo, useMemo, useCallback, useState } from "react";
@@ -21,7 +18,6 @@ interface ProfileComponentProps {
 
 function ProfileComponent({ profile, loading, onProfileRefresh }: ProfileComponentProps) {
   const { passwordMask } = useAppSelector((state) => state.auth);
-  const { theme } = useTheme();
   const [verifyDialogOpen, setVerifyDialogOpen] = useState<boolean>(false);
 
   const handleEmailVerified = () => {
@@ -61,11 +57,10 @@ function ProfileComponent({ profile, loading, onProfileRefresh }: ProfileCompone
               height={16}
             />
             <span
-              className={`text-xs ml-1 font-medium ${
-                profile.emailVerified
-                  ? "text-green-600 dark:text-green-400"
-                  : "text-yellow-600 dark:text-yellow-400"
-              }`}
+              className={`text-xs ml-1 font-medium ${profile.emailVerified
+                ? "text-green-600 dark:text-green-400"
+                : "text-yellow-600 dark:text-yellow-400"
+                }`}
             >
               {profile.emailVerified ? "Verified" : "Not Verified"}
             </span>
@@ -124,27 +119,29 @@ function ProfileComponent({ profile, loading, onProfileRefresh }: ProfileCompone
     <div className="dark:bg-[#01040D] dark:text-[#FFFFFF] text-[#000000]">
       <div className="flex rounded-xl mb-4 items-center justify-between bg-white dark:bg-gradient-to-r from-[#FFFFFF] dark:from-[#110F17] to-[#f4e7f6] dark:to-[#1E1429] border-2 dark:border-[#1D1825] border-gray-300">
         <div className="py-6 px-8 flex items-center w-full">
-          <div className="rounded-full flex items-center justify-center mr-4">
+          <div className="h-16 w-16 rounded-full border-2 border-purple-400/60 dark:border-purple-400/60 p-0.5 mr-4">
             <Image
-              className="dark:h-16 w-full h-full dark:w-16"
-              src={theme === "dark" ? userImage : userImageDark}
+              className="h-full w-full rounded-full"
+              src="/userprofileicon.png"
               alt="User profile"
               width={64}
               height={64}
+              quality={100}
+              unoptimized
             />
           </div>
 
-            <div className="flex-1">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    {displayName && (
-                      <TextAnimate className="text-2xl font-semibold">
-                        {displayName}
-                      </TextAnimate>
-                    )}
-                  </div>       
+          <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  {displayName && (
+                    <TextAnimate className="text-2xl font-semibold">
+                      {displayName}
+                    </TextAnimate>
+                  )}
                 </div>
+              </div>
             </div>
           </div>
         </div>

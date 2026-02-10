@@ -76,11 +76,11 @@ export default function ProtectedLayout({
         <Sidebar mobileOpen={mobileMenuOpen} setMobileOpen={setMobileMenuOpen} />
         <div className="flex-1 flex flex-col overflow-hidden dark:bg-[#01040D]">
           <Navbar onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)} />
-          <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+          <main className="flex-1 overflow-y-auto pb-0 lg:pb-20">
             <div className="lg:px-8 md:px-4 px-1 py-6">{children}</div>
           </main>
-          {/* Footer with Explore Zuper Learn - Only visible in responsive mode */}
-          <footer className="lg:hidden fixed bottom-0 left-0 right-0 z-40 p-3 bg-white dark:bg-[#01040D] border-t border-gray-200 dark:border-[#1a2032]">
+          {/* Footer with Explore Zuper Learn - Hidden on mobile/responsive (< 1061px) */}
+          <footer className="hidden lg:block fixed bottom-0 left-0 right-0 z-40 p-3 bg-white dark:bg-[#01040D] border-t border-gray-200 dark:border-[#1a2032]">
             <div className="flex justify-start">
               <Link
                 href="https://zuperlearn.com"
