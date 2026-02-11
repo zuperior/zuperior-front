@@ -20,6 +20,13 @@ export default function TawkToChat() {
         window.Tawk_API = window.Tawk_API || {} as any;
         window.Tawk_LoadStart = new Date();
 
+        // Minimization handler
+        window.Tawk_API.onLoad = function () {
+          if (window.Tawk_API && typeof window.Tawk_API.minimize === "function") {
+            window.Tawk_API.minimize();
+          }
+        };
+
         // Create and append the script
         const script = document.createElement("script");
         script.src = "https://embed.tawk.to/690bc64ce10d0719502af37f/1j9avt755";
@@ -257,13 +264,8 @@ export default function TawkToChat() {
           window.Tawk_API.showWidget();
 
           // Prevent auto-opening by ensuring chat starts minimized
-          if (typeof window.Tawk_API.onLoad === "function" || window.Tawk_API.onLoad === undefined) {
-            window.Tawk_API.onLoad = function () {
-              // Minimize the chat window on load to prevent auto-opening
-              if (window.Tawk_API && typeof window.Tawk_API.minimize === "function") {
-                window.Tawk_API.minimize();
-              }
-            };
+          if (window.Tawk_API && typeof window.Tawk_API.minimize === "function") {
+            window.Tawk_API.minimize();
           }
 
           // Set user information if available
