@@ -24,13 +24,6 @@ import Link from "next/link";
 export default function TradingToolsPage() {
   const data = [
     {
-      id: 2,
-      icon: Calculator,
-      heading: "Risk Management Calculator",
-      link: "/tools/risk-calculator",
-      category: "Calculators",
-    },
-    {
       id: 3,
       icon: TrendingUp,
       heading: "Zuper Ai Technical Analysis",
@@ -49,13 +42,6 @@ export default function TradingToolsPage() {
       icon: Calendar,
       heading: "Zuper News Sentiment Analysis",
       link: "/tools/news-sentiment-analysis",
-      category: "Tech Analysis",
-    },
-    {
-      id: 6,
-      icon: Calculator,
-      heading: "Zuper Economic Calendar",
-      link: "/tools/economic-calendar",
       category: "Tech Analysis",
     },
     {
@@ -89,7 +75,7 @@ export default function TradingToolsPage() {
     {
       id: 11,
       icon: AreaChart,
-      heading: "Calender",
+      heading: "Zuper Economic Calendar",
       link: "/tools/calendar",
       category: "Tech Analysis",
     },
@@ -105,13 +91,6 @@ export default function TradingToolsPage() {
       icon: ChartNoAxesCombined,
       heading: "Performance Statics",
       link: "/tools/performance-statics",
-      category: "Tech Analysis",
-    },
-    {
-      id: 14,
-      icon: Presentation,
-      heading: "Price Range Volatility",
-      link: "/tools/technical-analysis2",
       category: "Tech Analysis",
     },
     {

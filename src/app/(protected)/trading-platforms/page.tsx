@@ -161,7 +161,7 @@ export default function TradingPlatformsPage() {
   const handleWebTerminalClick = () => {
     const token = localStorage.getItem('userToken');
     const clientId = localStorage.getItem('clientId');
-    
+
     if (!token || !clientId) {
       console.error('No authentication credentials found');
       return;
@@ -207,9 +207,6 @@ export default function TradingPlatformsPage() {
             >
               <span>Open Web Terminal</span>
             </button>
-            <p className="text-xs text-black/60 dark:text-white/60 text-align justify-center px-0 py-0 tracking-wide">
-              Click to open the web trading terminal
-            </p>
           </div>
         ) : (
           <div className="flex flex-col gap-2 w-full max-w-[100px]">
@@ -252,15 +249,15 @@ export default function TradingPlatformsPage() {
           <div className="pt-7 space-y-4 px-4 md:px-6">
             <div>
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList 
+                <TabsList
                   className="relative bg-[rgba(20,20,26,0.25)] border-0 rounded-[15px] p-1.5 inline-flex h-auto gap-2"
                   style={{
                     backgroundColor: "rgba(20, 20, 26, 0.25)",
                     borderRadius: "15px",
                   }}
                 >
-                  <TabsTrigger 
-                    value="all" 
+                  <TabsTrigger
+                    value="all"
                     className="relative rounded-[10px] px-4 py-2 text-sm font-semibold data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#311B47] data-[state=active]:to-[#1C061C] data-[state=inactive]:bg-transparent data-[state=active]:text-white data-[state=inactive]:text-white/75 transition-colors overflow-hidden"
                     style={{
                       borderRadius: "10px",
@@ -298,8 +295,8 @@ export default function TradingPlatformsPage() {
                     )}
                     <span className="relative z-10">All</span>
                   </TabsTrigger>
-                  <TabsTrigger 
-                    value="metatraders" 
+                  <TabsTrigger
+                    value="metatraders"
                     className="relative rounded-[10px] px-4 py-2 text-sm font-semibold data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#311B47] data-[state=active]:to-[#1C061C] data-[state=inactive]:bg-transparent data-[state=active]:text-white data-[state=inactive]:text-white/75 transition-colors overflow-hidden"
                     style={{
                       borderRadius: "10px",
@@ -337,8 +334,8 @@ export default function TradingPlatformsPage() {
                     )}
                     <span className="relative z-10">MT5</span>
                   </TabsTrigger>
-                  <TabsTrigger 
-                    value="zuperior" 
+                  <TabsTrigger
+                    value="zuperior"
                     className="relative rounded-[10px] px-4 py-2 text-sm font-semibold data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#311B47] data-[state=active]:to-[#1C061C] data-[state=inactive]:bg-transparent data-[state=active]:text-white data-[state=inactive]:text-white/75 transition-colors overflow-hidden"
                     style={{
                       borderRadius: "10px",

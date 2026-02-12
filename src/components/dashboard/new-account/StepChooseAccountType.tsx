@@ -68,7 +68,18 @@ export const StepChooseAccountType: React.FC<StepChooseAccountTypeProps> = ({
         if (response.success && response.data) {
           console.log('✅ Groups received:', response.data);
           console.log('✅ First group leverage:', response.data[0]?.leverage);
-          setGroups(response.data);
+
+          // Sort groups: Startup first
+          const sortedGroups = [...response.data].sort((a, b) => {
+            const titleA = a.dedicated_name || a.group.split('\\').pop() || "Account";
+            const titleB = b.dedicated_name || b.group.split('\\').pop() || "Account";
+
+            if (titleA === "Startup") return -1;
+            if (titleB === "Startup") return 1;
+            return 0;
+          });
+
+          setGroups(sortedGroups);
         } else {
           console.error('❌ Invalid response format:', response);
           setGroups([]);
@@ -128,6 +139,28 @@ export const StepChooseAccountType: React.FC<StepChooseAccountTypeProps> = ({
                 const userRole = isPro ? "For Experts" : "For Beginners";
                 const title = group.dedicated_name || group.group.split('\\').pop() || "Account";
 
+                // Overrides for specific account types
+                let overrides: any = {};
+                if (title === "Startup") {
+                  overrides = {
+                    minDeposit: 10,
+                    spread: "9 Pips",
+                    leverage: 200,
+                    commission: "$0",
+                    spreadLabel: "Medium Spreads",
+                    commissionLabel: "Commissions"
+                  };
+                } else if (title === "Professional") {
+                  overrides = {
+                    minDeposit: 1000,
+                    spread: "5 Pips",
+                    leverage: 200,
+                    commission: "$0",
+                    spreadLabel: "Medium Spreads",
+                    commissionLabel: "Commissions"
+                  };
+                }
+
                 return (
                   <div key={group.id} className="flex-shrink-0">
                     <AccountTypeCard
@@ -141,12 +174,14 @@ export const StepChooseAccountType: React.FC<StepChooseAccountTypeProps> = ({
                           setAccountType(group.account_type);
                         }
                       }}
-                      leverage={group.leverage !== null && group.leverage !== undefined ? Number(group.leverage) : null}
-                      minDeposit={group.min_deposit ? Number(group.min_deposit) : null}
-                      spread={group.spread ? Number(group.spread) : null}
-                      commission={group.commission ? Number(group.commission) : null}
+                      leverage={overrides.leverage ?? (group.leverage !== null && group.leverage !== undefined ? Number(group.leverage) : null)}
+                      minDeposit={overrides.minDeposit ?? (group.min_deposit ? Number(group.min_deposit) : null)}
+                      spread={overrides.spread ?? (group.spread ? Number(group.spread) : null)}
+                      commission={overrides.commission ?? (group.commission ? Number(group.commission) : null)}
                       description={null}
                       accountType={accountType}
+                      spreadLabel={overrides.spreadLabel}
+                      commissionLabel={overrides.commissionLabel}
                     />
                   </div>
                 );

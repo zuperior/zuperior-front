@@ -20,6 +20,13 @@ export default function TawkToChat() {
         window.Tawk_API = window.Tawk_API || {} as any;
         window.Tawk_LoadStart = new Date();
 
+        // Minimization handler
+        window.Tawk_API.onLoad = function () {
+          if (window.Tawk_API && typeof window.Tawk_API.minimize === "function") {
+            window.Tawk_API.minimize();
+          }
+        };
+
         // Create and append the script
         const script = document.createElement("script");
         script.src = "https://embed.tawk.to/690bc64ce10d0719502af37f/1j9avt755";
@@ -61,7 +68,7 @@ export default function TawkToChat() {
       const makeWidgetDraggable = () => {
         // Find the Tawk.to widget container - look for the actual Tawk container div
         const tawkContainer = document.querySelector('#tawkchat-container, [id*="tawkchat"], div[id*="tawk"]') as HTMLElement;
-        
+
         if (!tawkContainer) return;
 
         // Check if already initialized
@@ -127,13 +134,13 @@ export default function TawkToChat() {
           const target = e.target as HTMLElement;
           const iframe = target.closest('iframe');
           if (iframe && iframe.offsetWidth > 100) return; // Don't drag if chat is open
-          
+
           // Don't drag if clicking on interactive elements inside the chat
           if (target.closest('input, textarea, button, a, select')) return;
 
           isDragging = true;
           const rect = widgetContainer.getBoundingClientRect();
-          
+
           initialTop = rect.top;
           initialLeft = rect.left;
 
@@ -256,6 +263,11 @@ export default function TawkToChat() {
           // Show the widget initially
           window.Tawk_API.showWidget();
 
+          // Prevent auto-opening by ensuring chat starts minimized
+          if (window.Tawk_API && typeof window.Tawk_API.minimize === "function") {
+            window.Tawk_API.minimize();
+          }
+
           // Set user information if available
           if (user) {
             const setUserData = () => {
@@ -300,12 +312,8 @@ export default function TawkToChat() {
               }
             };
 
-            // Set user data immediately if API is ready, or wait for onLoad
-            if (window.Tawk_API.onLoad) {
-              window.Tawk_API.onLoad = setUserData;
-            } else {
-              setUserData();
-            }
+            // Set user data after a short delay to ensure API is fully ready
+            setTimeout(setUserData, 500);
           }
         }
       }, 100);
