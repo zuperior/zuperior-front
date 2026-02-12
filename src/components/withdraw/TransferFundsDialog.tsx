@@ -69,7 +69,27 @@ const TransferFundsDialog = ({
   const fromAccObj = filteredAccounts.find(
     (account) => account?.accountId && String(account.accountId) === fromAccount
   );
-  const fromBalance = fromAccObj ? (fromAccObj.balance ?? 0) : 0;
+
+  // Get wallet balance for fromBalance if fromAccount is 'WALLET'
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+
+  useEffect(() => {
+    if (open) {
+      const token = localStorage.getItem('userToken');
+      fetch('/api/wallet', {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        cache: 'no-store'
+      })
+        .then(r => r.json())
+        .then(j => {
+          const bal = parseFloat(j?.data?.balance ?? j?.balance ?? 0);
+          if (!isNaN(bal)) setWalletBalance(bal);
+        })
+        .catch(() => { });
+    }
+  }, [open]);
+
+  const fromBalance = fromAccount === 'WALLET' ? walletBalance : (fromAccObj ? (fromAccObj.balance ?? 0) : 0);
 
   // Fetch deposit limits for the "To Account" (destination) to get max transfer limit
   const [depositLimits, setDepositLimits] = useState<{
@@ -138,10 +158,10 @@ const TransferFundsDialog = ({
       // Also fetch user's wallet number for wallet transfer option
       const token = localStorage.getItem('userToken');
       fetch('/api/wallet', { headers: token ? { Authorization: `Bearer ${token}` } : undefined, cache: 'no-store' })
-        .then(r=>r.json()).then(j=>{
+        .then(r => r.json()).then(j => {
           const wn = j?.data?.walletNumber || j?.walletNumber || '';
           if (wn) setWalletNumber(String(wn));
-        }).catch(()=>{});
+        }).catch(() => { });
     }
   }, [open, dispatch]);
 
@@ -165,13 +185,13 @@ const TransferFundsDialog = ({
     const val = e.target.value;
     setAmount(val);
     const numVal = parseFloat(val);
-    
+
     // Check minimum
     if (val && (isNaN(numVal) || numVal < MIN_TRANSFER)) {
       setError(`Minimum transfer amount is $${MIN_TRANSFER}`);
       return;
     }
-    
+
     // Check maximum (effectiveMaxTransfer is already min of max_limit and balance)
     if (val && numVal > effectiveMaxTransfer) {
       const maxLimit = depositLimits?.maxLimit ?? MAX_TRANSFER;
@@ -180,26 +200,26 @@ const TransferFundsDialog = ({
         setError(`Amount cannot exceed available balance of $${fromBalance.toFixed(2)}`);
       } else {
         // Max limit is the limiting factor
-        const maxText = maxLimit === MAX_TRANSFER 
+        const maxText = maxLimit === MAX_TRANSFER
           ? `$${MAX_TRANSFER.toLocaleString()}`
           : `$${maxLimit.toFixed(2)} (account limit)`;
         setError(`Maximum transfer amount is ${maxText}`);
       }
       return;
     }
-    
+
     setError("");
   };
 
   const handleTransfer = async () => {
     const numAmount = parseFloat(amount);
-    
+
     // Validate amount
     if (!amount || isNaN(numAmount) || numAmount < MIN_TRANSFER) {
       setError(`Minimum transfer amount is $${MIN_TRANSFER}`);
       return;
     }
-    
+
     // Check maximum (effectiveMaxTransfer is already min of max_limit and balance)
     if (numAmount > effectiveMaxTransfer) {
       const maxLimit = depositLimits?.maxLimit ?? MAX_TRANSFER;
@@ -208,7 +228,7 @@ const TransferFundsDialog = ({
         setError(`Amount cannot exceed available balance of $${fromBalance.toFixed(2)}`);
       } else {
         // Max limit is the limiting factor
-        const maxText = maxLimit === MAX_TRANSFER 
+        const maxText = maxLimit === MAX_TRANSFER
           ? `$${MAX_TRANSFER.toLocaleString()}`
           : `$${maxLimit.toFixed(2)} (account limit)`;
         setError(`Maximum transfer amount is ${maxText}`);
@@ -222,7 +242,7 @@ const TransferFundsDialog = ({
         toast.error("Please log in to perform transfers");
         return;
       }
-      
+
       // Debug logging
       console.log('🔄 Initiating transfer with data:', {
         fromAccount,
@@ -231,25 +251,26 @@ const TransferFundsDialog = ({
         fromAccountType: typeof fromAccount,
         toAccountType: typeof toAccount,
       });
-      
+
       const response = await InternalTransfer({
         fromAccount,
         toAccount,
         amount: parseFloat(amount),
         comment: "Internal transfer between MT5 accounts",
       });
-      
+
       console.log('[Transfer] 📦 Backend response:', JSON.stringify(response, null, 2));
-      
+
       if (response.success) {
         const isTransferToWallet = String(toAccount).toUpperCase() === 'WALLET';
         const isTransferFromWallet = String(fromAccount).toUpperCase() === 'WALLET';
-        const responseData = response?.data || {};
-        
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const responseData: any = response?.data || {};
+
         // INSTANT UPDATE: Use optimistic updates from response data
         // This ensures no delay - balance updates immediately
         console.log('[Transfer] ⚡ Applying optimistic updates from response...');
-        
+
         // Step 1: Update source account balance instantly (if MT5 account)
         if (!isTransferFromWallet && responseData.fromBalance !== undefined) {
           const fromBalance = Number(responseData.fromBalance || 0);
@@ -262,7 +283,7 @@ const TransferFundsDialog = ({
           }));
           console.log(`[Transfer] ✅ Updated source account ${fromAccount} balance instantly: $${fromBalance}`);
         }
-        
+
         // Step 2: Update destination account balance instantly (if MT5 account)
         if (!isTransferToWallet && responseData.toBalance !== undefined) {
           const toBalance = Number(responseData.toBalance || 0);
@@ -273,11 +294,11 @@ const TransferFundsDialog = ({
           }));
           console.log(`[Transfer] ✅ Updated destination account ${toAccount} balance instantly: $${toBalance}`);
         }
-        
+
         // Step 3: Update navbar total balance instantly
         // Total balance should stay the same (internal transfer), but we update to ensure consistency
         window.dispatchEvent(new CustomEvent('mt5:refresh'));
-        
+
         // Step 4: Show success message IMMEDIATELY (no delay)
         toast.success(`$${amount} transferred to ${isTransferToWallet ? 'Wallet' : `#${toAccount}`}`);
         setStep("progress");
@@ -295,7 +316,7 @@ const TransferFundsDialog = ({
           console.error('[Transfer] ⚠️ Background refresh failed (non-critical):', refreshError);
           // Non-critical - we already updated optimistically
         });
-        
+
         // Refresh wallet balance if transferring to/from wallet
         if (isTransferToWallet || isTransferFromWallet) {
           // Update wallet balance in background (non-blocking)
@@ -325,7 +346,16 @@ const TransferFundsDialog = ({
       }
     } catch (error: any) {
       console.error('Transfer error:', error);
-      console.error('Error response:', error?.response?.data);
+      // Log more details about the error to help debugging
+      if (error?.response) {
+        console.error('Error response data:', error.response.data);
+        console.error('Error status:', error.response.status);
+      } else if (error?.request) {
+        console.error('No response received (Request made):', error.request);
+      } else {
+        console.error('Error setting up request:', error.message);
+      }
+
       const errorMessage = error?.response?.data?.message || error?.message || "Unable to transfer funds";
       toast.error(errorMessage);
       setStep("form");
@@ -369,7 +399,7 @@ const TransferFundsDialog = ({
                   <SelectItem value="between_accounts">
                     Between your accounts
                   </SelectItem>
-                 {/*  <SelectItem value="to_another_user">
+                  {/*  <SelectItem value="to_another_user">
                     To another user
                   </SelectItem> */}
                 </SelectContent>
@@ -386,6 +416,16 @@ const TransferFundsDialog = ({
                       <SelectValue placeholder="Select Account" />
                     </SelectTrigger>
                     <SelectContent>
+                      {/* Wallet option */}
+                      {walletNumber && (
+                        <SelectItem key={`wallet-from-${walletNumber}`} value={`WALLET`} disabled={toAccount === 'WALLET'}>
+                          <span className="bg-[#9F8ACF]/30 px-2 py-[2px] rounded-[5px] font-semibold text-black/75 dark:text-white/75 tracking-tighter text-[10px]">WALLET</span>
+                          <span>{walletNumber}</span>
+                          <span className="text-xs text-muted-foreground ml-1">
+                            ${walletBalance.toFixed(2)}
+                          </span>
+                        </SelectItem>
+                      )}
                       {filteredAccounts
                         .filter((account) => {
                           // Only show Live accounts
@@ -393,20 +433,20 @@ const TransferFundsDialog = ({
                           return accountType === 'Live';
                         })
                         .map((account, index) => (
-                        <SelectItem
-                          key={`${account?.accountId || 'no-id'}-${index}`}
-                          value={account?.accountId?.toString() || ''}
-                          disabled={account?.accountId?.toString() === toAccount}
-                        >
-                          <span className="bg-[#9F8ACF]/30 px-2 py-[2px] rounded-[5px] font-semibold text-black/75 dark:text-white/75 tracking-tighter text-[10px]">
-                            MT5
-                          </span>
-                          <span>{account?.accountId || 'No ID'}</span>
-                          <span className="text-xs text-muted-foreground">
-                            ${(account?.balance ?? 0).toFixed(2)}
-                          </span>
-                        </SelectItem>
-                      ))}
+                          <SelectItem
+                            key={`${account?.accountId || 'no-id'}-${index}`}
+                            value={account?.accountId?.toString() || ''}
+                            disabled={account?.accountId?.toString() === toAccount}
+                          >
+                            <span className="bg-[#9F8ACF]/30 px-2 py-[2px] rounded-[5px] font-semibold text-black/75 dark:text-white/75 tracking-tighter text-[10px]">
+                              MT5
+                            </span>
+                            <span>{account?.accountId || 'No ID'}</span>
+                            <span className="text-xs text-muted-foreground">
+                              ${(account?.balance ?? 0).toFixed(2)}
+                            </span>
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </Label>
@@ -453,20 +493,20 @@ const TransferFundsDialog = ({
                           return accountType === 'Live';
                         })
                         .map((account, index) => (
-                        <SelectItem
-                          key={`${account?.accountId || 'no-id'}-${index}-to`}
-                          value={account?.accountId?.toString() || ''}
-                          disabled={account?.accountId?.toString() === fromAccount}
-                        >
-                          <span className="bg-[#9F8ACF]/30 px-2 py-[2px] rounded-[5px] font-semibold text-black/75 dark:text-white/75 tracking-tighter text-[10px]">
-                            MT5
-                          </span>
-                          <span>{account?.accountId || 'No ID'}</span>
-                          <span className="text-xs text-muted-foreground">
-                            ${(account?.balance ?? 0).toFixed(2)}
-                          </span>
-                        </SelectItem>
-                      ))}
+                          <SelectItem
+                            key={`${account?.accountId || 'no-id'}-${index}-to`}
+                            value={account?.accountId?.toString() || ''}
+                            disabled={account?.accountId?.toString() === fromAccount}
+                          >
+                            <span className="bg-[#9F8ACF]/30 px-2 py-[2px] rounded-[5px] font-semibold text-black/75 dark:text-white/75 tracking-tighter text-[10px]">
+                              MT5
+                            </span>
+                            <span>{account?.accountId || 'No ID'}</span>
+                            <span className="text-xs text-muted-foreground">
+                              ${(account?.balance ?? 0).toFixed(2)}
+                            </span>
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </Label>
@@ -487,7 +527,7 @@ const TransferFundsDialog = ({
                     {(() => {
                       const maxLimit = depositLimits?.maxLimit ?? MAX_TRANSFER;
                       const effectiveMax = Math.min(maxLimit, fromBalance);
-                      
+
                       if (fromBalance < maxLimit) {
                         return `Maximum transfer: $${effectiveMax.toFixed(2)} (limited by available balance)`;
                       } else if (depositLimits?.maxLimit) {
@@ -547,7 +587,7 @@ const TransferFundsDialog = ({
                   <strong>From Account:</strong> {fromAccount}
                 </div>
                 <div>
-                  <strong>To Account:</strong> {toAccount === 'WALLET' ? `WALLET (${walletNumber||'-'})` : toAccount}
+                  <strong>To Account:</strong> {toAccount === 'WALLET' ? `WALLET (${walletNumber || '-'})` : toAccount}
                 </div>
                 <div>
                   <strong>Amount:</strong> ${parseFloat(amount).toFixed(2)}

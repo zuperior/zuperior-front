@@ -3,6 +3,11 @@ import TradingLoader from "./TradingLoader";
 import { formatDate, getStatusColor, formatStatusText } from "@/utils/formDate";
 import { ArrowDown, ArrowUpRight, ArrowLeftRight } from "lucide-react";
 import Image from "next/image";
+import { toast } from "sonner";
+import axios from "axios";
+import { Badge } from "@/components/ui/badge";
+import { CancelWithdrawalDialog } from "./CancelWithdrawalDialog";
+import { useState } from "react";
 
 interface Tx {
   depositID?: string;
@@ -15,12 +20,14 @@ interface Tx {
   status?: string;
   account_id?: string;
   inrAmount?: string | number;
+  id?: string;
 }
 
 interface Props {
   loadingTx: boolean;
   selectedAccountId: string | null;
   tableData: Tx[];
+  onRefresh?: () => void;
 }
 
 const getArrowIcon = (type: string) => {
@@ -176,159 +183,223 @@ export const TransactionsTable: React.FC<Props> = ({
   loadingTx,
   selectedAccountId,
   tableData,
-}) => (
-  <>
-    <div
-      className="overflow-x-auto rounded-b-xl w-full"
-      style={{ maxHeight: "550px", overflowY: "auto" }}
-    >
-      <table className=" hidden xl:block w-full text-sm table-fixed ">
-        <thead className="sticky top-0 bg-white dark:bg-[#01040D] z-10 border-b border-black/10 dark:border-white/10 w-full">
-          <tr className="text-xs font-semibold leading-3.5 dark:text-white/25 text-black/25">
-            <th className="text-left px-4 py-3 w-[8%]">Sr. No</th>
-            <th className="text-left px-2 py-3 w-[14%]">Amount (USD)</th>
-            <th className="text-left px-4 py-3 w-[24%]">Transfer Process</th>
-            <th className="text-left py-3 w-[20%]">Deposit/Withdrawal</th>
-            <th className="text-left px-7 py-3 w-[18%]">Date-Time</th>
-            <th className="text-center px-10 py-3 w-[8%]">Status</th>
-          </tr>
-        </thead>
-        <tbody className="text-gray-800 dark:text-white">
-          {loadingTx ? (
-            <tr>
-              <td colSpan={6} className="py-16 text-center text-gray-400">
-                <TradingLoader />
-              </td>
+  onRefresh,
+}) => {
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [selectedCancelId, setSelectedCancelId] = useState("");
+
+  const triggerCancel = (id: string) => {
+    setSelectedCancelId(id);
+    setCancelDialogOpen(true);
+  };
+
+  const handleCancelWithdrawal = async (id: string) => {
+    // Deprecated for the new Dialog component
+    try {
+      const token = localStorage.getItem('userToken');
+      const response = await axios.post(`/api/withdraw/cancel/${id}`, {}, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      });
+
+      if (response.data.success) {
+        toast.success("Withdrawal cancelled and refunded to wallet.");
+        if (onRefresh) onRefresh();
+      } else {
+        toast.error(response.data.message || "Failed to cancel withdrawal.");
+      }
+    } catch (error: any) {
+      console.error("Cancel withdrawal error:", error);
+      toast.error(error.response?.data?.message || "Error cancelling withdrawal.");
+    }
+  };
+
+  return (
+    <>
+      <div
+        className="overflow-x-auto rounded-b-xl w-full"
+        style={{ maxHeight: "550px", overflowY: "auto" }}
+      >
+        <table className=" hidden xl:block w-full text-sm table-fixed ">
+          <thead className="sticky top-0 bg-white dark:bg-[#01040D] z-10 border-b border-black/10 dark:border-white/10 w-full">
+            <tr className="text-xs font-semibold leading-3.5 dark:text-white/25 text-black/25">
+              <th className="text-left px-4 py-3 w-[8%]">Sr. No</th>
+              <th className="text-left px-2 py-3 w-[14%]">Amount (USD)</th>
+              <th className="text-left px-4 py-3 w-[24%]">Transfer Process</th>
+              <th className="text-left py-3 w-[20%]">Deposit/Withdrawal</th>
+              <th className="text-left px-7 py-3 w-[18%]">Date-Time</th>
+              <th className="text-center px-10 py-3 w-[8%]">Status</th>
             </tr>
-          ) : !selectedAccountId ? (
-            <tr>
-              <td colSpan={6} className="text-center py-10 text-gray-400">
-                Please select an account to view transactions.
-              </td>
-            </tr>
-          ) : tableData.length === 0 ? (
-            <tr>
-              <td colSpan={6} className="text-center py-10 text-gray-400">
-                No transactions found.
-              </td>
-            </tr>
-          ) : (
-            tableData.map((tx, i) => (
-              <tr
-                key={tx.depositID ?? `${i}-${tx.login}-${tx.open_time}`}
-                className="text-sm leading-6.5 text-black/75 dark:text-white/75 whitespace-nowrap font-semibold border-b border-[#9F8ACF]/10"
-              >
-                <td className="px-4 py-[15px]">
-                  {i + 1}
-                </td>
-                <td className="px-2 py-[15px]">
-                  {(() => {
-                    const val = Number(tx.profit ?? tx.amount ?? 0);
-                    const usdDisplay = `$ ${Math.abs(val).toFixed(2)}`;
-                    // For UPI payments, show USD and INR amounts
-                    if (tx.comment === 'UPI' && tx.inrAmount) {
-                      const inrVal = Number(tx.inrAmount);
-                      return `${usdDisplay} (₹${inrVal.toLocaleString('en-IN')} INR)`;
-                    }
-                    return usdDisplay;
-                  })()}
-                </td>
-                <td className="px-2 py-[15px]">{renderPaymentMethod(tx.comment)}</td>
-                <td className="px-2 py-[15px]">
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2 whitespace-nowrap">
-                      {getArrowIcon(tx.type)}
-                      <span>{tx.type}</span>
-                    </div>
-                    {tx.comment && (
-                      <span className="text-xs text-black/50 dark:text-white/50 ml-5">
-                        {getPaymentMethodText(tx.comment)}
-                      </span>
-                    )}
-                  </div>
-                </td>
-                <td className="px-2 py-[15px]">
-                  {formatDate(tx.open_time ?? "")}
-                </td>
-                <td
-                  className={`px-4 py-[15px] text-center ${getStatusColor(
-                    tx.status
-                  )}`}
-                >
-                  {formatStatusText(tx.status)}
+          </thead>
+          <tbody className="text-gray-800 dark:text-white">
+            {loadingTx ? (
+              <tr>
+                <td colSpan={6} className="py-16 text-center text-gray-400">
+                  <TradingLoader />
                 </td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
+            ) : !selectedAccountId ? (
+              <tr>
+                <td colSpan={6} className="text-center py-10 text-gray-400">
+                  Please select an account to view transactions.
+                </td>
+              </tr>
+            ) : tableData.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="text-center py-10 text-gray-400">
+                  No transactions found.
+                </td>
+              </tr>
+            ) : (
+              tableData.map((tx, i) => (
+                <tr
+                  key={tx.id ?? tx.depositID ?? `${i}-${tx.login}-${tx.open_time}`}
+                  className="text-sm leading-6.5 text-black/75 dark:text-white/75 whitespace-nowrap font-semibold border-b border-[#9F8ACF]/10"
+                >
+                  <td className="px-4 py-[15px]">
+                    {i + 1}
+                  </td>
+                  <td className="px-2 py-[15px]">
+                    {(() => {
+                      const val = Number(tx.profit ?? tx.amount ?? 0);
+                      const usdDisplay = `$ ${Math.abs(val).toFixed(2)}`;
+                      // For UPI payments, show USD and INR amounts
+                      if (tx.comment === 'UPI' && tx.inrAmount) {
+                        const inrVal = Number(tx.inrAmount);
+                        return `${usdDisplay} (₹${inrVal.toLocaleString('en-IN')} INR)`;
+                      }
+                      return usdDisplay;
+                    })()}
+                  </td>
+                  <td className="px-2 py-[15px]">{renderPaymentMethod(tx.comment)}</td>
+                  <td className="px-2 py-[15px]">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2 whitespace-nowrap">
+                        {getArrowIcon(tx.type)}
+                        <span>{tx.type}</span>
+                      </div>
+                      {tx.comment && (
+                        <span className="text-xs text-black/50 dark:text-white/50 ml-5">
+                          {getPaymentMethodText(tx.comment)}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-2 py-[15px]">
+                    {formatDate(tx.open_time ?? "")}
+                  </td>
+                  <td className="px-4 py-[15px] text-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <Badge
+                        variant="outline"
+                        className={`${getStatusColor(tx.status)} border-current/20 bg-current/5 px-3 py-1`}
+                      >
+                        {formatStatusText(tx.status)}
+                      </Badge>
 
-    <div
-      className="w-full bg-gradient-to-r from-[#181422] to-[#181422] dark:from-[#15101d] dark:to-[#181422] rounded-xl px-5 shadow-lg 
+                      {tx.status === 'pending' && (tx.type === 'Withdrawal' || tx.type === 'WALLET_WITHDRAWAL') && (
+                        <button
+                          onClick={() => triggerCancel(tx.depositID || '')}
+                          className="text-[10px] font-bold text-red-500 hover:text-red-600 transition-colors uppercase tracking-wider underline-offset-2 hover:underline"
+                        >
+                          Cancel Request
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div
+        className="w-full bg-gradient-to-r from-[#181422] to-[#181422] dark:from-[#15101d] dark:to-[#181422] rounded-xl px-5 shadow-lg 
         text-white dark:text-white/75 block lg:block xl:hidden"
-    >
-      {loadingTx ? (
-        <div className="py-16 text-center text-gray-400">
-          <TradingLoader />
-        </div>
-      ) : !selectedAccountId ? (
-        <div className="py-10 text-center text-gray-400">
-          Please select an account to view transactions.
-        </div>
-      ) : tableData.length === 0 ? (
-        <div className="py-10 text-center text-gray-400">
-          No transactions found.
-        </div>
-      ) : (
-        tableData.map((tx, i) => {
-          const val = Number(tx.profit ?? tx.amount ?? 0);
-          return (
-            <div
-              key={tx.depositID ?? `${i}-${tx.login}-${tx.open_time}`}
-              className="flex justify-between items-center border-b border-white/10 py-3 last:border-none"
-            >
-              <div>
-                <div className="font-medium">
-                  {renderPaymentMethod(tx.comment)}
-                </div>
-                <p className="text-sm text-gray-400 dark:text-white/75">
-                  Sr. No: {i + 1}
-                </p>
-                <p className="text-sm text-gray-400 dark:text-white/75">
-                  {formatDate(tx.open_time ?? "")}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="font-semibold text-lg">
-                  {(() => {
-                    const usdDisplay = `$${Math.abs(val).toFixed(2)}`;
-                    // For UPI payments, show USD and INR amounts
-                    if (tx.comment === 'UPI' && tx.inrAmount) {
-                      const inrVal = Number(tx.inrAmount);
-                      return `${usdDisplay} (₹${inrVal.toLocaleString('en-IN')} INR)`;
-                    }
-                    return usdDisplay;
-                  })()}
-                </p>
-                <div className="flex flex-col gap-1">
-                  <p className="flex items-center gap-1 text-green-400 text-sm">
-                    {getArrowIcon(tx.type)} {tx.type}
+      >
+        {loadingTx ? (
+          <div className="py-16 text-center text-gray-400">
+            <TradingLoader />
+          </div>
+        ) : !selectedAccountId ? (
+          <div className="py-10 text-center text-gray-400">
+            Please select an account to view transactions.
+          </div>
+        ) : tableData.length === 0 ? (
+          <div className="py-10 text-center text-gray-400">
+            No transactions found.
+          </div>
+        ) : (
+          tableData.map((tx, i) => {
+            const val = Number(tx.profit ?? tx.amount ?? 0);
+            return (
+              <div
+                key={tx.id ?? tx.depositID ?? `${i}-${tx.login}-${tx.open_time}`}
+                className="flex justify-between items-center border-b border-white/10 py-3 last:border-none"
+              >
+                <div>
+                  <div className="font-medium">
+                    {renderPaymentMethod(tx.comment)}
+                  </div>
+                  <p className="text-sm text-gray-400 dark:text-white/75">
+                    Sr. No: {i + 1}
                   </p>
-                  {tx.comment && (
-                    <p className="text-xs text-gray-400 dark:text-white/50">
-                      {getPaymentMethodText(tx.comment)}
-                    </p>
-                  )}
+                  <p className="text-sm text-gray-400 dark:text-white/75">
+                    {formatDate(tx.open_time ?? "")}
+                  </p>
                 </div>
-                <p className={`text-xs mt-1 ${getStatusColor(tx.status)}`}>
-                  {formatStatusText(tx.status)}
-                </p>
+                <div className="text-right">
+                  <p className="font-semibold text-lg">
+                    {(() => {
+                      const usdDisplay = `$${Math.abs(val).toFixed(2)}`;
+                      // For UPI payments, show USD and INR amounts
+                      if (tx.comment === 'UPI' && tx.inrAmount) {
+                        const inrVal = Number(tx.inrAmount);
+                        return `${usdDisplay} (₹${inrVal.toLocaleString('en-IN')} INR)`;
+                      }
+                      return usdDisplay;
+                    })()}
+                  </p>
+                  <div className="flex flex-col gap-1">
+                    <p className="flex items-center gap-1 text-green-400 text-sm">
+                      {getArrowIcon(tx.type)} {tx.type}
+                    </p>
+                    {tx.comment && (
+                      <p className="text-xs text-gray-400 dark:text-white/50">
+                        {getPaymentMethodText(tx.comment)}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <Badge
+                      variant="outline"
+                      className={`${getStatusColor(tx.status)} border-current/20 bg-current/5 px-2 py-0.5 text-[10px]`}
+                    >
+                      {formatStatusText(tx.status)}
+                    </Badge>
+
+                    {tx.status === 'pending' && (tx.type === 'Withdrawal' || tx.type === 'WALLET_WITHDRAWAL') && (
+                      <button
+                        onClick={() => triggerCancel(tx.depositID || '')}
+                        className="text-[10px] font-bold text-red-500 hover:text-red-600 transition-colors uppercase tracking-wider underline-offset-2 hover:underline"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          );
-        })
-      )}
-    </div>
-  </>
-);
+            );
+          })
+        )}
+      </div>
+
+      <CancelWithdrawalDialog
+        open={cancelDialogOpen}
+        onOpen={setCancelDialogOpen}
+        depositID={selectedCancelId}
+        onSuccess={onRefresh}
+      />
+    </>
+  );
+};

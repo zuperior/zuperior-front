@@ -63,7 +63,7 @@ export default function TransactionsPage() {
         type: account.package || "Live",
         isWallet: false,
       }));
-    
+
     // Add Wallet if available
     if (wallet?.walletNumber) {
       mt5Accounts.unshift({
@@ -72,7 +72,7 @@ export default function TransactionsPage() {
         isWallet: true,
       });
     }
-    
+
     return mt5Accounts;
   }) || [];
 
@@ -108,22 +108,22 @@ export default function TransactionsPage() {
     console.log("🔍 Fetching transactions for account:", accountId);
     setLoadingTx(true);
     setSelectedAccountId(accountId);
-    
+
     // Check if this is a wallet account
     const isWalletAccount = wallet?.walletNumber === accountId;
-    
+
     // Clear wallet transactions if this is NOT a wallet account
     if (!isWalletAccount) {
       setWalletTransactions([]);
     }
-    
+
     try {
       if (isWalletAccount) {
         // Fetch wallet transactions
         const token = localStorage.getItem('userToken');
-        const r = await fetch('/api/wallet/transactions?limit=200', { 
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined, 
-          cache: 'no-store' 
+        const r = await fetch('/api/wallet/transactions?limit=200', {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          cache: 'no-store'
         });
         const j = await r.json();
         if (j?.success) {
@@ -150,41 +150,41 @@ export default function TransactionsPage() {
         }
       } else {
         // Fetch MT5 transactions
-      let start_date: string | undefined;
-      let end_date: string | undefined;
+        let start_date: string | undefined;
+        let end_date: string | undefined;
 
-      if (from && to) {
-        start_date = format(from, "yyyy-MM-dd");
-        end_date = format(to, "yyyy-MM-dd");
-      } else if (from) {
-        start_date = format(from, "yyyy-MM-dd");
-        end_date = format(from, "yyyy-MM-dd");
-      }
+        if (from && to) {
+          start_date = format(from, "yyyy-MM-dd");
+          end_date = format(to, "yyyy-MM-dd");
+        } else if (from) {
+          start_date = format(from, "yyyy-MM-dd");
+          end_date = format(from, "yyyy-MM-dd");
+        }
 
-      console.log("📤 Dispatching getTransactions with:", {
-        account_number: accountId,
-        start_date,
-        end_date,
-      });
-
-      const result = await dispatch(
-        getTransactions({
-            account_number: accountId,
+        console.log("📤 Dispatching getTransactions with:", {
+          account_number: accountId,
           start_date,
           end_date,
-        })
-      ).unwrap();
+        });
 
-      console.log("📥 Received transactions result:", result);
+        const result = await dispatch(
+          getTransactions({
+            account_number: accountId,
+            start_date,
+            end_date,
+          })
+        ).unwrap();
 
-      setTransactionsData({
-        deposits: result.deposits || [],
-        withdrawals: result.withdrawals || [],
-        mt5Transactions: result.mt5Transactions || [],
-        bonuses: result.bonuses || [],
-        status: result.status,
-        MT5_account: result.MT5_account || accountId,
-      });
+        console.log("📥 Received transactions result:", result);
+
+        setTransactionsData({
+          deposits: result.deposits || [],
+          withdrawals: result.withdrawals || [],
+          mt5Transactions: result.mt5Transactions || [],
+          bonuses: result.bonuses || [],
+          status: result.status,
+          MT5_account: result.MT5_account || accountId,
+        });
         setWalletTransactions([]);
       }
 
@@ -209,17 +209,17 @@ export default function TransactionsPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let tableData: any[] = [];
   const isWalletAccount = wallet?.walletNumber === selectedAccountId;
-  
+
   // Only show wallet transactions if wallet account is selected
   // Never show wallet transactions for MT5 accounts
   if (isWalletAccount && selectedAccountId) {
     // For wallet account, show wallet transactions
-    const filteredWalletTx = activeTab === "all" 
+    const filteredWalletTx = activeTab === "all"
       ? walletTransactions
       : activeTab === "deposits"
-      ? walletTransactions.filter((tx) => tx.type === 'MT5_TO_WALLET' || tx.type === 'DEPOSIT')
-      : walletTransactions.filter((tx) => tx.type === 'WALLET_TO_MT5' || tx.type === 'WITHDRAWAL');
-    
+        ? walletTransactions.filter((tx) => tx.type === 'MT5_TO_WALLET' || tx.type === 'DEPOSIT')
+        : walletTransactions.filter((tx) => tx.type === 'WALLET_TO_MT5' || tx.type === 'WITHDRAWAL');
+
     tableData = filteredWalletTx.map((tx) => ({
       amount: tx.amount,
       profit: tx.amount,
@@ -228,6 +228,8 @@ export default function TransactionsPage() {
       status: tx.status || 'completed',
       open_time: tx.createdAt,
       account_id: selectedAccountId,
+      depositID: tx.withdrawalId || tx.id,
+      id: tx.id,
     }));
   } else {
     // For MT5 accounts, show deposits, withdrawals, and internal transfers
@@ -239,7 +241,7 @@ export default function TransactionsPage() {
           status: tx.status || transactionsData.status || "Success",
           account_id: transactionsData.MT5_account || tx.login,
         })),
-        ...transactionsData.withdrawals.map((tx) => ({
+        ...transactionsData.withdrawals.map((tx: any) => ({
           ...tx,
           type: tx.type || "Withdrawal",
           status: tx.status || transactionsData.status || "Success",
@@ -254,7 +256,7 @@ export default function TransactionsPage() {
             status: tx.status || transactionsData.status || "Success",
             account_id: transactionsData.MT5_account || tx.login || selectedAccountId,
             comment: tx.comment || `Transfer from MT5 ${selectedAccountId} to Wallet`,
-            open_time: tx.createdAt || tx.open_time,
+            open_time: tx.open_time,
           })),
       ];
     } else if (activeTab === "deposits") {
@@ -274,12 +276,12 @@ export default function TransactionsPage() {
             status: tx.status || transactionsData.status || "Success",
             account_id: transactionsData.MT5_account || tx.login || selectedAccountId,
             comment: tx.comment || `Transfer from MT5 ${selectedAccountId} to Wallet`,
-            open_time: tx.createdAt || tx.open_time,
+            open_time: tx.open_time,
           })),
       ];
     } else {
       // Withdrawals tab - show withdrawals from transactionsData.withdrawals
-      tableData = transactionsData.withdrawals.map((tx) => ({
+      tableData = transactionsData.withdrawals.map((tx: any) => ({
         ...tx,
         type: tx.type || "Withdrawal",
         status: tx.status || transactionsData.status || "Success",
@@ -346,6 +348,11 @@ export default function TransactionsPage() {
                   loadingTx={loadingTx}
                   selectedAccountId={selectedAccountId}
                   tableData={tableData}
+                  onRefresh={() => {
+                    if (selectedAccountId) {
+                      getAccountTransactions(selectedAccountId, dateRange.from, dateRange.to);
+                    }
+                  }}
                 />
               </div>
             </div>
