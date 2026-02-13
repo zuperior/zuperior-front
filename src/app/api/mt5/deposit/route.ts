@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const response = await fetch(`http://18.175.242.21:5003/api/Users/${login}/AddClientBalance`, {
+    const response = await fetch(`${process.env.MT5_API_URL}/Users/${login}/AddClientBalance`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
