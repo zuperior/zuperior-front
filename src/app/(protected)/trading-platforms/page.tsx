@@ -59,18 +59,7 @@ export default function TradingPlatformsPage() {
       name: "Zuperior Mobile App",
       image: mobile,
       category: "zuperior",
-      links: [
-        {
-          label: "Ios",
-          url: "https://download.mql5.com/cdn/mobile/mt5/ios?server=ZuperiorFX-Server",
-          icon: "apple",
-        },
-        {
-          label: "Android",
-          url: "https://download.mql5.com/cdn/mobile/mt5/android?server=ZuperiorFX-Server",
-          icon: "android",
-        },
-      ],
+      isComingSoon: true,
     },
   ];
 
@@ -150,6 +139,7 @@ export default function TradingPlatformsPage() {
       }>;
       title?: string;
       isWebTerminal?: boolean;
+      isComingSoon?: boolean;
     };
     index: number;
     icon?: string;
@@ -207,6 +197,12 @@ export default function TradingPlatformsPage() {
             >
               <span>Open Web Terminal</span>
             </button>
+          </div>
+        ) : "isComingSoon" in item && item.isComingSoon ? (
+          <div className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-[#a35ca2] bg-[#a35ca2]/10 py-1.5 px-3 rounded-[10px] w-fit">
+              Coming soon
+            </span>
           </div>
         ) : (
           <div className="flex flex-col gap-2 w-full max-w-[100px]">
