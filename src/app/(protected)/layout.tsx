@@ -36,17 +36,17 @@ export default function ProtectedLayout({
     } else {
       setAuthChecked(true); // Mark auth as confirmed
 
-      // Load user data from localStorage first if available and not yet fetched
-      if (storedUser && !userData && !userFetched) {
+      // Always fetch fresh user data on mount/refresh if we have a token
+      if (storedUser && !userFetched) {
         try {
           const userObj = JSON.parse(storedUser);
           // If we have email and token, fetch fresh user data from API
           if (userObj.email) {
-            setUserFetched(true); // Mark as fetched to prevent re-fetching
+            setUserFetched(true); // Mark as fetched to prevent redundant calls on re-renders
             dispatch(getUser({ email: userObj.email, access_token: token }))
               .catch((error) => {
                 console.error("Failed to fetch user data:", error);
-                setUserFetched(false); // Allow retry on error
+                setUserFetched(false); // Allow retry on failure
               });
           }
         } catch (error) {
