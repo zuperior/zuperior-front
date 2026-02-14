@@ -51,7 +51,7 @@ export function NewAccountDialog({
   const dispatch = useAppDispatch();
   const [step, setStep] = useState(1);
   const [accountType, setAccountType] = useState("Live");
-  const [accountPlan, setAccountPlan] = useState<{ id: number; group: string; dedicated_name: string | null; [key: string]: any } | null>(null);
+  const [accountPlan, setAccountPlan] = useState<{ id: number; group: string; dedicated_name: string | null;[key: string]: any } | null>(null);
   // const [server, setServer] = useState("");
   const [leverage, setLeverage] = useState("");
   const [currency, setCurrency] = useState("USD");
@@ -131,7 +131,7 @@ export function NewAccountDialog({
     if (step === 2 && accountType) {
       // Check if accountPlan is null or invalid
       const needsSelection = !accountPlan || (typeof accountPlan === 'object' && !accountPlan.group);
-      
+
       if (needsSelection) {
         const autoSelectGroup = async () => {
           try {
@@ -293,37 +293,6 @@ export function NewAccountDialog({
         console.log("✅ Account created successfully - Account ID:", result.accountId);
         toast.success(`Your MT5 account has been created successfully! Account ID: ${result.accountId}`);
 
-        // Add balance to demo account if topUpAmount is provided (non-blocking - don't wait for it)
-        if (isDemo && topUpAmount && parseFloat(topUpAmount) > 0) {
-          // Fire and forget - don't block account creation success
-          fetch(`/api/mt5/deposit`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('userToken')}`
-            },
-            body: JSON.stringify({
-              login: result.accountId,
-              balance: parseFloat(topUpAmount),
-              comment: "Initial demo account balance"
-            })
-          })
-          .then(async (balanceResponse) => {
-            if (balanceResponse.ok) {
-              console.log("✅ Balance added successfully");
-              toast.success(`Balance of $${topUpAmount} added to demo account`);
-            } else {
-              const errorData = await balanceResponse.json().catch(() => ({}));
-              console.error("❌ Failed to add balance:", errorData);
-              toast.error(`Failed to add balance: ${errorData.message || 'Unknown error'}`);
-            }
-          })
-          .catch((balanceError) => {
-            console.error("❌ Error adding balance to demo account:", balanceError);
-            toast.error("Failed to add balance to demo account");
-          });
-        }
-
         // Set the latest account data for the success step
         setLatestAccount({
           status: "success",
@@ -336,131 +305,31 @@ export function NewAccountDialog({
             tp_id: result.accountId,
             tp_creation_error: ""
           },
-          // Add real MT5 account data
-          accountId: result.accountId,
-          name: result.name,
-          group: result.group,
-          leverage: result.leverage ?? undefined,
-          balance: (isDemo && topUpAmount && parseFloat(topUpAmount) > 0)
-            ? parseFloat(topUpAmount)
-            : (result.balance ?? 0),
-          equity: result.equity,
-          credit: result.credit,
-          margin: result.margin,
-          marginFree: result.marginFree,
-          marginLevel: result.marginLevel,
-          profit: result.profit,
-          isEnabled: result.isEnabled,
-          createdAt: result.createdAt
+          // Use the transformed account data from Redux result
+          ...result
         });
 
-        // Fetch fresh account details from the API using correct endpoint
-        console.log("🔄 Fetching fresh account details from API...");
-        try {
-          const token = localStorage.getItem('userToken');
-          const profileResponse = await fetch(`/api/mt5/user-profile/${result.accountId}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-          const profileData = await profileResponse.json();
-          console.log("✅ Fresh account profile:", profileData);
-
-          // Update the latest account with fresh data
-          if (profileData.data) {
-            setLatestAccount(prev => ({
-              ...prev!,
-              accountId: profileData.data.accountId || prev?.accountId,
-              name: profileData.data.name || prev?.name,
-              group: profileData.data.group || prev?.group,
-              leverage: profileData.data.leverage || prev?.leverage,
-              balance: Math.max(
-                (profileData.data.balance ?? 0),
-                (prev?.balance ?? 0)
-              ),
-              equity: profileData.data.equity || prev?.equity,
-              credit: profileData.data.credit || prev?.credit,
-              margin: profileData.data.margin || prev?.margin,
-              marginFree: profileData.data.marginFree || prev?.marginFree,
-              marginLevel: profileData.data.marginLevel || prev?.marginLevel,
-              profit: profileData.data.profit || prev?.profit,
-              isEnabled: profileData.data.isEnabled || prev?.isEnabled,
-              createdAt: profileData.data.createdAt || prev?.createdAt
-            }));
-          }
-        } catch (profileError) {
-          console.log("⚠️ Could not fetch fresh profile:", profileError);
-        }
-
-        console.log("🎉 MT5 Account Created Successfully!");
-        console.log("📊 Account Details:", {
-          accountId: result.accountId,
-          name: result.name,
-          group: result.group,
-          leverage: result.leverage,
-          balance: result.balance,
-          isEnabled: result.isEnabled
-        });
-
-        // Store MT5 account in database (basic fields only)
-        console.log("💾 Storing MT5 account in database...");
-        try {
-          // Get user data from localStorage
-          const userData = localStorage.getItem('user');
-          const token = localStorage.getItem('userToken');
-
-          if (token && userData) {
-            const user = JSON.parse(userData);
-            console.log("👤 User data from localStorage:", user);
-
-            // Use name and email to lookup user in database
-            const userName = user.name;
-            const userEmail = user.email;
-
-            console.log("👤 User Name:", userName);
-            console.log("📧 User Email:", userEmail);
-
-            if (!userName || !userEmail) {
-              console.error("❌ User name or email not found in user data. Available fields:", Object.keys(user));
-              console.error("❌ Full user data:", user);
-              // Don't block the success screen - just skip database storage
-              console.warn("⚠️ Proceeding without database storage");
-            } else {
-
-              const storeResponse = await fetch('/api/mt5/store-account', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  accountId: result.accountId,
-                  userName: userName,
-                  userEmail: userEmail,
-                  accountType:accountType,
-                  password: masterPassword,
-                  leverage: parseInt(leverage) || 100
-                })
-              });
-
-              if (storeResponse.ok) {
-                const storeData = await storeResponse.json();
-                console.log("✅ MT5 account stored in database:", storeData);
-              } else {
-                const errorData = await storeResponse.json().catch(() => ({}));
-                console.error("❌ Failed to store MT5 account in database:", storeResponse.statusText, errorData);
-              }
-            }
-          } else {
-            console.warn("⚠️ No user token or user data found, skipping database storage");
-            console.log("🔍 Debug - userData:", userData);
-            console.log("🔍 Debug - token:", token);
-          }
-        } catch (storeError) {
-          console.error("❌ Error storing MT5 account in database:", storeError);
-        }
-
-        await fetchAllData(true); // Force refresh after account creation
+        // Advance to success step immediately
         nextStep();
+
+        // Refresh user data in background (non-blocking)
+        fetchAllData(true).catch(e => console.warn("Background data refresh failed:", e));
+
+        // Optional: Add balance to demo account if topUpAmount is provided (non-blocking background task)
+        if (isDemo && topUpAmount && parseFloat(topUpAmount) > 0) {
+          fetch(`/api/mt5/deposit`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('userToken')}`
+            },
+            body: JSON.stringify({
+              login: result.accountId,
+              balance: parseFloat(topUpAmount),
+              comment: "Initial demo account balance"
+            })
+          }).catch(e => console.warn("Failed to add initial demo balance:", e));
+        }
       } else {
         toast.error("Failed to create MT5 account");
       }
@@ -501,43 +370,38 @@ export function NewAccountDialog({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
-    onOpenChange(isOpen);
-    if (!isOpen) {
-      resetStates();
-    }
-  }}>
+      onOpenChange(isOpen);
+      if (!isOpen) {
+        resetStates();
+      }
+    }}>
       <DialogContent className="border-3 border-transparent py-10 px-[35px] md:px-[50px] text-white/75 rounded-lg flex flex-col items-center w-full max-w-[90%] sm:max-w-2xl [background:linear-gradient(#fff,#fff)_padding-box,conic-gradient(from_var(--border-angle),#ddd,#f6e6fc,theme(colors.purple.400/48%))_border-box] dark:[background:linear-gradient(#070206,#030103)_padding-box,conic-gradient(from_var(--border-angle),#030103,#030103,theme(colors.purple.400/48%))_border-box] animate-border">
         <DialogHeader className="w-full">
           <div className="flex items-center justify-center">
             <div className="flex items-center h-[24] w-[400px]">
               <div
-                className={`flex h-6 w-6 px-3 mx-0 items-center justify-center rounded-full ${
-                  step >= 1 ? "bg-[#9F8BCF]" : "bg-[#594B7A]"
-                }`}
+                className={`flex h-6 w-6 px-3 mx-0 items-center justify-center rounded-full ${step >= 1 ? "bg-[#9F8BCF]" : "bg-[#594B7A]"
+                  }`}
               >
                 <span className="text-sm font-medium">1</span>
               </div>
               <div
-                className={`h-[4px] w-full mx-0 ${
-                  step >= 2 ? "bg-[#6B5993]" : "bg-[#392F4F]"
-                }`}
+                className={`h-[4px] w-full mx-0 ${step >= 2 ? "bg-[#6B5993]" : "bg-[#392F4F]"
+                  }`}
               ></div>
               <div
-                className={`flex h-6 w-6 px-3 mx-0 items-center justify-center rounded-full ${
-                  step >= 2 ? "bg-[#9F8BCF]" : "bg-[#594B7A]"
-                }`}
+                className={`flex h-6 w-6 px-3 mx-0 items-center justify-center rounded-full ${step >= 2 ? "bg-[#9F8BCF]" : "bg-[#594B7A]"
+                  }`}
               >
                 <span className="text-sm font-medium ">2</span>
               </div>
               <div
-                className={`h-[4px] w-full mx-0 ${
-                  step >= 3 ? "bg-[#6B5993]" : "bg-[#392F4F]"
-                }`}
+                className={`h-[4px] w-full mx-0 ${step >= 3 ? "bg-[#6B5993]" : "bg-[#392F4F]"
+                  }`}
               ></div>
               <div
-                className={`flex h-6 w-6 px-3 items-center justify-center rounded-full ${
-                  step >= 3 ? " bg-[#9F8BCF]" : "bg-[#594B7A]"
-                }`}
+                className={`flex h-6 w-6 px-3 items-center justify-center rounded-full ${step >= 3 ? " bg-[#9F8BCF]" : "bg-[#594B7A]"
+                  }`}
               >
                 <span className="text-sm font-medium">3</span>
               </div>

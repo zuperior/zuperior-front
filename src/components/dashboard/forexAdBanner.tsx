@@ -8,7 +8,6 @@ const slides = [
     id: 1,
     title: "Zuperior: A Modern Forex Trading Platform",
     subtitle: "Think Superior. Trade Zuperior",
-    brandText: "Zuperior",
     buttonText: "Learn more",
     backgroundColor: "#944B93",
     image: "/dashboard_promotion_banners/image_1.avif",
@@ -19,7 +18,6 @@ const slides = [
     id: 2,
     title: "Introducing Broker Program",
     subtitle: "Refer traders, grow your network, and earn commissions",
-    brandText: "Affiliate",
     buttonText: "Learn more",
     backgroundColor: "#000000",
     image: "/dashboard_promotion_banners/image2.avif",
@@ -29,7 +27,6 @@ const slides = [
     id: 3,
     title: "Free Forex Education",
     subtitle: "Learn Forex the Way Professionals Do",
-    brandText: "ZuperLearn",
     buttonText: "Learn more",
     backgroundColor: "#4B2C96",
     image: "/dashboard_promotion_banners/image3.avif",
@@ -98,18 +95,7 @@ const ForexAdBanner = () => {
           {/* Starry Background for Dark Slides */}
           {slide.backgroundColor === "#000000" && <StarBackground />}
 
-          {/* Brand Header */}
-          <div className="absolute top-4 left-4 md:top-2 md:left-6 z-20 flex items-center gap-2">
-            <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-[#2E5CFF] flex items-center justify-center border-2 border-white/10 shrink-0">
-              <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-white" />
-            </div>
-            <span
-              className="text-white font-semibold text-sm md:text-lg tracking-tight"
-              style={{ fontFamily: "'Manrope', sans-serif" }}
-            >
-              {slide.brandText}
-            </span>
-          </div>
+          
           {/* Content Section */}
           <div className="flex flex-col gap-3 md:gap-4 z-10 max-w-[65%] md:max-w-[70%]">
             <div className="space-y-1">

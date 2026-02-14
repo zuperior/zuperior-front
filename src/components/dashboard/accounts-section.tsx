@@ -329,22 +329,18 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
           </motion.h2>
         </AnimatePresence>
         <div className="flex gap-2 items-center">
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button
-                onClick={onOpenNewAccount}
-                className="relative gap-1 cursor-pointer font-semibold text-white rounded-[15px] px-4 sm:px-6 py-2 sm:py-2.5 text-xs leading-6 h-9 sm:h-11 
-            [background:radial-gradient(ellipse_27%_80%_at_0%_0%,rgba(163,92,162,0.5),rgba(0,0,0,1))]
-             hover:bg-transparent dark:[background:black]"
-              >
-                <Plus className="w-3 h-3" /> Open New Account
-                <div
-                  style={maskStyle}
-                  className="dark:border dark:border-white/50 pointer-events-none"
-                />
-              </Button>
-            </DialogTrigger>
-          </Dialog>
+          <Button
+            onClick={onOpenNewAccount}
+            className="relative gap-1 cursor-pointer font-semibold text-white rounded-[15px] px-4 sm:px-6 py-2 sm:py-2.5 text-xs leading-6 h-9 sm:h-11 
+        [background:radial-gradient(ellipse_27%_80%_at_0%_0%,rgba(163,92,162,0.5),rgba(0,0,0,1))]
+         hover:bg-transparent dark:[background:black]"
+          >
+            <Plus className="w-3 h-3" /> Open New Account
+            <div
+              style={maskStyle}
+              className="dark:border dark:border-white/50 pointer-events-none"
+            />
+          </Button>
           {/* Refresh button removed as requested */}
         </div>
       </div>
