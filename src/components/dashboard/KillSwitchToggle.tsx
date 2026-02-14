@@ -4,7 +4,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ShieldAlert, ShieldCheck, Clock } from "lucide-react";
 import type { RootState } from "@/store";
-import { mt5Service } from "@/services/api.service";
+import { mt5Service, userService } from "@/services/api.service";
 import { toast } from "sonner";
 import {
     Dialog,
@@ -31,6 +31,25 @@ export function KillSwitchToggle() {
 
     const isActive = user?.killSwitchActive || false;
     const expiryTime = user?.killSwitchUntil;
+
+    // Sync status with server on mount (handle multi-tab/browser updates)
+    useEffect(() => {
+        const fetchStatus = async () => {
+            try {
+                const response = await userService.getProfile();
+                if (response.success && response.data) {
+                    dispatch(setKillSwitchStatus({
+                        active: response.data.killSwitchActive ?? false,
+                        until: response.data.killSwitchUntil ?? null
+                    }));
+                }
+            } catch (error) {
+                console.error("Failed to sync kill switch status:", error);
+            }
+        };
+
+        fetchStatus();
+    }, [dispatch]);
 
     // Countdown Timer and Auto-Refresh logic
     useEffect(() => {
