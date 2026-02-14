@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const MT5_API_URL = process.env.NEXT_PUBLIC_MT5_API_URL || 'http://18.175.242.21:5003/api';
+const MT5_API_URL = process.env.MT5_API_URL;
 
 export async function POST(
   request: NextRequest,
@@ -31,7 +31,7 @@ export async function POST(
     if (type === 'BALANCE') {
       // For deposits (positive amount) use AddClientBalance
       // For withdrawals (negative amount) use DeductClientBalance
-      endpoint = amount >= 0 
+      endpoint = amount >= 0
         ? `Users/${login}/AddClientBalance`
         : `Users/${login}/DeductClientBalance`;
     } else {
@@ -46,7 +46,7 @@ export async function POST(
 
     // Get auth token from request headers
     const authHeader = request.headers.get('authorization');
-    
+
     const response = await fetch(targetUrl, {
       method: 'POST',
       headers: {
@@ -90,10 +90,10 @@ export async function POST(
   } catch (error: any) {
     console.error('❌ [BALANCE-ADJUSTMENT] Proxy error:', error);
     return NextResponse.json(
-      { 
+      {
         success: false,
-        error: 'Proxy error', 
-        message: error?.message || 'Unknown error' 
+        error: 'Proxy error',
+        message: error?.message || 'Unknown error'
       },
       {
         status: 500,

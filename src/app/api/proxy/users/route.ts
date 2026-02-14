@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
-    const targetUrl = 'http://18.175.242.21:5003/api/Users';
+    const targetUrl = `${process.env.MT5_API_URL}/Users`;
 
     console.log('Proxying users request to:', targetUrl);
 
@@ -46,7 +46,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const targetUrl = 'http://18.175.242.21:5003/api/Users';
 
     let body;
     let rawBodyText = '';
@@ -108,7 +107,7 @@ export async function POST(request: NextRequest) {
       console.log('Treating as raw text body:', body);
     }
 
-    console.log('Proxying users POST request to:', targetUrl);
+    const targetUrl = `${process.env.MT5_API_URL}/Users`;
     console.log('Request body:', body);
     console.log('Content-Type:', contentType);
 
@@ -141,23 +140,23 @@ export async function POST(request: NextRequest) {
     // After MT5 account is created, determine and store accountType in our database
     if (response.ok && data && body.group) {
       console.log('🔍 Extracting group from MT5 response:', body.group);
-      
+
       // Determine account type from group (handle both single and double backslashes)
       const groupFromRequest = body.group;
       const groupLower = groupFromRequest.toLowerCase();
       const isDemoGroup = groupLower.includes('demo');
       const accountType = isDemoGroup ? 'Demo' : 'Live';
-      
+
       console.log('📝 Determined account type:', accountType, 'from group:', groupFromRequest);
-      
+
       // If we got an accountId from the response, store it in our database
       const accountId = data?.Login || data?.login || data?.Data?.Login || data?.Data?.login;
-      
+
       if (accountId) {
         try {
           const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
           const token = request.headers.get('authorization');
-          
+
           // Determine package from group or accountPlan
           let packageValue = body.accountPlan;
           if (!packageValue) {
@@ -174,9 +173,9 @@ export async function POST(request: NextRequest) {
               packageValue = packageValue.charAt(0).toUpperCase() + packageValue.slice(1);
             }
           }
-          
+
           console.log('💾 Storing account with accountType:', accountType, 'and package:', packageValue);
-          
+
           const storeResponse = await fetch(`${backendUrl}/mt5/store-account`, {
             method: 'POST',
             headers: {
@@ -192,7 +191,7 @@ export async function POST(request: NextRequest) {
               package: packageValue
             })
           });
-          
+
           if (storeResponse.ok) {
             console.log('✅ Account stored with accountType:', accountType);
           } else {

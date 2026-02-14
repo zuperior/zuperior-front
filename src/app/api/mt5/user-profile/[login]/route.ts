@@ -26,7 +26,7 @@ export async function GET(
     // Get cache-busting param from query string
     const { searchParams } = new URL(request.url);
     const cacheBuster = searchParams.get('_t') || Date.now().toString();
-    
+
     // Try calling backend protected endpoint first (requires Authorization)
     const incomingAuth = request.headers.get('authorization');
     let response: Response | null = null;
@@ -39,11 +39,11 @@ export async function GET(
           cache: 'no-store',
         });
       }
-    } catch (_) {}
+    } catch (_) { }
 
     // Fallback to direct MT5 endpoint if backend route not available or returns 401
     if (!response || response.status === 401) {
-      response = await fetch(`http://18.175.242.21:5003/api/client/getClientBalance/${login}?_t=${cacheBuster}`, {
+      response = await fetch(`${process.env.MT5_API_URL}/client/getClientBalance/${login}?_t=${cacheBuster}`, {
         method: 'GET',
         signal: controller.signal,
         cache: 'no-store',
@@ -61,7 +61,7 @@ export async function GET(
         { status: 503 }
       );
     }
-    
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       console.log('[Next.js API] Backend error:', response.status, errorData);
@@ -75,7 +75,7 @@ export async function GET(
     }
 
     const data = await response.json();
-    
+
     // Log the response to debug
     console.log(`[Next.js API] 📥 Response from backend for account ${login}:`, JSON.stringify(data, null, 2));
 
