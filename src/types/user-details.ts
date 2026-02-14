@@ -45,7 +45,9 @@ export interface User {
   lastLoginAt?: string;
   role?: string;
   status?: string;
-  
+  killSwitchActive?: boolean;
+  killSwitchUntil?: string | null;
+
   // Legacy CRM fields (for backward compatibility)
   crm_account_id?: number;
   accountname?: string;

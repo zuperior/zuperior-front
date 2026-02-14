@@ -42,7 +42,7 @@ export const getUser = createAsyncThunk<
 
       // ✅ Separate account data and dispatch it
       const { tp_accounts_last_snapshot_info, ...rest } = userData;
-      dispatch(setAccounts(tp_accounts_last_snapshot_info));
+      dispatch(setAccounts(tp_accounts_last_snapshot_info || []));
 
       // Set KYC verification statuses
       if (userData.verification_status === "Verified") {
@@ -100,6 +100,12 @@ const getUserSlice = createSlice({
       state.error = null;
       state.loading = false;
     },
+    setKillSwitchStatus: (state, action: PayloadAction<{ active: boolean; until: string | null }>) => {
+      if (state.data) {
+        state.data.killSwitchActive = action.payload.active;
+        state.data.killSwitchUntil = action.payload.until;
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -118,5 +124,5 @@ const getUserSlice = createSlice({
   },
 });
 
-export const { clearUser } = getUserSlice.actions;
+export const { clearUser, setKillSwitchStatus } = getUserSlice.actions;
 export default getUserSlice.reducer;

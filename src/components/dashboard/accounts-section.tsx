@@ -17,6 +17,7 @@ import {
   fetchUserAccountsFromDb,
 } from "@/store/slices/mt5AccountSlice";
 import { useMT5WebSocket } from "@/hooks/useMT5WebSocket";
+import { KillSwitchToggle } from "./KillSwitchToggle";
 
 interface AccountsSectionProps {
   onOpenNewAccount: () => void;
@@ -90,8 +91,8 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
   // ✅ Webhook Integration: Replace polling with real-time WebSocket updates
   const activeAccountIds = accounts
     .filter(acc => !acc.archived)
-    .map(acc => parseInt(acc.accountId))
-    .filter(id => !isNaN(id));
+    .map(acc => acc.accountId)
+    .filter(Boolean);
 
   useMT5WebSocket(activeAccountIds);
 
@@ -194,7 +195,8 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
             Accounts
           </motion.h2>
         </AnimatePresence>
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-3 items-center flex-wrap justify-end">
+          <KillSwitchToggle />
           <Button
             onClick={onOpenNewAccount}
             className="relative gap-1 cursor-pointer font-semibold text-white rounded-[15px] px-4 sm:px-6 py-2 sm:py-2.5 text-xs leading-6 h-9 sm:h-11 

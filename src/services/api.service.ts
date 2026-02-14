@@ -814,6 +814,12 @@ const mt5Service = {
     }
   },
 
+  /** Toggle Kill Switch for all accounts */
+  toggleKillSwitch: async (active: boolean) => {
+    const response = await api.post('/api/mt5/kill-switch', { active });
+    return response.data;
+  },
+
   cancelAll,
 };
 
