@@ -800,6 +800,20 @@ const mt5Service = {
     return normalizeOk(response.data);
   },
 
+  /** Sync account balances with DB (Periodic pulse from WebSocket) */
+  syncAccountBalances: async (accounts: any[], opts?: { signal?: AbortSignal }) => {
+    try {
+      const response = await api.post('/api/mt5/sync-balances', { accounts }, {
+        signal: opts?.signal,
+        timeout: 10000,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('❌ [API] Error syncing account balances:', error);
+      throw error;
+    }
+  },
+
   cancelAll,
 };
 

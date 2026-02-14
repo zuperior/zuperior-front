@@ -15,8 +15,8 @@ import { TpAccountSnapshot } from "@/types/user-details";
 import { MT5Account } from "@/store/slices/mt5AccountSlice";
 import {
   fetchUserAccountsFromDb,
-  fetchAllAccountsWithBalance,
 } from "@/store/slices/mt5AccountSlice";
+import { useMT5WebSocket } from "@/hooks/useMT5WebSocket";
 
 interface AccountsSectionProps {
   onOpenNewAccount: () => void;
@@ -87,147 +87,13 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
     "live"
   );
 
-  const balancePollIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const profilesFetchedRef = useRef<Set<string>>(new Set());
-  const detailsFetchedRef = useRef<Set<string>>(new Set());
+  // ✅ Webhook Integration: Replace polling with real-time WebSocket updates
+  const activeAccountIds = accounts
+    .filter(acc => !acc.archived)
+    .map(acc => parseInt(acc.accountId))
+    .filter(id => !isNaN(id));
 
-  // Fetch accounts from DB once on mount (fetch all, including archived for Archive tab)
-  useEffect(() => {
-    dispatch(fetchUserAccountsFromDb({ includeArchived: true }) as any);
-  }, [dispatch]);
-
-  // Listen for unarchive events to switch tabs
-  useEffect(() => {
-    const handleUnarchive = (event: CustomEvent<UnarchiveEventDetail>) => {
-      const { accountType } = event.detail;
-      // Switch to the appropriate tab based on account type
-      if (accountType?.toLowerCase() === 'demo') {
-        setActiveTab('demo');
-      } else {
-        setActiveTab('live');
-      }
-    };
-
-    window.addEventListener(UNARCHIVE_EVENT as any, handleUnarchive as EventListener);
-    return () => {
-      window.removeEventListener(UNARCHIVE_EVENT as any, handleUnarchive as EventListener);
-    };
-  }, []);
-
-  // ✅ AUTO-REFRESH: Fetch all account balances every 10 seconds to keep balances up-to-date
-  // Uses optimized endpoint that fetches all balances in parallel (fast & accurate)
-  const accountsRef = useRef(accounts);
-  const dispatchRef = useRef(dispatch);
-  const hasInitializedRef = useRef(false);
-
-  // Update refs when values change (but don't restart polling)
-  useEffect(() => {
-    accountsRef.current = accounts;
-    dispatchRef.current = dispatch;
-  }, [accounts, dispatch]);
-
-  useEffect(() => {
-    // Skip if already initialized and interval is running - don't restart polling
-    if (hasInitializedRef.current && balancePollIntervalRef.current) {
-      return;
-    }
-
-    // Only start polling when accounts first become available
-    if (accounts.length === 0) {
-      // Clear interval if no accounts and interval exists
-      if (balancePollIntervalRef.current) {
-        clearInterval(balancePollIntervalRef.current);
-        balancePollIntervalRef.current = null;
-        hasInitializedRef.current = false;
-      }
-      return;
-    }
-
-    // Mark as initialized to prevent restarting on subsequent account updates
-    hasInitializedRef.current = true;
-
-    // Clear any cached balance data from localStorage on first mount
-    if (typeof window !== 'undefined') {
-      try {
-        const persistRoot = localStorage.getItem('persist:root');
-        if (persistRoot) {
-          const parsed = JSON.parse(persistRoot);
-          if (parsed.mt5) {
-            const mt5Data = JSON.parse(parsed.mt5);
-            // Force clear accounts array from persisted data
-            if (mt5Data.accounts) {
-              mt5Data.accounts = [];
-              parsed.mt5 = JSON.stringify(mt5Data);
-              localStorage.setItem('persist:root', JSON.stringify(parsed));
-              console.log(`[AccountsSection] 🗑️ Cleared cached account balances from localStorage`);
-            }
-          }
-        }
-      } catch (e) {
-        console.warn(`[AccountsSection] ⚠️ Failed to clear cache:`, e);
-      }
-    }
-
-    // Function to fetch balances - uses ref to get latest accounts without restarting effect
-    const fetchBalances = () => {
-      const currentAccounts = accountsRef.current;
-      if (currentAccounts.length === 0) {
-        console.log(`[AccountsSection] ⏭️ Skipping balance refresh - no accounts`);
-        return;
-      }
-
-      console.log(`[AccountsSection] 🔄 Refreshing account balances (${currentAccounts.length} accounts) - ${new Date().toLocaleTimeString()}`);
-
-      // Dispatch the action - fire and forget style to ensure polling never stops
-      // The Redux reducer handles success/failure internally, and polling continues regardless
-      try {
-        dispatchRef.current(fetchAllAccountsWithBalance() as any);
-      } catch (error: any) {
-        // This should rarely happen, but if it does, log it and continue polling
-        console.warn(`[AccountsSection] ⚠️ Error dispatching balance fetch (will retry in 10s):`, error?.message || error);
-      }
-    };
-
-    // Fetch immediately on mount
-    fetchBalances();
-
-    // Set up polling every 30 seconds - this will continue until component unmounts
-    balancePollIntervalRef.current = setInterval(() => {
-      fetchBalances();
-    }, 30000); // 30 seconds
-
-    console.log(`[AccountsSection] ✅ Started automatic balance refresh every 30 seconds for ${accounts.length} accounts`);
-  }, [accounts.length]); // Check when accounts become available, but guard prevents restarting
-
-  // Cleanup on unmount only
-  useEffect(() => {
-    return () => {
-      if (balancePollIntervalRef.current) {
-        clearInterval(balancePollIntervalRef.current);
-        balancePollIntervalRef.current = null;
-        hasInitializedRef.current = false;
-        console.log(`[AccountsSection] 🛑 Stopped automatic balance refresh - component unmounting`);
-      }
-    };
-  }, []); // Only run cleanup on unmount
-
-  // Trigger immediate refresh when window gains focus or tab becomes visible
-  useEffect(() => {
-    const onFocus = () => {
-      try {
-        dispatchRef.current(fetchAllAccountsWithBalance() as any);
-      } catch (_) { }
-    };
-    const onVisibility = () => {
-      if (document.visibilityState === 'visible') onFocus();
-    };
-    window.addEventListener('focus', onFocus);
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => {
-      window.removeEventListener('focus', onFocus);
-      document.removeEventListener('visibilitychange', onVisibility);
-    };
-  }, []);
+  useMT5WebSocket(activeAccountIds);
 
   // DISABLED: Fetch ClientProfile - stopped per user request to prevent continuous API calls
   // useEffect(() => {

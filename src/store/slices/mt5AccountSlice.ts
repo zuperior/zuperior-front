@@ -46,17 +46,11 @@ export interface ClientProfileData {
 
 // Combined account data for display
 export interface MT5Account extends MT5AccountDB {
-  // ClientProfile fields (fetched once on render)
-  balance?: number;
-  equity?: number;
-  credit?: number;
-  margin?: number;
-  marginFree?: number;
-  marginLevel?: number;
+  // ClientProfile fields (fetched once on render or updated via WebSocket)
   server?: string;
   mtLogin?: number;
-  // Dynamic fields (updated every 200ms)
-  profit?: number;
+  marginUsed?: number;
+  freeMargin?: number;
   // Legacy fields for backward compatibility
   name?: string;
   group?: string;
@@ -553,7 +547,7 @@ export const fetchAllAccountsWithBalance = createAsyncThunk(
       if (error?.message === 'canceled' || error?.name === 'AbortError') {
         return rejectWithValue('Request canceled');
       }
-      
+
       // Enhanced error logging to capture all error details
       console.error(`[MT5] ❌ fetchAllAccountsWithBalance error:`, {
         error,
@@ -568,7 +562,7 @@ export const fetchAllAccountsWithBalance = createAsyncThunk(
         config: error?.config,
         request: error?.request
       });
-      
+
       // Try to extract meaningful error message
       let errorMessage = "Failed to fetch account balances";
       if (error?.response?.data?.message) {
@@ -584,7 +578,7 @@ export const fetchAllAccountsWithBalance = createAsyncThunk(
       } else if (error?.response?.status === 401) {
         errorMessage = "Authentication failed. Please log in again.";
       }
-      
+
       return rejectWithValue(errorMessage);
     }
   }
@@ -758,6 +752,33 @@ const mt5AccountSlice = createSlice({
       }
       // Reset throttling to allow immediate refresh
       state.lastAccountsFetchAt = null;
+    },
+    updateAccountFromWebSocket: (state, action: PayloadAction<{
+      accountId: string;
+      balance: number;
+      equity: number;
+      marginUsed: number;
+      freeMargin: number;
+      marginLevel: number;
+      currency: string;
+    }>) => {
+      const { accountId, ...update } = action.payload;
+      const account = state.accounts.find(acc => acc.accountId === String(accountId));
+      if (account) {
+        account.balance = update.balance;
+        account.equity = update.equity;
+        account.marginUsed = update.marginUsed;
+        account.freeMargin = update.freeMargin;
+        account.marginLevel = update.marginLevel;
+        account.currency = update.currency;
+
+        // Update total balance if this is a live account
+        if (account.accountType === 'Live') {
+          state.totalBalance = state.accounts
+            .filter(acc => acc.accountType === 'Live')
+            .reduce((sum, acc) => sum + (acc.equity || 0), 0);
+        }
+      }
     },
   },
   extraReducers: (builder) => {
@@ -933,12 +954,12 @@ const mt5AccountSlice = createSlice({
         // The backend endpoint /api/mt5/accounts-with-balance returns totalBalance calculated from DB equity values
         const oldTotalBalance = state.totalBalance;
         state.totalBalance = Number(totalBalance ?? 0);
-        
+
         // Also recalculate from equity values as a safety check (should match backend calculation)
         const calculatedTotal = state.accounts
           .filter((acc) => (acc.accountType || 'Live') === 'Live')
           .reduce((sum, acc) => sum + (acc.equity || 0), 0);
-        
+
         if (Math.abs(state.totalBalance - calculatedTotal) > 0.01) {
           console.warn(`[MT5] ⚠️ Total balance mismatch: API=${state.totalBalance}, Calculated=${calculatedTotal}. Using API value.`);
         } else {
@@ -1141,6 +1162,6 @@ const mt5AccountSlice = createSlice({
 // --------------------
 // Exports
 // --------------------
-export const { setSelectedAccount, clearError, updateAccountBalance, updateAccountName, updateAccountLeverage, resetForNewClient, addAccountOptimistically } =
+export const { setSelectedAccount, clearError, updateAccountBalance, updateAccountName, updateAccountLeverage, resetForNewClient, addAccountOptimistically, updateAccountFromWebSocket } =
   mt5AccountSlice.actions;
 export default mt5AccountSlice.reducer;
