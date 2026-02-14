@@ -993,7 +993,7 @@ const userService = {
   /** Get user profile */
   getProfile: async (opts?: { signal?: AbortSignal }) => {
     return singleFlight('user-profile', (signal) =>
-      api.get('/api/profile', { signal: opts?.signal ?? signal }).then(r => normalizeOk(r.data)),
+      api.get('/api/user/profile', { signal: opts?.signal ?? signal }).then(r => normalizeOk(r.data)),
       opts?.signal
     );
   },
