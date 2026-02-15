@@ -816,8 +816,28 @@ const mt5Service = {
 
   /** Toggle Kill Switch for all accounts */
   toggleKillSwitch: async (active: boolean) => {
-    const response = await api.post('/api/mt5/kill-switch', { active });
-    return response.data;
+    try {
+      const response = await api.post('/api/mt5/kill-switch', { active }, {
+        // Treat 400 as a valid response to prevent console errors
+        // The component will handle validation errors appropriately
+        validateStatus: (status) => status < 500,
+      });
+
+      // Check if response indicates success
+      if (response.status === 200 && response.data.success) {
+        return response.data;
+      } else {
+        // Validation error (400) - throw to be caught by component
+        throw {
+          response: {
+            status: response.status,
+            data: response.data,
+          },
+        };
+      }
+    } catch (error: any) {
+      throw error;
+    }
   },
 
   cancelAll,
