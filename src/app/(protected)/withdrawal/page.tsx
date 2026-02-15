@@ -165,7 +165,7 @@ export default function WithdrawalDepositPage() {
       return {
         processingTime: "1 - 3 business days",
         fee: "0 USD",
-        limits: "100 - 50,000 USD",
+        limits: "10 - 10,000 USD",
         recommended: false
       };
     }
