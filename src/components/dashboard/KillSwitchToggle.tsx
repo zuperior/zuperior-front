@@ -27,6 +27,9 @@ export function KillSwitchToggle() {
     const dispatch = useDispatch<any>();
     const [loading, setLoading] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
+
+    // Debug state to show raw error
+    const [lastError, setLastError] = useState<any>(null);
     const [showOpenPositionsError, setShowOpenPositionsError] = useState(false);
     const [openPositionsData, setOpenPositionsData] = useState<any[]>([]);
     const [timeRemaining, setTimeRemaining] = useState<string | null>(null);
@@ -139,6 +142,11 @@ export function KillSwitchToggle() {
                 if (errorData?.accountsWithOpenPositions && Array.isArray(errorData.accountsWithOpenPositions) && errorData.accountsWithOpenPositions.length > 0) {
                     console.log('[Kill Switch] Showing modal with account data:', errorData.accountsWithOpenPositions);
                     setOpenPositionsData(errorData.accountsWithOpenPositions);
+                } else if (errorData?.accountsWithOpenPositions) {
+                    // Handle case where it might be a single object or different structure
+                    console.log('[Kill Switch] Showing modal with non-array account data:', errorData.accountsWithOpenPositions);
+                    const data = Array.isArray(errorData.accountsWithOpenPositions) ? errorData.accountsWithOpenPositions : [errorData.accountsWithOpenPositions];
+                    setOpenPositionsData(data);
                 } else {
                     // Show modal with generic message if no account details
                     console.log('[Kill Switch] No account data, showing modal with generic info');
@@ -251,7 +259,12 @@ export function KillSwitchToggle() {
                             </DialogTitle>
                             <DialogDescription className="text-base text-muted-foreground/90 leading-relaxed pt-2">
                                 {openPositionsData[0]?.accountId === 'one or more accounts' ? (
-                                    <>You have <strong className="text-red-400">open positions</strong> on your trading accounts.</>
+                                    <>
+                                        You have <strong className="text-red-400">open positions</strong> on your trading accounts.
+                                        <span className="mt-4 p-2 bg-black/20 rounded text-xs font-mono break-all text-left block">
+                                            DEBUG: {JSON.stringify(lastError || {})}
+                                        </span>
+                                    </>
                                 ) : (
                                     <>You have <strong className="text-red-400">{openPositionsData.reduce((sum, acc) => sum + acc.openPositions, 0)} open position{openPositionsData.reduce((sum, acc) => sum + acc.openPositions, 0) > 1 ? 's' : ''}</strong> across the following account{openPositionsData.length > 1 ? 's' : ''}:</>
                                 )}

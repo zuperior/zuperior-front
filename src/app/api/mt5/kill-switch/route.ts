@@ -29,7 +29,8 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(
                 {
                     success: false,
-                    message: errorData.message || 'Failed to toggle kill switch'
+                    message: errorData.message || 'Failed to toggle kill switch',
+                    ...errorData
                 },
                 { status: response.status }
             );
