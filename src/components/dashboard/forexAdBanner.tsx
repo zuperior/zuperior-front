@@ -43,7 +43,7 @@ const ForexAdBanner = () => {
   };
 
   return (
-    <div className="relative w-full h-full rounded-[20px] overflow-hidden group/banner cursor-grab active:cursor-grabbing">
+    <div className="relative w-full h-[160px] md:h-full rounded-[20px] overflow-hidden group/banner cursor-grab active:cursor-grabbing">
       <AnimatePresence mode="wait">
         <motion.div
           key={currentSlide}
