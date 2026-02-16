@@ -211,9 +211,9 @@ export function KillSwitchToggle() {
                                 Activate Kill Switch?
                             </DialogTitle>
                             <DialogDescription className="text-base text-muted-foreground/90 leading-relaxed pt-2">
-                                This will disable trading on <strong className="text-foreground">all</strong> your accounts until <strong className="text-foreground">2:00 AM UTC</strong> tomorrow.
+                                This will disable trading on all your accounts for the current trading session.
                                 <br /><br />
-                                <span className="text-red-400/90 font-medium">It will automatically reactivate at 2:00 AM UTC</span>
+                                <span className="text-red-400/90 font-medium">It will automatically be enabled in the next trading session UTC+2 00:00.</span>
                             </DialogDescription>
                         </DialogHeader>
                         <DialogFooter className="flex gap-3 sm:justify-end border-t border-white/5 pt-6 mt-2">
