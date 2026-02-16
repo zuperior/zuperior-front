@@ -800,6 +800,46 @@ const mt5Service = {
     return normalizeOk(response.data);
   },
 
+  /** Sync account balances with DB (Periodic pulse from WebSocket) */
+  syncAccountBalances: async (accounts: any[], opts?: { signal?: AbortSignal }) => {
+    try {
+      const response = await api.post('/api/mt5/sync-balances', { accounts }, {
+        signal: opts?.signal,
+        timeout: 10000,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('❌ [API] Error syncing account balances:', error);
+      throw error;
+    }
+  },
+
+  /** Toggle Kill Switch for all accounts */
+  toggleKillSwitch: async (active: boolean) => {
+    try {
+      const response = await api.post('/api/mt5/kill-switch', { active }, {
+        // Treat 400 as a valid response to prevent console errors
+        // The component will handle validation errors appropriately
+        validateStatus: (status) => status < 500,
+      });
+
+      // Check if response indicates success
+      if (response.status === 200 && response.data.success) {
+        return response.data;
+      } else {
+        // Validation error (400) - throw to be caught by component
+        throw {
+          response: {
+            status: response.status,
+            data: response.data,
+          },
+        };
+      }
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
   cancelAll,
 };
 
@@ -966,6 +1006,14 @@ const userService = {
 
     return singleFlight('user-login-activity', (signal) =>
       api.get(url, { signal: opts?.signal ?? signal }).then(r => normalizeOk(r.data)),
+      opts?.signal
+    );
+  },
+
+  /** Get user profile */
+  getProfile: async (opts?: { signal?: AbortSignal }) => {
+    return singleFlight('user-profile', (signal) =>
+      api.get('/api/user/profile', { signal: opts?.signal ?? signal }).then(r => normalizeOk(r.data)),
       opts?.signal
     );
   },

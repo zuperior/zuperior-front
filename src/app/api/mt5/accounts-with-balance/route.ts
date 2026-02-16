@@ -22,15 +22,15 @@ export async function GET(request: NextRequest) {
     // Get cache-busting param from query string
     const { searchParams } = new URL(request.url);
     const cacheBuster = searchParams.get('_t') || Date.now().toString();
-    
+
     // Aggressive cache busting - multiple query params
     const cacheBuster2 = Date.now();
     const url = `${API_URL}/mt5/accounts-with-balance?_t=${cacheBuster}&_nocache=${cacheBuster2}&_fresh=${Date.now()}`;
-    
+
     console.log(`[Next.js API] 🚀 Fetching accounts with balance from: ${url}`);
     console.log(`[Next.js API] 🔍 API_URL: ${API_URL}`);
     console.log(`[Next.js API] 🔍 Full URL: ${url}`);
-    
+
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -49,25 +49,24 @@ export async function GET(request: NextRequest) {
     clearTimeout(timeout);
 
     if (!response || !response.ok) {
-      const errorData = response ? (await response.json().catch(() => ({}))) : {};
       const statusCode = response ? response.status : 503;
-      console.error(`[Next.js API] ❌ Backend error (${statusCode}):`, {
-        url,
-        status: statusCode,
-        errorData,
-        message: errorData.message || errorData.Message || (!response ? 'Backend unavailable' : 'Failed to fetch accounts with balance')
-      });
+      console.warn(`[Next.js API] ⚠️ Backend error (${statusCode}) for accounts-with-balance. Returning empty data to prevent UI blocking.`);
+
       return NextResponse.json(
         {
-          success: false,
-          message: errorData.message || errorData.Message || (!response ? 'Backend unavailable' : `Failed to fetch accounts with balance (${statusCode})`)
+          success: true,
+          data: {
+            accounts: [],
+            totalBalance: 0,
+            _error: `Backend error ${statusCode}` // Helpful for debugging but doesn't break UI
+          }
         },
-        { status: statusCode }
+        { status: 200 }
       );
     }
 
     const data = await response.json();
-    
+
     // Log the response to debug
     console.log(`[Next.js API] 📥 Accounts with balance response:`, {
       accountCount: data?.data?.accounts?.length || 0,
@@ -82,10 +81,10 @@ export async function GET(request: NextRequest) {
       message: error?.message,
       name: error?.name,
       code: error?.code,
-      url,
-      API_URL
+      requestUrl: request.url,
+      apiUrl: API_URL
     });
-    
+
     // If it's a 404, the backend route might not exist or server isn't running
     if (error?.message?.includes('404') || error?.code === 'ENOTFOUND' || error?.code === 'ECONNREFUSED') {
       console.error('❌ Backend server may not be running or route not found. Check:', {
@@ -94,7 +93,7 @@ export async function GET(request: NextRequest) {
         message: 'Ensure backend server is running on port 5000'
       });
     }
-    
+
     // Return empty accounts instead of 500 to prevent UI blocking
     return NextResponse.json(
       {

@@ -78,20 +78,20 @@ export default function WithdrawalDepositPage() {
         const r = await fetch('/api/withdrawal-payment-methods', { cache: 'no-store' });
         const j = await r.json();
         if (j?.ok && Array.isArray(j.methods)) {
-          const bankTransfer = j.methods.find((m: any) => 
-            m.method_key === 'bank_transfer' || 
+          const bankTransfer = j.methods.find((m: any) =>
+            m.method_key === 'bank_transfer' ||
             m.method_key === 'wire_transfer' ||
             (m.method_type === 'bank_transfer' && m.is_enabled)
           );
           if (bankTransfer?.icon_path) {
             // Use the icon_path from API, prepend admin backend URL if it's a relative path
             // Payment method images are served from admin backend (port 5003), not server (port 5000)
-            const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 
-                                   process.env.NEXT_PUBLIC_ADMIN_API_URL || 
-                                   'http://localhost:5003';
-            const iconPath = bankTransfer.icon_path.startsWith('http') 
-              ? bankTransfer.icon_path 
-              : bankTransfer.icon_path.startsWith('/') 
+            const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL ||
+              process.env.NEXT_PUBLIC_ADMIN_API_URL ||
+              'http://localhost:5003';
+            const iconPath = bankTransfer.icon_path.startsWith('http')
+              ? bankTransfer.icon_path
+              : bankTransfer.icon_path.startsWith('/')
                 ? `${adminBackendUrl}${bankTransfer.icon_path}`
                 : `${adminBackendUrl}/${bankTransfer.icon_path}`;
             console.log('[Withdrawal Page] Bank transfer icon path:', { icon_path: bankTransfer.icon_path, adminBackendUrl, iconPath });
@@ -151,29 +151,29 @@ export default function WithdrawalDepositPage() {
   const getPaymentMethodMetadata = (id: string, type: string) => {
     const normalizedId = (id || '').toUpperCase();
     const normalizedType = (type || '').toLowerCase();
-    
+
     if (normalizedId.includes('USDT') || normalizedId.includes('TRC20')) {
       return {
         processingTime: "Instant - 15 minutes",
-        fee: "1 USD",
+        fee: "0 USD",
         limits: "10 - 200,000 USD",
         recommended: true
       };
     }
-    
+
     if (normalizedType === 'bank_transfer' || normalizedId.includes('BANK')) {
       return {
         processingTime: "1 - 3 business days",
-        fee: "2.5%",
-        limits: "100 - 50,000 USD",
+        fee: "0 USD",
+        limits: "10 - 10,000 USD",
         recommended: false
       };
     }
-    
+
     // Default for others
     return {
       processingTime: "Instant",
-      fee: "0%",
+      fee: "0 USD",
       limits: "50 - 10,000 USD",
       recommended: false
     };
@@ -200,11 +200,10 @@ export default function WithdrawalDepositPage() {
               <Link
                 href={isUnverified ? "#" : "/transactions"}
                 className={`flex items-center justify-center gap-2 rounded-[10px] py-3 px-3 text-[16px] leading-[14px] w-auto border-2 border-gray-300 dark:border-[#1D1825] bg-white text-black dark:bg-gradient-to-r from-[#FFFFFF] dark:from-[#110F17] to-[#f4e7f6] dark:to-[#1E1429] dark:text-white/75
-                ${
-                  isUnverified
+                ${isUnverified
                     ? "opacity-50 cursor-not-allowed"
                     : "hover:brightness-95 cursor-pointer"
-                }`}>
+                  }`}>
                 Pending Withdrawals
                 {isUnverified && <Lock className="w-5 h-5 dark:text-white" />}
               </Link>
@@ -394,7 +393,7 @@ function PaymentTile({
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     const target = e.target as HTMLImageElement;
     console.error(`[PaymentTile] Failed to load image: ${imageSrc}`);
-    
+
     setImageError(true);
     target.style.display = 'none';
   };
@@ -402,9 +401,8 @@ function PaymentTile({
   return (
     <div
       onClick={unverified ? undefined : onOpenNewAccount}
-      className={`group relative flex flex-col justify-between rounded-xl bg-white dark:bg-[#0d0414] border border-gray-200 dark:border-gray-800 p-6 cursor-pointer transition-all hover:shadow-lg hover:border-purple-500/50 dark:hover:border-purple-500/50 ${
-        unverified ? "cursor-not-allowed opacity-70" : ""
-      }`}
+      className={`group relative flex flex-col justify-between rounded-xl bg-white dark:bg-[#0d0414] border border-gray-200 dark:border-gray-800 p-6 cursor-pointer transition-all hover:shadow-lg hover:border-purple-500/50 dark:hover:border-purple-500/50 ${unverified ? "cursor-not-allowed opacity-70" : ""
+        }`}
     >
       <div className="flex justify-between items-start mb-6">
         <div className="flex items-center gap-3">
@@ -478,11 +476,10 @@ function TransferAmountCard({
       onClick={unverified ? undefined : onOpenNewAccount}
       className={`group relative rounded-lg bg-[#fbfafd] 
                  dark:bg-[#0d0414] p-6 border dark:border-[#1D1825] 
-                 border-gray-300 overflow-hidden ${
-                   unverified
-                     ? "cursor-not-allowed opacity-50"
-                     : "cursor-pointer"
-                 }`}>
+                 border-gray-300 overflow-hidden ${unverified
+          ? "cursor-not-allowed opacity-50"
+          : "cursor-pointer"
+        }`}>
       {unverified && (
         <div className="absolute right-5 top-5 flex items-center justify-center z-10 rounded-[15px]">
           <div className="flex flex-col items-center text-white">
@@ -492,9 +489,9 @@ function TransferAmountCard({
       )}
 
       <div className="flex items-start gap-4">
-        <Image 
-          className="h-12 w-12 md:h-16 md:w-16 shrink-0" 
-          src={icon} 
+        <Image
+          className="h-12 w-12 md:h-16 md:w-16 shrink-0"
+          src={icon}
           alt={name}
           width={64}
           height={64}

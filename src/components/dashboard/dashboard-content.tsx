@@ -35,34 +35,9 @@ export function DashboardContent() {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const { fetchAllData, balance: totalBalance, isLoading, hasData, isAuthenticated } = useFetchUserData();
 
-  //auto refetch every 10 seconds using optimized endpoint
+  // Initial data fetch
   useEffect(() => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-
     fetchAllData();
-
-    let timeoutId: NodeJS.Timeout;
-    let isMounted = true;
-
-    const poll = async () => {
-      if (!isMounted) return;
-
-      // Fetch data and wait for it to complete
-      await fetchAllData();
-
-      // Schedule next poll only after previous one completes
-      if (isMounted) {
-        timeoutId = setTimeout(poll, 500);
-      }
-    };
-
-    // Start polling
-    poll();
-
-    return () => {
-      isMounted = false;
-      clearTimeout(timeoutId);
-    };
   }, [fetchAllData, isAuthenticated]);
 
   // Log current API URL for debugging
