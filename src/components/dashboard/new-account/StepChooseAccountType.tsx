@@ -144,8 +144,8 @@ export const StepChooseAccountType: React.FC<StepChooseAccountTypeProps> = ({
                 if (title === "Startup") {
                   overrides = {
                     minDeposit: 10,
-                    spread: "9 Pips",
-                    leverage: 200,
+                    spread: "0.9 Pips",
+                    leverage: 2000,
                     commission: "$0",
                     spreadLabel: "Medium Spreads",
                     commissionLabel: "Commissions"
@@ -153,8 +153,8 @@ export const StepChooseAccountType: React.FC<StepChooseAccountTypeProps> = ({
                 } else if (title === "Professional") {
                   overrides = {
                     minDeposit: 1000,
-                    spread: "5 Pips",
-                    leverage: 200,
+                    spread: "0.5 Pips",
+                    leverage: 2000,
                     commission: "$0",
                     spreadLabel: "Medium Spreads",
                     commissionLabel: "Commissions"
