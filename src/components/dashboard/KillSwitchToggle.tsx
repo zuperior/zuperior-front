@@ -179,8 +179,8 @@ export function KillSwitchToggle() {
                     <TooltipContent side="bottom" className="max-w-[250px] bg-popover text-popover-foreground border-border">
                         <p className="text-xs font-medium leading-relaxed">
                             {isActive
-                                ? "It will automatically reactivate at 00:00 UTC"
-                                : "By enabling this, the trading functionality of all your accounts will be disabled until 00:00 UTC tomorrow."}
+                                ? "Trading accounts will be enabled at UTC+2 00:00 hrs"
+                                : "By enabling this, the trading functionality of all your accounts will be disabled until next trading session UTC +2 00:00 hrs"}
                         </p>
                     </TooltipContent>
                 </Tooltip>
@@ -221,7 +221,7 @@ export function KillSwitchToggle() {
                             <DialogDescription className="text-base text-muted-foreground/90 leading-relaxed pt-2">
                                 This will disable trading on all your accounts for the current trading session.
                                 <br /><br />
-                                <span className="text-red-400/90 font-medium">It will automatically be enabled in the next trading session 00:00 UTC.</span>
+                                <span className="text-red-400/90 font-medium">It will automatically be enabled in the next trading session UTC+2 00:00 hrs.</span>
                             </DialogDescription>
                         </DialogHeader>
                         <DialogFooter className="flex gap-3 sm:justify-end border-t border-white/5 pt-6 mt-2">
