@@ -127,9 +127,10 @@ const AccountDetails = ({
   const availableForWithdrawal = equity;
 
   const equityFormatted = `${equity.toFixed(2)}`;
-  // Header should display Wallet Balance (actual account balance), not Equity
-  const headerBalance = `$${bal.toFixed(2)}`;
-  const actualBalance = `$${bal.toFixed(2)}`;
+  // Header should display Equity (Balance + P/L) for real-time visibility, as requested by user
+  const headerBalance = `$${equity.toFixed(2)}`;
+  const actualBalance = `$${equity.toFixed(2)}`;
+  const walletBalance = `$${bal.toFixed(2)}`; // Kept for reference if needed elsewhere
   const freeMargin = `${parseFloat(accountDetails.margin_free || "0").toFixed(2)}`;
   const credit = `${parseFloat(accountDetails.credit || "0").toFixed(2)}`;
   const leverage = `1:${accountDetails.leverage || 1000}`;

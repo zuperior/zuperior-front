@@ -704,11 +704,11 @@ const mt5AccountSlice = createSlice({
       if (account) {
         account.balance = action.payload.balance;
         account.equity = action.payload.equity;
-        // Calculate total balance from Live accounts only (sum of balances, not equity)
+        // Calculate total balance from Live accounts only (sum of equities, not balances)
         state.totalBalance = state.accounts
           .filter((acc) => (acc.accountType || 'Live') === 'Live')
           .reduce(
-            (sum, acc) => sum + (acc.balance || 0),
+            (sum, acc) => sum + (acc.equity || 0),
             0
           );
       }
@@ -744,7 +744,7 @@ const mt5AccountSlice = createSlice({
         state.accounts.push(action.payload);
         // Only add to total balance if it's a Live account
         if ((action.payload.accountType || 'Live') === 'Live') {
-          state.totalBalance += (action.payload.balance || 0);
+          state.totalBalance += (action.payload.equity || 0);
           console.log('🚀 Live account added optimistically:', action.payload.accountId);
         } else {
           console.log('🚀 Demo/Non-Live account added (not included in balance):', action.payload.accountId);
@@ -776,7 +776,7 @@ const mt5AccountSlice = createSlice({
         if (account.accountType === 'Live') {
           state.totalBalance = state.accounts
             .filter(acc => acc.accountType === 'Live')
-            .reduce((sum, acc) => sum + (acc.balance || 0), 0);
+            .reduce((sum, acc) => sum + (acc.equity || 0), 0);
         }
       }
     },
@@ -884,7 +884,7 @@ const mt5AccountSlice = createSlice({
           // Recalculate total balance
           state.totalBalance = state.accounts
             .filter((acc) => (acc.accountType || 'Live') === 'Live')
-            .reduce((sum, acc) => sum + (acc.balance || 0), 0);
+            .reduce((sum, acc) => sum + (acc.equity || 0), 0);
         }
       })
 
@@ -899,7 +899,7 @@ const mt5AccountSlice = createSlice({
           // Recalculate total balance
           state.totalBalance = state.accounts
             .filter((acc) => (acc.accountType || 'Live') === 'Live')
-            .reduce((sum, acc) => sum + (acc.balance || 0), 0);
+            .reduce((sum, acc) => sum + (acc.equity || 0), 0);
         }
       })
 
@@ -955,15 +955,15 @@ const mt5AccountSlice = createSlice({
         const oldTotalBalance = state.totalBalance;
         state.totalBalance = Number(totalBalance ?? 0);
 
-        // Also recalculate from balance values as a safety check (should match backend calculation)
+        // Also recalculate from equity values as a safety check (should match backend calculation)
         const calculatedTotal = state.accounts
           .filter((acc) => (acc.accountType || 'Live') === 'Live')
-          .reduce((sum, acc) => sum + (acc.balance || 0), 0);
+          .reduce((sum, acc) => sum + (acc.equity || 0), 0);
 
         if (Math.abs(state.totalBalance - calculatedTotal) > 0.01) {
           console.warn(`[MT5] ⚠️ Total balance mismatch: API=${state.totalBalance}, Calculated=${calculatedTotal}. Using API value.`);
         } else {
-          console.log(`[MT5] ✅ Total balance verified: $${state.totalBalance} (from DB balance values)`);
+          console.log(`[MT5] ✅ Total balance verified: $${state.totalBalance} (from DB equity values)`);
         }
 
         console.log(`[MT5] ✅ Updated balances for ${accountsWithBalance.length} accounts. Total: ${oldTotalBalance} → ${state.totalBalance}`);
@@ -1000,7 +1000,7 @@ const mt5AccountSlice = createSlice({
           // Recalculate total balance from Live accounts only
           state.totalBalance = state.accounts
             .filter((acc) => (acc.accountType || 'Live') === 'Live')
-            .reduce((sum, acc) => sum + (acc.balance || 0), 0);
+            .reduce((sum, acc) => sum + (acc.equity || 0), 0);
         } else {
           console.warn(`[MT5] ⚠️ Account ${details.accountId} not found in state. Accounts:`, state.accounts.map(a => a.accountId));
         }
@@ -1041,7 +1041,7 @@ const mt5AccountSlice = createSlice({
         // Calculate total balance from Live accounts only
         state.totalBalance = state.accounts
           .filter((acc) => (acc.accountType || 'Live') === 'Live')
-          .reduce((sum, acc) => sum + (acc.balance || 0), 0);
+          .reduce((sum, acc) => sum + (acc.equity || 0), 0);
         if (typeof window !== 'undefined') {
           state.ownerClientId = localStorage.getItem('clientId');
         }
@@ -1147,7 +1147,7 @@ const mt5AccountSlice = createSlice({
           state.totalBalance = state.accounts
             .filter((acc) => (acc.accountType || 'Live') === 'Live')
             .reduce(
-              (sum, acc) => sum + (acc.balance || 0),
+              (sum, acc) => sum + (acc.equity || 0),
               0
             );
         }
