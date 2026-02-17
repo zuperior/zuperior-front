@@ -508,7 +508,13 @@ const AuthForm = () => {
       }
 
       toast.success("Welcome back! You've successfully logged in.");
-      router.push("/");
+
+      // Add small delay to ensure localStorage is fully written and token is ready
+      // This prevents the "stuck on login" issue where the protected route guard
+      // doesn't see the token immediately after redirect
+      setTimeout(() => {
+        router.replace("/");
+      }, 200);
     } catch (error: any) {
       setShowLoginLoader(false);
       const errorMessage = error.response?.data?.message || "Login failed. Please check your credentials.";
@@ -588,7 +594,11 @@ const AuthForm = () => {
       }
 
       toast.success("Welcome back! You've successfully logged in.");
-      router.push("/");
+
+      // Add small delay to ensure localStorage is fully written and token is ready
+      setTimeout(() => {
+        router.replace("/");
+      }, 200);
     } catch (error: any) {
       setShowLoginLoader(false);
       const errorMessage = error.message || "Verification failed. Please try again.";
