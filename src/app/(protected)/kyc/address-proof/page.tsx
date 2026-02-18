@@ -55,7 +55,7 @@ export default function AddressVerificationPage() {
         const kycStatus = await getKycStatus(true); // Force refresh
         if (kycStatus.success && kycStatus.data) {
           const data = kycStatus.data;
-          
+
           // Update verification status based on actual database state
           // For address proof: if address is verified, show success
           // IMPORTANT: Once verified or declined, never change it back
@@ -88,7 +88,7 @@ export default function AddressVerificationPage() {
             // ONLY if not already in a final state
             setVerificationStatus("");
           }
-          
+
           console.log("📊 Loaded KYC status from database:", {
             isAddressVerified: data.isAddressVerified,
             verificationStatus: data.verificationStatus,
@@ -110,17 +110,17 @@ export default function AddressVerificationPage() {
         if (isFinalStateRef.current) {
           return;
         }
-        
+
         try {
           const kycStatus = await getKycStatus(true); // Force refresh
           if (kycStatus.success && kycStatus.data) {
             const data = kycStatus.data;
-            
+
             // NEVER override verified or declined status - these are final states
             if (isFinalStateRef.current) {
               return;
             }
-            
+
             // Update verification status based on actual database state
             // For address proof: if address is verified, show success
             if (data.isAddressVerified) {
@@ -132,7 +132,7 @@ export default function AddressVerificationPage() {
                 console.log("✅ Address is verified - showing success");
               }
               return; // Stop checking if already verified
-            } else if (data.verificationStatus === 'Declined') {
+            } else if (data.verificationStatus === 'Declined' || data.verificationStatus === 'Cancelled') {
               if (!isFinalStateRef.current) {
                 setVerificationStatus("declined");
                 isFinalStateRef.current = true; // Mark as final state
@@ -162,10 +162,10 @@ export default function AddressVerificationPage() {
           console.error("⚠️ Failed to check KYC status:", error);
         }
       };
-      
+
       // Check immediately
       checkStatus();
-      
+
       // Then check every 10 seconds while on step 3, but stop if we reach final state
       const interval = setInterval(() => {
         // Stop polling if we're in a final state
@@ -185,12 +185,12 @@ export default function AddressVerificationPage() {
     if (step === 3 && verificationStatus === "pending" && verificationReference && !isFinalStateRef.current) {
       console.log("📊 Starting Shufti Pro status polling for address verification...");
       console.log("🔗 Reference:", verificationReference);
-      
+
       // Poll every 10 seconds until accepted or declined
       let pollCount = 0;
       const maxPolls = 30; // 30 polls * 10 seconds = 5 minutes
       let invalidReferenceCount = 0;
-      
+
       const pollInterval = setInterval(async () => {
         // Double-check we're still in pending state before polling
         // If status changed to verified/declined, stop immediately
@@ -199,20 +199,20 @@ export default function AddressVerificationPage() {
           clearInterval(pollInterval);
           return;
         }
-        
+
         pollCount++;
-        
+
         try {
           // Call Shufti Pro API directly to get real-time status
           console.log(`🔍 Poll ${pollCount}/${maxPolls} - Checking Shufti Pro API...`);
           const shuftiResponse = await checkShuftiStatus(verificationReference);
-          
+
           if (shuftiResponse.success && shuftiResponse.data) {
             const event = shuftiResponse.data.event;
             const isAddress = shuftiResponse.data.isAddress;
-            
+
             console.log(`📊 Poll ${pollCount}/${maxPolls} - Shufti Event: ${event}, IsAddress: ${isAddress}`);
-            
+
             // Check if verification is complete
             if (event === "verification.accepted") {
               // ✅ Shufti accepted - show verified (ONLY if not already in final state)
@@ -220,7 +220,7 @@ export default function AddressVerificationPage() {
                 // Stop polling immediately
                 clearInterval(pollInterval);
                 isFinalStateRef.current = true; // Mark as final state
-                
+
                 // Update database first
                 try {
                   console.log("💾 Saving verification status to database...");
@@ -233,11 +233,11 @@ export default function AddressVerificationPage() {
                   console.error("⚠️ Failed to save status to database:", error);
                   // Continue anyway - webhook might update it
                 }
-                
+
                 // Update UI state
                 setVerificationStatus("verified");
                 dispatch(setAddressVerified(true));
-                
+
                 // Clear cache and refresh status from database
                 clearKycCache();
                 try {
@@ -248,20 +248,20 @@ export default function AddressVerificationPage() {
                 } catch (error) {
                   console.error("⚠️ Failed to refresh status:", error);
                 }
-                
+
                 toast.success("Address verification completed successfully!");
                 console.log("✅ Verification accepted! Stopped polling and saved to database.");
               }
-              
+
             } else if (event === "verification.declined") {
               // ❌ Shufti declined - show declined (ONLY if not already verified)
               if (!isFinalStateRef.current) {
                 // Stop polling immediately
                 clearInterval(pollInterval);
                 isFinalStateRef.current = true; // Mark as final state
-                
+
                 const reason = shuftiResponse.data.declined_reason || "Verification was declined";
-                
+
                 // Update database first
                 try {
                   console.log("💾 Saving declined status to database...");
@@ -274,11 +274,11 @@ export default function AddressVerificationPage() {
                   console.error("⚠️ Failed to save declined status to database:", error);
                   // Continue anyway - webhook might update it
                 }
-                
+
                 // Update UI state
                 setVerificationStatus("declined");
                 setDeclinedReason(reason);
-                
+
                 // Clear cache and refresh status from database
                 clearKycCache();
                 try {
@@ -293,11 +293,11 @@ export default function AddressVerificationPage() {
                 } catch (error) {
                   console.error("⚠️ Failed to refresh status:", error);
                 }
-                
+
                 toast.error("Address verification was declined. Please try again.");
                 console.log("❌ Verification declined! Stopped polling and saved to database.");
               }
-              
+
             } else if (event === "request.pending" || event === "request.received") {
               // ⏳ Still pending - continue polling (only if still in pending state)
               if (!isFinalStateRef.current) {
@@ -308,7 +308,21 @@ export default function AddressVerificationPage() {
                 // Status changed, stop polling
                 clearInterval(pollInterval);
               }
-              
+            } else if (event === "request.invalid" || event === "request.timeout" || event === "request.unauthorized" || event === "request.expired") {
+              // ❌ Terminal error event - stop polling and allow retry
+              if (!isFinalStateRef.current) {
+                clearInterval(pollInterval);
+                isFinalStateRef.current = true;
+
+                const errorMsg = event === "request.invalid" ? "Invalid verification request. Please check your document and try again." :
+                  event === "request.timeout" ? "Verification request timed out. Please try again." :
+                    "Verification request failed. Please try again.";
+
+                setVerificationStatus("declined");
+                setDeclinedReason(errorMsg);
+                toast.error(errorMsg);
+                console.log(`❌ Terminal Shufti event: ${event}. Stopped polling.`);
+              }
             } else {
               // 🤷 Unknown event - continue polling but log it (only if still pending)
               if (!isFinalStateRef.current) {
@@ -320,28 +334,28 @@ export default function AddressVerificationPage() {
           }
         } catch (error: any) {
           console.error("⚠️ Error polling Shufti status:", error);
-          
+
           // Stop polling if we're no longer in pending state
           if (isFinalStateRef.current) {
             clearInterval(pollInterval);
             return;
           }
-          
+
           // Check if error is "invalid reference"
           const errorData = error?.response?.data;
-          const isInvalidReference = 
+          const isInvalidReference =
             errorData?.error?.key === 'reference' ||
             errorData?.error?.message?.includes('invalid') ||
             errorData?.event === 'request.invalid';
-          
+
           if (isInvalidReference) {
             invalidReferenceCount++;
             console.warn(`⚠️ Invalid reference detected (${invalidReferenceCount}/3)`);
-            
+
             // If we get invalid reference 3 times in a row, the submission failed
             if (invalidReferenceCount >= 3) {
               console.error("❌ Reference is invalid. The initial submission likely failed.");
-              
+
               // Show error and allow user to retry (only if not already verified)
               if (!isFinalStateRef.current) {
                 setDeclinedReason("Verification submission failed. Please try again.");
@@ -354,7 +368,7 @@ export default function AddressVerificationPage() {
           }
           // Don't stop polling on other errors - Shufti might be temporarily unavailable
         }
-        
+
         // Stop polling after max attempts
         if (pollCount >= maxPolls) {
           console.log("⏱️ Status polling timeout - verification still pending after 5 minutes");
@@ -362,7 +376,7 @@ export default function AddressVerificationPage() {
           clearInterval(pollInterval);
         }
       }, 10000); // Poll every 10 seconds
-      
+
       // Cleanup interval on unmount or when status changes
       return () => {
         console.log("🛑 Stopping Shufti Pro status polling");
@@ -402,9 +416,9 @@ export default function AddressVerificationPage() {
       // Backend already stores the addressReference during submission via submitAddress
       // Status updates will come via webhook from Shufti
       // Only update UI status based on Shufti response event
-      
+
       const reference = addressVerificationResult.reference;
-      
+
       if (!reference) {
         console.error("❌ No reference returned from address verification");
         setVerificationStatus("pending"); // Changed from "declined" to "pending"
@@ -419,11 +433,11 @@ export default function AddressVerificationPage() {
       // Handle different Shufti verification events
       // Reference: https://docs.shuftipro.com/on-premise/api/status-codes
       console.log(`📊 Shufti Event Received: ${addressVerificationResult.event}`);
-      
+
       if (addressVerificationResult.event === "verification.accepted") {
         // ✅ Shufti accepted - verification successful
         isFinalStateRef.current = true; // Mark as final state
-        
+
         // Update database first
         try {
           console.log("💾 Saving verification status to database...");
@@ -436,11 +450,11 @@ export default function AddressVerificationPage() {
           console.error("⚠️ Failed to save status to database:", error);
           // Continue anyway - webhook might update it
         }
-        
+
         // Update UI state
         setVerificationStatus("verified");
         dispatch(setAddressVerified(true));
-        
+
         // Clear cache and refresh status from database
         clearKycCache();
         try {
@@ -451,13 +465,13 @@ export default function AddressVerificationPage() {
         } catch (error) {
           console.error("⚠️ Failed to refresh status:", error);
         }
-        
+
         toast.success("Address verification completed successfully!");
       } else if (addressVerificationResult.event === "verification.declined") {
         // ❌ Shufti explicitly declined - show as declined
         isFinalStateRef.current = true; // Mark as final state
         const reason = addressVerificationResult?.declined_reason || "Please check your document and try again.";
-        
+
         // Update database first
         try {
           console.log("💾 Saving declined status to database...");
@@ -470,11 +484,11 @@ export default function AddressVerificationPage() {
           console.error("⚠️ Failed to save declined status to database:", error);
           // Continue anyway - webhook might update it
         }
-        
+
         // Update UI state
         setVerificationStatus("declined");
         setDeclinedReason(reason);
-        
+
         // Clear cache and refresh status from database
         clearKycCache();
         try {
@@ -489,7 +503,7 @@ export default function AddressVerificationPage() {
         } catch (error) {
           console.error("⚠️ Failed to refresh status:", error);
         }
-        
+
         toast.error(`Address verification was declined: ${reason}`);
       } else if (addressVerificationResult.event === "request.pending" || addressVerificationResult.event === "request.received") {
         // ⏳ Verification in progress - keep polling, DO NOT show as declined!
