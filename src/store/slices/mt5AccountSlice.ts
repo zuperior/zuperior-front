@@ -26,6 +26,8 @@ export interface MT5AccountDB {
   marginLevel?: number;
   currency?: string;
   lastSyncedAt?: string;
+  killSwitchActive?: boolean;
+  killSwitchUntil?: string | null;
 }
 
 // ClientProfile data from MT5 API
@@ -536,6 +538,8 @@ export const fetchAllAccountsWithBalance = createAsyncThunk(
         marginFree: Number(acc.marginFree ?? 0),
         marginLevel: Number(acc.marginLevel ?? 0),
         leverage: Number(acc.leverage ?? 0),
+        killSwitchActive: Boolean(acc.killSwitchActive ?? false),
+        killSwitchUntil: acc.killSwitchUntil ?? null,
       }));
 
       return {
