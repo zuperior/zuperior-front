@@ -31,24 +31,24 @@ export default function VerificationInProgressStep({
       <Card className="border-0 bg-[#FFFFFF] dark:bg-[#01040D] p-8 dark:text-[#FFFFFF] text-[#000000] max-w-md">
         <div className="space-y-6 text-center flex flex-col items-center">
           <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              controls={false}
-              className="rounded-md object-contain z-[9999] relative h-24 w-24"
-              preload="auto"
-            >
-              <source src="/logo.mp4" type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
+            autoPlay
+            loop
+            muted
+            playsInline
+            controls={false}
+            className="rounded-md object-contain z-[9999] relative h-24 w-24"
+            preload="auto"
+          >
+            <source src="/logo.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
 
           <div>
             <h2 className="text-xl font-bold">
               Verifying your Identity...
             </h2>
             <p className="mt-4 text-gray-600 dark:text-gray-300 text-center italic">
-              We are verifying your identity—this will only take 30 to 60 secs. 
+              We are verifying your identity—this will only take 30 to 60 secs.
               Please wait while we process your information. Almost there! ⏳
             </p>
           </div>
@@ -72,7 +72,9 @@ export default function VerificationInProgressStep({
       </Card>
     </div>
   );
-  if (verificationStatus === "verified")
+  const status = verificationStatus?.toLowerCase();
+
+  if (status === "verified" || status === "accepted")
     return (
       <div className="flex flex-col items-center justify-center min-h-[40vh] p-8 text-center space-y-6">
         <div className="w-16 h-16 flex items-center justify-center rounded-full bg-green-500/20 border border-green-500/40">
@@ -111,7 +113,7 @@ export default function VerificationInProgressStep({
     );
 
   // Show pending state - checking status
-  if (verificationStatus === "pending")
+  if (status === "pending" || !status)
     return (
       <div className="flex flex-col items-center justify-center min-h-[40vh] p-8 text-center space-y-6">
         <video
@@ -132,7 +134,7 @@ export default function VerificationInProgressStep({
         </h2>
 
         <p className="text-gray-400 max-w-md">
-          We're checking your verification status every 10 seconds. 
+          We're checking your verification status every 10 seconds.
           This typically takes 30-60 seconds. Please wait... ⏳
         </p>
 
@@ -152,71 +154,71 @@ export default function VerificationInProgressStep({
     );
 
   // Only show declined if explicitly declined
-  if (verificationStatus === "declined")
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center space-y-6 max-w-lg mx-auto">
-      <div className="w-16 h-16 flex items-center justify-center rounded-full bg-purple-900/40 border border-purple-700/40">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-8 w-8 text-red-400"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"
-          />
-        </svg>
-      </div>
-
-      <h2 className="text-2xl font-bold text-red-400">
-        Verification Declined
-      </h2>
-
-      <p className="text-gray-400 max-w-md">
-        We couldnt verify your address at this time. This usually happens due to
-        missing or unclear documents.
-      </p>
-
-      {declinedReason && (
-        <div className="bg-purple-900/30 border border-purple-700/40 rounded-lg p-4 w-full text-left">
-          <p className="text-sm text-red-300 font-medium">
-            <span className="font-semibold">Reason:</span> {declinedReason}
-          </p>
+  if (status === "declined" || status === "rejected")
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center space-y-6 max-w-lg mx-auto">
+        <div className="w-16 h-16 flex items-center justify-center rounded-full bg-purple-900/40 border border-purple-700/40">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-8 w-8 text-red-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"
+            />
+          </svg>
         </div>
-      )}
 
-      <div className="flex flex-col sm:flex-row gap-3 w-full justify-center mt-4">
-        <Button
-          variant="default"
-          className="px-6 py-2 font-medium rounded-lg bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] dark:text-[#FFFFFF] text-[#000000] cursor-pointer"
-          onClick={onBack}
-        >
-          Try Again
-        </Button>
-        <Button
-          variant="outline"
-          className="px-6 py-2 font-medium rounded-lg border border-purple-500/50 text-purple-400 hover:bg-purple-900/30 transition"
-        >
-          Contact Support
-        </Button>
-      </div>
+        <h2 className="text-2xl font-bold text-red-400">
+          Verification Declined
+        </h2>
 
-      {/* Help Link */}
-      <p className="text-xs text-gray-500 mt-4">
-        Need help? Check our{" "}
-        <a
-          href="/support"
-          className="underline text-purple-400 hover:text-purple-300 transition"
-        >
-          KYC guidelines
-        </a>{" "}
-        before retrying.
-      </p>
-    </div>);
+        <p className="text-gray-400 max-w-md">
+          We couldnt verify your address at this time. This usually happens due to
+          missing or unclear documents.
+        </p>
+
+        {declinedReason && (
+          <div className="bg-purple-900/30 border border-purple-700/40 rounded-lg p-4 w-full text-left">
+            <p className="text-sm text-red-300 font-medium">
+              <span className="font-semibold">Reason:</span> {declinedReason}
+            </p>
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row gap-3 w-full justify-center mt-4">
+          <Button
+            variant="default"
+            className="px-6 py-2 font-medium rounded-lg bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] dark:text-[#FFFFFF] text-[#000000] cursor-pointer"
+            onClick={onBack}
+          >
+            Try Again
+          </Button>
+          <Button
+            variant="outline"
+            className="px-6 py-2 font-medium rounded-lg border border-purple-500/50 text-purple-400 hover:bg-purple-900/30 transition"
+          >
+            Contact Support
+          </Button>
+        </div>
+
+        {/* Help Link */}
+        <p className="text-xs text-gray-500 mt-4">
+          Need help? Check our{" "}
+          <a
+            href="/support"
+            className="underline text-purple-400 hover:text-purple-300 transition"
+          >
+            KYC guidelines
+          </a>{" "}
+          before retrying.
+        </p>
+      </div>);
 
   // Fallback - if status is unknown, default to pending (safe approach)
   return (
