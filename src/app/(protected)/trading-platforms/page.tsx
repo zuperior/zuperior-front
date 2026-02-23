@@ -159,7 +159,7 @@ export default function TradingPlatformsPage() {
 
     // Get terminal URL from environment variable
     const terminalBaseUrl = process.env.NEXT_PUBLIC_TERMINAL_URL || 'https://trade.zuperior.com';
-    const terminalUrl = `${terminalBaseUrl}/login?token=${encodeURIComponent(token)}&clientId=${encodeURIComponent(clientId)}&autoLogin=true`;
+    const terminalUrl = `${terminalBaseUrl}/terminal?token=${encodeURIComponent(token)}&clientId=${encodeURIComponent(clientId)}&autoLogin=true`;
     window.open(terminalUrl, '_blank');
   };
 
