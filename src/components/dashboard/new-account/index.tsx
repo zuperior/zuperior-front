@@ -288,8 +288,9 @@ export function NewAccountDialog({
 
       const result = await dispatch(createMt5Account(payload)).unwrap();
 
-      // Handle .NET Core API response format
-      if (result && (typeof result === 'boolean' ? result : result.success === true || result.success === 'true')) {
+      // Handle .NET Core API response format and new MT5Account object format
+      const resAny = result as any;
+      if (result && (typeof result === 'boolean' ? result : resAny.success === true || resAny.success === 'true' || !!result.accountId)) {
 
         // Check if account was actually created (accountId should not be empty)
         if (!result.accountId || result.accountId === "0") {
@@ -304,6 +305,7 @@ export function NewAccountDialog({
 
         // Set the latest account data for the success step
         setLatestAccount({
+          ...(result as any),
           status: "success",
           status_code: "200",
           message: "Account created successfully",
@@ -314,8 +316,6 @@ export function NewAccountDialog({
             tp_id: result.accountId,
             tp_creation_error: ""
           },
-          // Use the transformed account data from Redux result
-          ...result
         });
 
         // Advance to success step immediately
