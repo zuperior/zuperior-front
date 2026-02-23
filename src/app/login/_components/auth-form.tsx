@@ -63,7 +63,6 @@ const AuthForm = () => {
   const [twoFactorEmail, setTwoFactorEmail] = useState<string>("");
 
   // Login loading state
-  const [showLoginLoader, setShowLoginLoader] = useState(false);
   const [loginUserName, setLoginUserName] = useState<string>("");
 
   // Load referral code and resolve IB name for banner
@@ -460,7 +459,6 @@ const AuthForm = () => {
       const emailName = loginEmail.trim().split('@')[0];
       const capitalizedName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
       setLoginUserName(capitalizedName);
-      setShowLoginLoader(true);
 
       const loginData = {
         // Normalize email to lowercase to match registration/storage
@@ -472,7 +470,6 @@ const AuthForm = () => {
 
       // Check if 2FA is required
       if (response.requiresTwoFactor && response.otpKey) {
-        setShowLoginLoader(false);
         setRequiresTwoFactor(true);
         setTwoFactorOtpKey(response.otpKey);
         setTwoFactorEmail(loginData.email);
@@ -509,14 +506,8 @@ const AuthForm = () => {
 
       toast.success("Welcome back! You've successfully logged in.");
 
-      // Add small delay to ensure localStorage is fully written and token is ready
-      // This prevents the "stuck on login" issue where the protected route guard
-      // doesn't see the token immediately after redirect
-      setTimeout(() => {
-        router.replace("/");
-      }, 200);
+      router.replace("/");
     } catch (error: any) {
-      setShowLoginLoader(false);
       const errorMessage = error.response?.data?.message || "Login failed. Please check your credentials.";
       toast.error(errorMessage);
       console.error("Login error:", error);
@@ -528,8 +519,6 @@ const AuthForm = () => {
   const handleVerifyTwoFactor = async (otp: string) => {
     try {
       setIsLoading(true);
-      setShowLoginLoader(true);
-      // Extract name from email
       const emailName = twoFactorEmail.trim().split('@')[0];
       const capitalizedName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
       setLoginUserName(capitalizedName);
@@ -549,7 +538,6 @@ const AuthForm = () => {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        setShowLoginLoader(false);
         throw new Error(data.message || "Invalid verification code");
       }
 
@@ -595,12 +583,8 @@ const AuthForm = () => {
 
       toast.success("Welcome back! You've successfully logged in.");
 
-      // Add small delay to ensure localStorage is fully written and token is ready
-      setTimeout(() => {
-        router.replace("/");
-      }, 200);
+      router.replace("/");
     } catch (error: any) {
-      setShowLoginLoader(false);
       const errorMessage = error.message || "Verification failed. Please try again.";
       toast.error(errorMessage);
       throw error; // Re-throw to let TwoFactorVerification handle it
@@ -672,23 +656,6 @@ const AuthForm = () => {
         Let&apos;s become a Zuperior...
       </h2>
 
-      {/* Login Loader with Video - Only show when logging in (not creating account) */}
-      {showLoginLoader && !isCreateAccount && !requiresTwoFactor && (
-        <div className="flex flex-col items-center justify-center space-y-4 mb-6">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="w-32 h-32 object-contain"
-          >
-            <source src="/logo.mp4" type="video/mp4" />
-          </video>
-          <p className="text-white text-sm font-medium">
-            Logging you in MR {loginUserName}...
-          </p>
-        </div>
-      )}
 
       {/* Forgot Password Loader with Video */}
       {isLoading && forgotMode && (
@@ -710,7 +677,7 @@ const AuthForm = () => {
         </div>
       )}
 
-      {(!showLoginLoader || isCreateAccount) && !(isLoading && forgotMode) && (
+      {isCreateAccount && !(isLoading && forgotMode) && (
         <>
           <AuthToggleTabs
             isCreateAccount={isCreateAccount}
