@@ -74,20 +74,15 @@ export async function POST(request: NextRequest) {
     const data = await response.json();
 
     // After MT5 account is created, store account details in database
-    console.log('🔄 Storing MT5 account details in database...');
-    console.log('📊 MT5 Account Data:', data);
-
     if (data.data?.mt5Login) {
       try {
         const accountId = data.data.mt5Login.toString();
-        console.log('💾 Storing accountId:', accountId);
-        console.log('🔐 Storing password and leverage:', { leverage, hasPassword: !!masterPassword });
 
         // Determine account type from group (same logic as backend)
         const groupLower = group.toLowerCase();
         const isDemoGroup = groupLower.includes('demo');
         const accountType = isDemoGroup ? 'Demo' : 'Live';
-        
+
         // Determine package from accountPlan or group
         let packageValue = accountPlan;
         if (!packageValue) {
@@ -104,10 +99,6 @@ export async function POST(request: NextRequest) {
             packageValue = packageValue.charAt(0).toUpperCase() + packageValue.slice(1);
           }
         }
-        
-        console.log('📝 Determined account type:', accountType, 'from group:', group);
-        console.log('📦 Package:', packageValue);
-        console.log('👤 Name on Account:', name);
 
         // Call internal API to store in database with password, leverage, nameOnAccount, and package
         const storeResponse = await fetch(`${API_URL}/mt5/store-account`, {
@@ -128,9 +119,7 @@ export async function POST(request: NextRequest) {
           })
         });
 
-        if (storeResponse.ok) {
-          console.log('✅ MT5 account details stored successfully in database');
-        } else {
+        if (!storeResponse.ok) {
           console.error('❌ Failed to store MT5 account details in database');
         }
       } catch (storeError) {

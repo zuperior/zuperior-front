@@ -26,39 +26,29 @@ export function UPIStep2Instructions({ upi, amount, nextStep, fixedRate }: Props
   // Resolve QR code URL to use admin backend URL if it's a relative path or wrong domain
   const resolveQrCodeUrl = (qrCode: string | null | undefined): string | null => {
     if (!qrCode || typeof qrCode !== 'string') return null;
-    
+
     const trimmedPath = qrCode.trim();
-    const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 
-                            process.env.NEXT_PUBLIC_ADMIN_API_URL || 
-                            'http://localhost:5003';
-    
+    const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL ||
+      process.env.NEXT_PUBLIC_ADMIN_API_URL ||
+      'http://localhost:5003';
+
     // If it's already a full URL, check if it has the wrong domain and fix it
     if (trimmedPath.startsWith('http://') || trimmedPath.startsWith('https://')) {
       try {
         const url = new URL(trimmedPath);
         // Extract the path from the URL
         const path = url.pathname;
-        
+
         // If it's a kyc_proofs path, replace the entire URL with the correct admin backend URL
         if (path.includes('/kyc_proofs/') || path.startsWith('/kyc_proofs/')) {
           const resolvedUrl = `${adminBackendUrl}${path}`;
-          console.log('[UPIStep2Instructions] Fixed QR code URL (wrong domain):', { 
-            original: qrCode, 
-            resolved: resolvedUrl,
-            originalHost: url.hostname,
-            correctHost: new URL(adminBackendUrl).hostname
-          });
           return resolvedUrl;
         }
-        
+
         // If the hostname doesn't match the admin backend URL, replace it
         const adminUrlObj = new URL(adminBackendUrl);
         if (url.hostname !== adminUrlObj.hostname && path.includes('/kyc_proofs/')) {
           const resolvedUrl = `${adminBackendUrl}${path}`;
-          console.log('[UPIStep2Instructions] Fixed QR code URL (hostname mismatch):', { 
-            original: qrCode, 
-            resolved: resolvedUrl 
-          });
           return resolvedUrl;
         }
       } catch (e) {
@@ -66,20 +56,19 @@ export function UPIStep2Instructions({ upi, amount, nextStep, fixedRate }: Props
         console.warn('[UPIStep2Instructions] Failed to parse URL:', qrCode, e);
       }
     }
-    
+
     // If it starts with /kyc_proofs/ or kyc_proofs/, use admin backend URL
     if (trimmedPath.startsWith('/kyc_proofs/') || trimmedPath.startsWith('kyc_proofs/')) {
       const cleanPath = trimmedPath.startsWith('/') ? trimmedPath : `/${trimmedPath}`;
       const resolvedUrl = `${adminBackendUrl}${cleanPath}`;
-      console.log('[UPIStep2Instructions] Resolved QR code URL:', { original: qrCode, resolved: resolvedUrl });
       return resolvedUrl;
     }
-    
+
     // If it's a relative path starting with /, use admin backend URL
     if (trimmedPath.startsWith('/')) {
       return `${adminBackendUrl}${trimmedPath}`;
     }
-    
+
     // Return as is if we can't determine the path
     return qrCode;
   };
@@ -123,7 +112,8 @@ export function UPIStep2Instructions({ upi, amount, nextStep, fixedRate }: Props
                     console.error('[UPI] Failed to load QR code:', resolvedQrCodeUrl);
                     console.error('[UPI] Original QR code:', upi.qrCode);
                     // Show error message
-                    const parent = e.target.parentElement;
+                    const target = e.target as HTMLElement;
+                    const parent = target.parentElement;
                     if (parent) {
                       parent.innerHTML = `
                         <div class="flex items-center justify-center h-[250px] w-[250px] border-2 border-red-300 rounded bg-red-50">
@@ -175,7 +165,7 @@ export function UPIStep2Instructions({ upi, amount, nextStep, fixedRate }: Props
         {/* Amount Information */}
         <div className="bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/20 rounded-lg p-4 mt-6">
           <p className="text-yellow-700 dark:text-yellow-300 text-sm">
-            Send exactly <strong>{amount || 'your'}</strong> USD 
+            Send exactly <strong>{amount || 'your'}</strong> USD
             {amountNum > 0 && (
               <> (<strong>₹{inrAmount}</strong> INR)</>
             )}

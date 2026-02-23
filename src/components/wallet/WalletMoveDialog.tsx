@@ -13,26 +13,26 @@ import { toast } from "sonner";
 
 type Direction = "MT5_TO_WALLET" | "WALLET_TO_MT5";
 
-export function WalletMoveDialog({ open, onOpenChange, direction }: { open: boolean; onOpenChange: (v:boolean)=>void; direction: Direction; }) {
+export function WalletMoveDialog({ open, onOpenChange, direction }: { open: boolean; onOpenChange: (v: boolean) => void; direction: Direction; }) {
   const dispatch = useAppDispatch();
   const accounts = useSelector((s: RootState) => s.mt5.accounts);
   const filtered = (() => {
     const seen = new Set<string>();
-    return (accounts||[]).filter((a:any)=>{
+    return (accounts || []).filter((a: any) => {
       const type = a?.accountType || 'Live';
       const id = String(a?.accountId ?? '').trim();
-      if (type !== 'Live') return false; if (!id || id==='0' || seen.has(id)) return false; seen.add(id); return true;
+      if (type !== 'Live') return false; if (!id || id === '0' || seen.has(id)) return false; seen.add(id); return true;
     });
   })();
 
   const [mt5, setMt5] = useState("");
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<"form"|"review"|"done">("form");
+  const [step, setStep] = useState<"form" | "review" | "done">("form");
   const [balances, setBalances] = useState<Record<string, number>>({});
   const [walletBalance, setWalletBalance] = useState<number>(0);
 
-  useEffect(()=>{ if (open) { dispatch(fetchUserAccountsFromDb() as any); } }, [open, dispatch]);
+  useEffect(() => { if (open) { dispatch(fetchUserAccountsFromDb() as any); } }, [open, dispatch]);
 
   // Fetch wallet balance when dialog opens (for WALLET_TO_MT5 direction)
   useEffect(() => {
@@ -68,7 +68,7 @@ export function WalletMoveDialog({ open, onOpenChange, direction }: { open: bool
     })();
   }, [open, filtered.length]);
 
-  const handleClose = (v:boolean) => {
+  const handleClose = (v: boolean) => {
     if (!v) {
       setStep("form"); setMt5(""); setAmount("");
     }
@@ -87,7 +87,7 @@ export function WalletMoveDialog({ open, onOpenChange, direction }: { open: bool
   })();
 
   // Format available balance for placeholder
-  const placeholderText = availableBalance > 0 
+  const placeholderText = availableBalance > 0
     ? `0 - $${availableBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     : "Enter amount";
 
@@ -100,7 +100,7 @@ export function WalletMoveDialog({ open, onOpenChange, direction }: { open: bool
 
   async function submit() {
     const a = parseFloat(amount);
-    if (!mt5 || !a || a<=0) { toast.error("Enter valid amount and account"); return; }
+    if (!mt5 || !a || a <= 0) { toast.error("Enter valid amount and account"); return; }
     try {
       setLoading(true);
       const token = localStorage.getItem('userToken');
@@ -115,9 +115,7 @@ export function WalletMoveDialog({ open, onOpenChange, direction }: { open: bool
         const responseData = j?.data || {};
         const mt5AccountData = responseData.mt5Account;
         const walletData = responseData.wallet || responseData;
-        
-        console.log('[WalletMoveDialog] ⚡ Applying optimistic updates from response...');
-        
+
         // Step 1: Update MT5 account balance instantly in Redux (if MT5 account data is present)
         if (mt5AccountData && mt5AccountData.accountId) {
           dispatch(updateAccountBalance({
@@ -125,30 +123,27 @@ export function WalletMoveDialog({ open, onOpenChange, direction }: { open: bool
             balance: mt5AccountData.balance || 0,
             equity: mt5AccountData.equity || mt5AccountData.balance || 0
           }));
-          console.log(`[WalletMoveDialog] ✅ Updated MT5 account ${mt5AccountData.accountId} balance instantly: $${mt5AccountData.balance}`);
         }
-        
+
         // Step 2: Update wallet balance instantly (if wallet data is present)
         if (walletData && walletData.balance !== undefined) {
           const walletBalance = Number(walletData.balance || 0);
           window.dispatchEvent(new CustomEvent('wallet:refresh', { detail: { balance: walletBalance } }));
-          console.log(`[WalletMoveDialog] ✅ Updated wallet balance instantly: $${walletBalance}`);
         }
-        
+
         // Step 3: Update navbar total balance instantly
         window.dispatchEvent(new CustomEvent('mt5:refresh'));
-        
+
         // Step 4: Show success message IMMEDIATELY (no delay)
         toast.success('Transfer completed successfully');
         setStep('done');
-        
+
         // Step 5: Refresh from database in the background (non-blocking)
         // This ensures we have the latest data, but doesn't block the UI
         Promise.all([
           dispatch(fetchUserAccountsFromDb() as any),
           dispatch(fetchAllAccountsWithBalance() as any)
         ]).then(() => {
-          console.log('[WalletMoveDialog] ✅ Background refresh from database completed');
           // Dispatch refresh events again to ensure everything is in sync
           window.dispatchEvent(new CustomEvent('mt5:refresh'));
           window.dispatchEvent(new CustomEvent('wallet:refresh'));
@@ -176,13 +171,13 @@ export function WalletMoveDialog({ open, onOpenChange, direction }: { open: bool
           <div className="relative w-full mt-3">
             <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[3px] bg-[#392F4F] rounded-full" />
             <div className="absolute top-1/2 -translate-y-1/2 left-0">
-              <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-semibold ring-1 ${stepIndex>=1? 'bg-[#9F8BCF] text-black ring-[#9F8BCF]/40' : 'bg-[#2F2642] text-white/60 ring-[#594B7A]'}`}>1</div>
+              <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-semibold ring-1 ${stepIndex >= 1 ? 'bg-[#9F8BCF] text-black ring-[#9F8BCF]/40' : 'bg-[#2F2642] text-white/60 ring-[#594B7A]'}`}>1</div>
             </div>
             <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2">
-              <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-semibold ring-1 ${stepIndex>=2? 'bg-[#9F8BCF] text-black ring-[#9F8BCF]/40' : 'bg-[#2F2642] text-white/60 ring-[#594B7A]'}`}>2</div>
+              <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-semibold ring-1 ${stepIndex >= 2 ? 'bg-[#9F8BCF] text-black ring-[#9F8BCF]/40' : 'bg-[#2F2642] text-white/60 ring-[#594B7A]'}`}>2</div>
             </div>
             <div className="absolute top-1/2 -translate-y-1/2 right-0">
-              <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-semibold ring-1 ${stepIndex>=3? 'bg-[#9F8BCF] text-black ring-[#9F8BCF]/40' : 'bg-[#2F2642] text-white/60 ring-[#594B7A]'}`}>3</div>
+              <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-semibold ring-1 ${stepIndex >= 3 ? 'bg-[#9F8BCF] text-black ring-[#9F8BCF]/40' : 'bg-[#2F2642] text-white/60 ring-[#594B7A]'}`}>3</div>
             </div>
           </div>
         </DialogHeader>
@@ -198,7 +193,7 @@ export function WalletMoveDialog({ open, onOpenChange, direction }: { open: bool
             }}>
               <SelectTrigger className="w-full"><SelectValue placeholder="Select account" /></SelectTrigger>
               <SelectContent>
-                {filtered.map((a:any)=> {
+                {filtered.map((a: any) => {
                   const bal = balances[String(a.accountId)] ?? a.balance ?? 0;
                   return (
                     <SelectItem key={a.accountId} value={String(a.accountId)}>
@@ -210,15 +205,15 @@ export function WalletMoveDialog({ open, onOpenChange, direction }: { open: bool
             </Select>
             <div>
               <Label className="block text-sm mb-1">Amount</Label>
-              <Input 
-                value={amount} 
-                onChange={(e)=>setAmount(e.target.value.replace(/[^0-9.]/g,''))} 
+              <Input
+                value={amount}
+                onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))}
                 placeholder="Enter amount"
                 onClick={handleAmountClick}
                 className="cursor-pointer"
               />
               {availableBalance > 0 && (
-                <p 
+                <p
                   onClick={() => {
                     if (availableBalance > 0) {
                       setAmount(availableBalance.toFixed(2));
@@ -231,8 +226,8 @@ export function WalletMoveDialog({ open, onOpenChange, direction }: { open: bool
               )}
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={()=>handleClose(false)}>Cancel</Button>
-              <Button className="bg-gradient-to-r from-[#6242a5] to-[#9f8bcf]" onClick={()=>setStep('review')} disabled={!mt5 || !amount}>Continue</Button>
+              <Button variant="secondary" onClick={() => handleClose(false)}>Cancel</Button>
+              <Button className="bg-gradient-to-r from-[#6242a5] to-[#9f8bcf]" onClick={() => setStep('review')} disabled={!mt5 || !amount}>Continue</Button>
             </div>
           </div>
         )}
@@ -242,8 +237,8 @@ export function WalletMoveDialog({ open, onOpenChange, direction }: { open: bool
             <div className="text-sm">MT5 Account: <b>{mt5}</b></div>
             <div className="text-sm">Amount: <b>${amount}</b></div>
             <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={()=>setStep('form')}>Back</Button>
-              <Button onClick={submit} disabled={loading} className="bg-gradient-to-r from-[#6242a5] to-[#9f8bcf]">{loading? 'Processing...' : 'Confirm'}</Button>
+              <Button variant="secondary" onClick={() => setStep('form')}>Back</Button>
+              <Button onClick={submit} disabled={loading} className="bg-gradient-to-r from-[#6242a5] to-[#9f8bcf]">{loading ? 'Processing...' : 'Confirm'}</Button>
             </div>
           </div>
         )}
@@ -251,7 +246,7 @@ export function WalletMoveDialog({ open, onOpenChange, direction }: { open: bool
           <div className="text-center space-y-4">
             <DialogTitle>Request Submitted</DialogTitle>
             <DialogDescription>Your transfer request has been submitted. You will see it reflected shortly.</DialogDescription>
-            <Button onClick={()=>handleClose(false)} className="bg-gradient-to-r from-[#6242a5] to-[#9f8bcf]">Close</Button>
+            <Button onClick={() => handleClose(false)} className="bg-gradient-to-r from-[#6242a5] to-[#9f8bcf]">Close</Button>
           </div>
         )}
       </DialogContent>

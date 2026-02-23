@@ -50,21 +50,12 @@ function generateSignature(
   // Create string to sign: secretKey + sorted key-value pairs
   const stringToSign = secretKey + sorted.map(([k, v]) => `${k}${v}`).join("");
 
-  console.log("🔐 Generating signature:", {
-    paramsCount: filtered.length,
-    sortedKeys: sorted.map(([k]) => k),
-    stringToSignLength: stringToSign.length,
-    stringToSign: stringToSign.substring(0, 100) + "..."
-  });
-
   // Generate MD5 hash in lowercase
   const signature = crypto
     .createHash("md5")
     .update(stringToSign)
     .digest("hex")
     .toLowerCase();
-
-  console.log("✅ Generated signature:", signature);
 
   return signature;
 }
@@ -143,18 +134,6 @@ export async function createPaymentOrder({
     const sign = generateSignature(payload, PAYMENT_CONFIG.API_KEY);
     const requestData = { ...payload, sign };
 
-    console.log("📤 Creating Cregis payment order:", {
-      orderId,
-      orderAmount,
-      orderCurrency,
-      gatewayUrl: PAYMENT_CONFIG.GATEWAY_URL,
-      callbackUrl,
-      successUrl,
-      cancelUrl,
-      validTime,
-    });
-    console.log("📋 Full payload being sent:", JSON.stringify(requestData, null, 2));
-
     // Make request to Cregis API
     const response = await fetch(`${PAYMENT_CONFIG.GATEWAY_URL}/api/v2/checkout`, {
       method: "POST",
@@ -173,9 +152,6 @@ export async function createPaymentOrder({
     }
 
     const data = await response.json();
-    console.log("📥 Cregis API response:", JSON.stringify(data, null, 2));
-    console.log("📥 Cregis response code:", data.code);
-    console.log("📥 Cregis response msg:", data.msg);
 
     if (data.code !== "00000") {
       const errorMessage = data.msg || "Unknown error";
@@ -204,8 +180,6 @@ export async function createPaymentOrder({
       throw new Error(`Cregis API error: ${errorMessage}`);
     }
 
-    console.log("✅ Payment order created successfully:", data);
-
     // Extract payment data from Cregis response
     const paymentData = {
       cregis_id: data.data?.cregis_id,
@@ -214,14 +188,6 @@ export async function createPaymentOrder({
       expire_time: data.data?.expire_time,
       orderId,
     };
-
-    console.log("📋 Extracted payment data:", {
-      hasCregisId: !!paymentData.cregis_id,
-      hasCheckoutUrl: !!paymentData.checkout_url,
-      hasPaymentInfo: !!paymentData.payment_info,
-      paymentInfoCount: paymentData.payment_info?.length || 0,
-      orderId: paymentData.orderId,
-    });
 
     // Verify payment_info is present
     if (!paymentData.payment_info || paymentData.payment_info.length === 0) {
@@ -261,8 +227,6 @@ export async function queryPaymentOrder(cregisId: string) {
 
     const sign = generateSignature(payload, PAYMENT_CONFIG.API_KEY);
     const requestData = { ...payload, sign };
-
-    console.log("📥 Querying payment order status:", cregisId);
 
     const response = await fetch(`${PAYMENT_CONFIG.GATEWAY_URL}/api/v2/checkout/info`, {
       method: "POST",
@@ -383,13 +347,6 @@ export async function createWithdrawalOrder({
     const sign = generateSignature(payload, WAAS_CONFIG.API_KEY);
     const requestData = { ...payload, sign };
 
-    console.log("📤 Creating Cregis withdrawal order:", {
-      currency,
-      address,
-      amount,
-      thirdPartyId,
-    });
-
     const response = await fetch(`${WAAS_CONFIG.GATEWAY_URL}/api/v1/payout`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -405,8 +362,6 @@ export async function createWithdrawalOrder({
     if (data.code !== "00000") {
       throw new Error(`Cregis API error: ${data.msg}`);
     }
-
-    console.log("✅ Withdrawal order created successfully:", data);
 
     return {
       success: true,

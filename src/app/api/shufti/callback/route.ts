@@ -21,11 +21,7 @@ export async function POST(req: Request) {
     }
 
     // 3. Log the result (replace with your database logic)
-    console.log('Shufti Callback Received:', {
-      reference: data.reference,
-      event: data.event,
-      status: data.verification_data?.status,
-    });
+
 
     // 4. Always return 200 OK to Shufti (avoid retries)
     return NextResponse.json({ success: true });

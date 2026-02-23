@@ -33,7 +33,6 @@ const getCachedTemplate = async (emailType: string): Promise<EmailTemplate | nul
   const cached = templateCache.get(cacheKey);
 
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    console.log(`📦 Using cached template for type: ${emailType}`);
     return cached.data;
   }
 
@@ -42,30 +41,29 @@ const getCachedTemplate = async (emailType: string): Promise<EmailTemplate | nul
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
-    
+
     if (ADMIN_API_KEY) {
       headers['X-API-Key'] = ADMIN_API_KEY;
     }
 
     const response = await fetch(url, { headers });
-    
+
     if (response.ok) {
       const data = await response.json();
-      
+
       if (data?.ok && data.template) {
         const template = data.template;
-        
+
         // Cache the template
         templateCache.set(cacheKey, {
           data: template,
           timestamp: Date.now(),
         });
-        
-        console.log(`✅ Fetched template from admin API for type: ${emailType}`);
+
         return template;
       }
     }
-    
+
     return null;
   } catch (error: any) {
     console.warn(`⚠️ Failed to fetch template from admin API for type: ${emailType}`, {
@@ -99,8 +97,8 @@ export const renderTemplate = (templateHtml: string, variables: Record<string, a
   // Replace all {{variableName}} with actual values
   Object.keys(variables).forEach((key) => {
     const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-    const value = variables[key] !== null && variables[key] !== undefined 
-      ? String(variables[key]) 
+    const value = variables[key] !== null && variables[key] !== undefined
+      ? String(variables[key])
       : '';
     rendered = rendered.replace(regex, value);
   });
@@ -140,20 +138,20 @@ export const getDefaultSenderEmail = async (): Promise<{ email_address: string; 
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
-    
+
     if (ADMIN_API_KEY) {
       headers['X-API-Key'] = ADMIN_API_KEY;
     }
 
     const response = await fetch(url, { headers });
-    
+
     if (response.ok) {
       const data = await response.json();
       if (data?.ok && data.senderEmail) {
         return data.senderEmail;
       }
     }
-    
+
     // Fallback
     return {
       email_address: process.env.NEXT_PUBLIC_FROM_EMAIL || 'info@zuperior.com',
@@ -174,7 +172,6 @@ export const getDefaultSenderEmail = async (): Promise<{ email_address: string; 
  */
 export const clearTemplateCache = (): void => {
   templateCache.clear();
-  console.log('🗑️ Template cache cleared');
 };
 
 export default {
@@ -184,4 +181,3 @@ export default {
   getDefaultSenderEmail,
   clearTemplateCache,
 };
-

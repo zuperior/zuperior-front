@@ -138,7 +138,6 @@ export function NewAccountDialog({
             const response = await groupManagementService.getActiveGroups(accountType);
             if (response.success && response.data && response.data.length > 0) {
               setAccountPlan(response.data[0]);
-              console.log('✅ Auto-selected first group for', accountType, ':', response.data[0].dedicated_name || response.data[0].group);
             } else {
               console.warn('⚠️ No groups available for account type:', accountType);
             }
@@ -229,7 +228,6 @@ export function NewAccountDialog({
         const response = await groupManagementService.getActiveGroups(accountType);
         if (response.success && response.data && response.data.length > 0) {
           setAccountPlan(response.data[0]);
-          console.log('✅ Auto-selected first group for', accountType, ':', response.data[0].dedicated_name || response.data[0].group);
           // Continue with the selected group
         } else {
           console.error("❌ Invalid account plan selected:", accountPlan);
@@ -248,11 +246,15 @@ export function NewAccountDialog({
     try {
       setLoadingStep2(true);
 
+      if (!accountPlan) {
+        toast.error("Please select an account plan");
+        setLoadingStep2(false);
+        return;
+      }
+
       // Use group from selected account plan
       const group = accountPlan.group;
       const isDemo = accountType.toLowerCase() === "demo";
-
-      console.log("✅ Account type:", accountType, "| Selected Group:", group);
 
       // Generate passwords for MT5 (master and investor)
       const masterPassword = password.trim();
@@ -273,13 +275,10 @@ export function NewAccountDialog({
         accountPlan: accountPlan.dedicated_name || accountPlan.group.split('\\').pop() || "Account" // Include accountPlan name for reference
       };
 
-      console.log("🚀 Creating MT5 Account - Type:", accountType, "| Final payload:", JSON.stringify(payload, null, 2));
-
       const result = await dispatch(createMt5Account(payload)).unwrap();
 
       // Handle .NET Core API response format
-      if (result) {
-        console.log("✅ MT5 Account creation response:", result);
+      if (result && (typeof result === 'boolean' ? result : result.success === true || result.success === 'true')) {
 
         // Check if account was actually created (accountId should not be empty)
         if (!result.accountId || result.accountId === "0") {
@@ -290,7 +289,6 @@ export function NewAccountDialog({
           return;
         }
 
-        console.log("✅ Account created successfully - Account ID:", result.accountId);
         toast.success(`Your MT5 account has been created successfully! Account ID: ${result.accountId}`);
 
         // Set the latest account data for the success step

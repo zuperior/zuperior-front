@@ -48,12 +48,11 @@ export const UnarchiveAccountDialog = ({
 
         setLoading(true);
         try {
-            console.log("🔄 Unarchiving account:", idToUse);
-            console.log("🔄 Account details:", { accountNumber, internalId, accountType });
-            
+
+
             const response = await mt5Service.unarchiveAccount(idToUse);
 
-            console.log("📥 Unarchive API response:", JSON.stringify(response, null, 2));
+
 
             // normalizeOk returns { success: boolean, data: any, message?: string }
             // The response structure after normalizeOk should be:
@@ -86,7 +85,7 @@ export const UnarchiveAccountDialog = ({
                 data: err.response?.data,
                 stack: err.stack
             });
-            
+
             // Extract error message from various possible locations
             const errorMessage =
                 err.response?.data?.message ||
@@ -94,7 +93,7 @@ export const UnarchiveAccountDialog = ({
                 err.response?.data?.detail ||
                 err.message ||
                 "Failed to unarchive account";
-            
+
             console.error("❌ Final error message:", errorMessage);
             toast.error(errorMessage);
         } finally {

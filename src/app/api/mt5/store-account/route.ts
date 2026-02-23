@@ -17,13 +17,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { accountId, userName, userEmail, accountType, password, leverage, nameOnAccount, package: packageValue, group } = body;
 
-    console.log('🔄 API: Storing MT5 account in database...');
-    console.log('📊 Account ID:', accountId);
-    console.log('👤 User Name:', userName);
-    console.log('📧 User Email:', userEmail);
-    console.log('🔐 Password provided:', !!password);
-    console.log('⚡ Leverage:', leverage);
-
     if (!accountId) {
       return NextResponse.json(
         { success: false, message: 'Account ID is required' },
@@ -60,7 +53,6 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    console.log('✅ MT5 account stored successfully via server API');
     return NextResponse.json(response.data);
 
   } catch (error: any) {

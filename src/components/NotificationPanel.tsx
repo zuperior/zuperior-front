@@ -33,7 +33,6 @@ export function NotificationPanel() {
   // Refresh notifications when dropdown opens
   useEffect(() => {
     if (isOpen) {
-      console.log('🔔 Notification panel opened, refreshing notifications...');
       fetchNotifications();
     }
   }, [isOpen, fetchNotifications]);
@@ -49,8 +48,8 @@ export function NotificationPanel() {
       // Actually, a better beep:
       const beep = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
       beep.volume = 0.5;
-      beep.play().catch(e => console.log("Audio play failed (user interaction needed first):", e));
-      
+      beep.play().catch(e => console.error("Audio play failed (user interaction needed first):", e));
+
       // If panel is open, refresh notifications immediately
       if (isOpen) {
         fetchNotifications();

@@ -22,15 +22,13 @@ export async function GET(req: NextRequest) {
 
     if (!token) {
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Authentication required' 
+        {
+          success: false,
+          message: 'Authentication required'
         },
         { status: 401 }
       );
     }
-
-    console.log('📥 [Profile API] Fetching user profile from backend...');
 
     // Call backend API
     const response = await fetch(`${BACKEND_API_URL}/user/profile`, {
@@ -47,27 +45,26 @@ export async function GET(req: NextRequest) {
         status: response.status,
         error: errorText,
       });
-      
+
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           message: `Backend error: ${response.status}`,
-          error: errorText 
+          error: errorText
         },
         { status: response.status }
       );
     }
 
     const data = await response.json();
-    console.log('✅ [Profile API] Profile fetched successfully');
 
     return NextResponse.json(data);
   } catch (error) {
     console.error('❌ [Profile API] Error:', error);
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         message: 'Failed to fetch profile',
         error: error instanceof Error ? error.message : 'Unknown error'
       },

@@ -20,8 +20,7 @@ const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://local
 
 export async function POST(req: NextRequest) {
   try {
-    console.log('🚀 [CHECKOUT] ========== NEW CHECKOUT REQUEST (Backend Proxy) ==========');
-    
+
     const body = (await req.json()) as {
       order_amount: string;
       order_currency: string;
@@ -31,18 +30,16 @@ export async function POST(req: NextRequest) {
       crypto_symbol?: string;
     };
 
-    console.log('📦 [CHECKOUT] Request body:', JSON.stringify(body, null, 2));
-
     const { order_amount, order_currency, account_number, account_type, network, crypto_symbol } = body;
 
     // Validate required fields
     if (!order_amount || !order_currency) {
       console.error('❌ [CHECKOUT] Missing required fields');
       return NextResponse.json(
-        { 
+        {
           code: "10000",
           msg: "Payment initiation failed",
-          error: "Missing required fields: order_amount, order_currency" 
+          error: "Missing required fields: order_amount, order_currency"
         },
         { status: 400 }
       );
@@ -52,10 +49,10 @@ export async function POST(req: NextRequest) {
     if (order_amount.trim() === '' || order_amount === '0') {
       console.error('❌ [CHECKOUT] Invalid amount:', order_amount);
       return NextResponse.json(
-        { 
+        {
           code: "10000",
           msg: "Payment initiation failed",
-          error: "Invalid amount: must be greater than 0" 
+          error: "Invalid amount: must be greater than 0"
         },
         { status: 400 }
       );
@@ -68,10 +65,10 @@ export async function POST(req: NextRequest) {
     if (!token) {
       console.error('❌ [CHECKOUT] No auth token found');
       return NextResponse.json(
-        { 
+        {
           code: "10000",
           msg: "Authentication required",
-          error: "Please log in to continue" 
+          error: "Please log in to continue"
         },
         { status: 401 }
       );
@@ -82,13 +79,6 @@ export async function POST(req: NextRequest) {
     const successUrl = `${baseUrl}/deposit/success`;
     const cancelUrl = `${baseUrl}/deposit/cancel`;
     const callbackUrl = `${BACKEND_API_URL}/cregis/payment-callback`;
-
-    console.log('📋 [CHECKOUT] URLs:', { 
-      baseUrl,
-      successUrl, 
-      cancelUrl,
-      callbackUrl,
-    });
 
     // Prepare payment request for backend
     const paymentRequest = {
@@ -103,12 +93,6 @@ export async function POST(req: NextRequest) {
       accountType: account_type,
       network: network || 'TRC20',
     };
-
-    console.log('📤 [CHECKOUT] Calling backend Cregis API:', {
-      url: `${BACKEND_API_URL}/cregis/create-payment`,
-      orderAmount: paymentRequest.orderAmount,
-      orderCurrency: paymentRequest.orderCurrency,
-    });
 
     // Call backend Cregis API
     const response = await fetch(`${BACKEND_API_URL}/cregis/create-payment`, {
@@ -130,8 +114,6 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await response.json();
-    
-    console.log('📥 [CHECKOUT] Backend response:', data);
 
     if (!data.success) {
       console.error('❌ [CHECKOUT] Backend returned error:', data.error);
@@ -172,7 +154,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: unknown) {
     const error = err as Error;
-    
+
     console.error("❌ [CHECKOUT] Error:", error);
     console.error("❌ [CHECKOUT] Stack:", error.stack);
 

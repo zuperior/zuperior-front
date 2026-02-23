@@ -11,8 +11,6 @@ export async function POST(
         // In Next.js 15+, params is a promise
         const { id } = await params;
 
-        console.log(`🔄 [Withdraw Cancel Proxy] ID: ${id}`);
-
         const resp = await fetch(`${backendBase}/withdraw/cancel/${id}`, {
             method: 'POST',
             headers: {

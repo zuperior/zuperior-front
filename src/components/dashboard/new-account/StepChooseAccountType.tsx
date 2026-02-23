@@ -61,14 +61,9 @@ export const StepChooseAccountType: React.FC<StepChooseAccountTypeProps> = ({
     const fetchGroups = async () => {
       try {
         setLoading(true);
-        console.log('🔄 Fetching active groups for account type:', accountType);
         const response = await groupManagementService.getActiveGroups(accountType);
-        console.log('✅ Active Groups Response:', response);
 
         if (response.success && response.data) {
-          console.log('✅ Groups received:', response.data);
-          console.log('✅ First group leverage:', response.data[0]?.leverage);
-
           // Sort groups: Startup first
           const sortedGroups = [...response.data].sort((a, b) => {
             const titleA = a.dedicated_name || a.group.split('\\').pop() || "Account";

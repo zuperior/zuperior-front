@@ -30,14 +30,6 @@ export async function GET(request: NextRequest) {
     // Use normalized API_URL
     const url = `${API_URL}/mt5/accounts-with-balance?_t=${cacheBuster}&_nocache=${cacheBuster2}&_fresh=${Date.now()}`;
 
-    console.log(`[Next.js API] 🚀 Proxying request to backend:`, {
-      method: 'GET',
-      rawApiUrl: RAW_API_URL,
-      normalizedApiUrl: API_URL,
-      targetUrl: url,
-      timestamp: new Date().toISOString()
-    });
-
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -73,12 +65,6 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json();
-
-    // Log the response to debug
-    console.log(`[Next.js API] 📥 Accounts with balance response:`, {
-      accountCount: data?.data?.accounts?.length || 0,
-      totalBalance: data?.data?.totalBalance || 0
-    });
 
     // The backend returns: { success: true, data: { accounts: [...], totalBalance: ... } }
     return NextResponse.json(data);

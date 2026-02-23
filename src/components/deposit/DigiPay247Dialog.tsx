@@ -87,15 +87,6 @@ export function DigiPay247Dialog({
             if (method.fixed_rate !== null && method.fixed_rate !== undefined) {
               setFixedRate(Number(method.fixed_rate));
             }
-
-            console.log('📊 Payment method data fetched for DigiPay247:', {
-              methodKey: 'digipay247_upi',
-              limits: {
-                minLimit: method.min_limit,
-                maxLimit: method.max_limit,
-              },
-              fixedRate: method.fixed_rate,
-            });
           }
         }
       } catch (error) {
@@ -176,15 +167,6 @@ export function DigiPay247Dialog({
           minLimit: finalMinLimit,
           maxLimit: finalMaxLimit,
           source: groupMinLimit !== null || groupMaxLimit !== null ? 'group' : 'payment_method',
-        });
-
-        console.log('📊 Deposit limits resolved:', {
-          groupMinLimit,
-          groupMaxLimit,
-          paymentMethodMinLimit: paymentMethodLimits?.minLimit,
-          paymentMethodMaxLimit: paymentMethodLimits?.maxLimit,
-          finalMinLimit,
-          finalMaxLimit,
         });
       } catch (error) {
         console.error('❌ Error fetching deposit limits:', error);
@@ -345,7 +327,6 @@ export function DigiPay247Dialog({
         throw new Error(data.error || 'Failed to submit proof');
       }
 
-      console.log('✅ [DigiPay247] Proof submitted successfully');
       setStep(3);
       setIsCheckingStatus(true);
 
@@ -428,12 +409,6 @@ export function DigiPay247Dialog({
         throw new Error("Payment URL not received from SecurePayee");
       }
 
-      console.log('✅ [DigiPay247] Payment request created:', {
-        depositId: result.data.depositId,
-        transactionId: result.data.transactionId,
-        paymentUrl: result.data.paymentUrl,
-      });
-
       setPaymentUrl(result.data.paymentUrl);
       setDepositId(result.data.depositId);
       setTransactionId(result.data.transactionId);
@@ -448,18 +423,6 @@ export function DigiPay247Dialog({
       setIsProcessing(false);
     }
   };
-
-  // Debug: Log when dialog open state changes
-  useEffect(() => {
-    console.log('[DigiPay247Dialog] Dialog open state:', open);
-    if (open) {
-      console.log('[DigiPay247Dialog] Dialog is OPEN - should be visible');
-    } else {
-      console.log('[DigiPay247Dialog] Dialog is CLOSED');
-    }
-  }, [open]);
-
-  console.log('[DigiPay247Dialog] Rendering with open=', open, 'displayName=', displayName);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

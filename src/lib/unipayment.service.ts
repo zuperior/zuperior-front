@@ -17,11 +17,8 @@ export async function getAccessToken(): Promise<string> {
   try {
     // Check cache first
     if (tokenCache && tokenCache.expiresAt > Date.now()) {
-      console.log('🔐 [Unipayment] Using cached access token');
       return tokenCache.token;
     }
-
-    console.log('🔐 [Unipayment] Fetching new access token via backend...');
 
     // Get auth token from localStorage (same as other services)
     const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
@@ -57,7 +54,6 @@ export async function getAccessToken(): Promise<string> {
       expiresAt: Date.now() + TOKEN_TTL_MS,
     };
 
-    console.log('✅ [Unipayment] Access token obtained successfully');
     return data.access_token;
   } catch (error) {
     console.error('❌ [Unipayment] Error getting access token:', error);
@@ -93,13 +89,6 @@ export async function createInvoice({
   inrAmount?: string;
 }) {
   try {
-    console.log('📤 [Unipayment] Creating invoice via backend:', {
-      amount,
-      currency,
-      paymentMethod,
-      mt5AccountId,
-    });
-
     // Get auth token from localStorage (same as other services)
     const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
 
@@ -145,7 +134,6 @@ export async function createInvoice({
       throw new Error(data.error || 'Failed to create invoice');
     }
 
-    console.log('✅ [Unipayment] Invoice created successfully:', data.data);
     return {
       success: true,
       data: data.data,
@@ -165,8 +153,6 @@ export async function createInvoice({
  */
 export async function getExchangeRate(fromCurrency: string = 'USD', toCurrency: string = 'BTC', amount: number = 1) {
   try {
-    console.log(`💱 [Unipayment] Getting exchange rate: ${amount} ${fromCurrency} -> ${toCurrency}`);
-
     // Get auth token from localStorage (same as other services)
     const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
 
@@ -190,17 +176,16 @@ export async function getExchangeRate(fromCurrency: string = 'USD', toCurrency: 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       const errorMessage = errorData.error || 'Failed to get exchange rate';
-      
+
       // Handle minimum amount error gracefully (don't show error if amount is too low)
       if (errorMessage.includes('minimum amount') || errorMessage.includes('below the minimum')) {
-        console.log('⚠️ [Unipayment] Amount below minimum, will retry when amount is sufficient');
         return {
           success: false,
           error: errorMessage,
           isMinimumAmountError: true,
         };
       }
-      
+
       throw new Error(errorMessage);
     }
 
@@ -210,7 +195,6 @@ export async function getExchangeRate(fromCurrency: string = 'USD', toCurrency: 
       throw new Error(data.error || 'Failed to get exchange rate');
     }
 
-    console.log(`✅ [Unipayment] Exchange rate obtained: rate=${data.rate}, netAmount=${data.netAmount}`);
     return {
       success: true,
       rate: data.rate,
@@ -231,8 +215,6 @@ export async function getExchangeRate(fromCurrency: string = 'USD', toCurrency: 
  */
 export async function getInvoiceStatus(invoiceId: string) {
   try {
-    console.log('📥 [Unipayment] Getting invoice status via backend:', invoiceId);
-
     // Get auth token from localStorage (same as other services)
     const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
 

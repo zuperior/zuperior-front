@@ -19,12 +19,6 @@ export async function createPayment({
   accountType?: string;
 }) {
   try {
-    console.log('📤 [DigiPay247] Creating payment request:', {
-      amount,
-      currency,
-      mt5AccountId,
-    });
-
     // Get auth token from localStorage
     const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
 
@@ -62,7 +56,6 @@ export async function createPayment({
       throw new Error(data.error || 'Failed to create payment request');
     }
 
-    console.log('✅ [DigiPay247] Payment request created successfully:', data.data);
     return {
       success: true,
       data: data.data,
