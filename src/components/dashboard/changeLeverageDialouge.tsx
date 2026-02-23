@@ -66,7 +66,7 @@ export default function ChangeLeverageDialog({
     setLoading(true);
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
-      
+
       if (!token) {
         throw new Error("Authentication required. Please log in again.");
       }
@@ -83,15 +83,14 @@ export default function ChangeLeverageDialog({
       );
 
       const data = res.data;
-      console.log("Change leverage response:", data);
 
       if (data.success) {
         // Immediately update Redux state with new leverage (instant UI update)
-        dispatch(updateAccountLeverage({ 
-          accountId: accountNumber, 
-          leverage: parseInt(selectedLeverage) 
+        dispatch(updateAccountLeverage({
+          accountId: accountNumber,
+          leverage: parseInt(selectedLeverage)
         }));
-        
+
         toast.success("Leverage changed successfully!");
 
         // Then refresh from database to ensure consistency (async, won't block UI)

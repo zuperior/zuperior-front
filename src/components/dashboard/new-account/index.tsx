@@ -51,7 +51,18 @@ export function NewAccountDialog({
   const dispatch = useAppDispatch();
   const [step, setStep] = useState(1);
   const [accountType, setAccountType] = useState("Live");
-  const [accountPlan, setAccountPlan] = useState<{ id: number; group: string; dedicated_name: string | null;[key: string]: any } | null>(null);
+  const [accountPlan, setAccountPlan] = useState<{
+    id: number;
+    group: string;
+    dedicated_name: string | null;
+    account_type: string | null;
+    leverage: number | null;
+    min_deposit: number | null;
+    spread: number | null;
+    commission: number | null;
+    is_active: boolean;
+    [key: string]: any;
+  } | null>(null);
   // const [server, setServer] = useState("");
   const [leverage, setLeverage] = useState("");
   const [currency, setCurrency] = useState("USD");
