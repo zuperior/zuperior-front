@@ -677,7 +677,7 @@ const AuthForm = () => {
         </div>
       )}
 
-      {isCreateAccount && !(isLoading && forgotMode) && (
+      {!(isLoading && forgotMode) && (
         <>
           <AuthToggleTabs
             isCreateAccount={isCreateAccount}
