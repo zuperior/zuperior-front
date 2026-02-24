@@ -48,7 +48,13 @@ export function NotificationPanel() {
       // Actually, a better beep:
       const beep = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
       beep.volume = 0.5;
-      beep.play().catch(e => console.error("Audio play failed (user interaction needed first):", e));
+      beep.play().catch(e => {
+        // Ignore autoplay policy errors (NotAllowedError) which occur if the
+        // user hasn't interacted with the document yet.
+        if (e.name !== 'NotAllowedError') {
+          console.warn("Audio play failed:", e);
+        }
+      });
 
       // If panel is open, refresh notifications immediately
       if (isOpen) {
