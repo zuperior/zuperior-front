@@ -316,7 +316,7 @@ const AuthForm = () => {
       const res = await fetch("/api/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: loginEmail.trim(), name: fullName, useBackend: true }),
+        body: JSON.stringify({ email: loginEmail.trim(), name: fullName, useBackend: true, purpose: 'forgot_password' }),
       });
       const data = await res.json();
       if (!res.ok || !data?.success) throw new Error(data?.error || "Failed to send OTP");
