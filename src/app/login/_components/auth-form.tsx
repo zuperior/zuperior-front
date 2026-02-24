@@ -486,15 +486,6 @@ const AuthForm = () => {
         localStorage.setItem('user', JSON.stringify(response.user));
       }
 
-      // Fallback: attempt simple attach on login if code exists
-      try {
-        const code = getStoredReferralCode();
-        if (code) {
-          await attachReferral(code, loginData.email);
-        }
-      } catch {
-        // non-blocking
-      }
 
       // Initialize FCM for push notifications (non-blocking)
       try {
@@ -549,15 +540,6 @@ const AuthForm = () => {
         localStorage.setItem('user', JSON.stringify(data.user));
       }
 
-      // Fallback: attempt simple attach on login if code exists
-      try {
-        const code = getStoredReferralCode();
-        if (code) {
-          await attachReferral(code, twoFactorEmail);
-        }
-      } catch {
-        // non-blocking
-      }
 
       // Reset 2FA state
       setRequiresTwoFactor(false);
@@ -734,13 +716,7 @@ const AuthForm = () => {
                 )
               ) : (
                 <>
-                  {/* Referral banner on login tab as informational if code present */}
-                  {referralCode && (
-                    <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-200 mb-2">
-                      Referred by <span className="font-semibold">{referrerName || 'IB Partner'}</span>
-                      <span className="opacity-70"> ({referralCode})</span>
-                    </div>
-                  )}
+                  {/* Referral banner on login tab as informational if code present - Removed as per requirement */}
                   {requiresTwoFactor ? (
                     <TwoFactorVerification
                       email={twoFactorEmail}
