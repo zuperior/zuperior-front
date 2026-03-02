@@ -7,8 +7,7 @@ export async function GET() {
   try {
     // Try the backend API first
     const url = `${BACKEND_URL}/countries`;
-    console.log("🌍 Fetching countries from backend:", url);
-    
+
     try {
       const response = await axios.get(url, {
         headers: {
@@ -16,13 +15,6 @@ export async function GET() {
         },
         timeout: 10000,
         validateStatus: (status) => status < 500, // Don't throw on 4xx
-      });
-
-      console.log("✅ Backend response:", {
-        status: response.status,
-        success: response.data?.success,
-        hasData: !!response.data?.data,
-        dataLength: response.data?.data?.length
       });
 
       if (response.status === 200 && response.data?.success && Array.isArray(response.data.data)) {
@@ -36,7 +28,6 @@ export async function GET() {
           }))
           .filter((c: any) => c.country_code); // Filter again after cleaning
 
-        console.log(`✅ Returning ${validCountries.length} valid countries`);
         return NextResponse.json({
           success: true,
           countries: validCountries,

@@ -39,7 +39,7 @@ function isCacheValid(): boolean {
   try {
     const timestamp = localStorage.getItem(KYC_CACHE_TIMESTAMP_KEY);
     if (!timestamp) return false;
-    
+
     const cacheAge = Date.now() - parseInt(timestamp, 10);
     return cacheAge < KYC_CACHE_TTL;
   } catch (e) {
@@ -188,7 +188,7 @@ export function getLocalKycStatus(): KycStatusResponse | null {
   if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
     return null;
   }
-  
+
   try {
     const cached = localStorage.getItem(KYC_CACHE_KEY);
     if (cached) {

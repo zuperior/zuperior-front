@@ -11,7 +11,6 @@ const ADMIN_BACKEND_URL = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || process.e
 export async function GET(req: NextRequest) {
   try {
     const backendUrl = `${ADMIN_BACKEND_URL}/api/promotional-posters`;
-    console.log('[Promotional Posters API] Proxying to:', backendUrl);
 
     // Add timeout to prevent hanging requests
     const controller = new AbortController();
@@ -49,7 +48,6 @@ export async function GET(req: NextRequest) {
     }
 
     const data = await response.json();
-    console.log('[Promotional Posters API] Success:', data.posters?.length || 0, 'posters');
     return NextResponse.json(data);
   } catch (error: any) {
     console.error('[Promotional Posters API] Error:', error);

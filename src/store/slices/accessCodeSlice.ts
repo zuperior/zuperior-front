@@ -26,7 +26,6 @@ export const fetchAccessToken = createAsyncThunk<
       return rejectWithValue("Access token not returned");
     }
 
-    console.log("✅ Access token fetched successfully");
     return response.data.access_token;
   } catch (error) {
     if (axios.isAxiosError(error)) {

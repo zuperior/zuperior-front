@@ -28,7 +28,7 @@ export function TopUpDialog({
 
   const handleSubmit = async () => {
     const amountNum = parseFloat(amount);
-    
+
     if (!amount || isNaN(amountNum) || amountNum <= 0) {
       toast.error("Please enter a valid amount greater than 0");
       return;
@@ -53,7 +53,6 @@ export function TopUpDialog({
 
       if (balanceResponse.ok) {
         const balanceData = await balanceResponse.json();
-        console.log("✅ Balance added successfully:", balanceData);
         toast.success(`Balance of $${amountNum.toFixed(2)} added to demo account`);
         setAmount("");
         onOpenChange(false);

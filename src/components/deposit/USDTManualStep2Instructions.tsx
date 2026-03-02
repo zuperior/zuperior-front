@@ -40,21 +40,14 @@ export function USDTManualStep2Instructions({
         });
 
         const result = await response.json();
-        
-        console.log("🔍 Full API Response:", JSON.stringify(result, null, 2));
-        console.log("🔍 result.data:", result.data);
-        console.log("🔍 result.data.paymentInfo:", result.data?.paymentInfo);
 
         if (result.success && result.data) {
           const paymentInfo = result.data.paymentInfo;
-          console.log("🔍 Payment Info Array:", paymentInfo);
-          
+
           // Find USDT-TRC20 payment address
           const trc20Payment = paymentInfo?.find((p: any) => p.token_name === "USDT-TRC20");
-          console.log("🔍 TRC20 Payment:", trc20Payment);
-          
+
           if (trc20Payment?.payment_address) {
-            console.log("✅ Setting payment address:", trc20Payment.payment_address);
             setPaymentAddress(trc20Payment.payment_address);
             setPaymentUrl(result.data.checkoutUrl || result.data.checkout_url || "");
             setQrCode(result.data.qrCode || "");

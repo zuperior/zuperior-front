@@ -31,7 +31,6 @@ let analytics: Analytics | null = null;
 if (typeof window !== 'undefined') {
   try {
     messaging = getMessaging(app);
-    console.log('✅ Firebase Messaging initialized');
   } catch (error) {
     console.error('Failed to initialize Firebase Messaging:', error);
     // Messaging might not be available (e.g., in development without HTTPS)
@@ -40,7 +39,6 @@ if (typeof window !== 'undefined') {
   // Initialize Analytics (only in browser)
   try {
     analytics = getAnalytics(app);
-    console.log('✅ Firebase Analytics initialized');
   } catch (error) {
     console.warn('Failed to initialize Firebase Analytics:', error);
     // Analytics might fail in some environments
@@ -48,5 +46,4 @@ if (typeof window !== 'undefined') {
 }
 
 export { app, messaging, analytics };
-export default app;
 

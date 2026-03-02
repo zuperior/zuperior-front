@@ -26,6 +26,8 @@ export interface MT5AccountDB {
   marginLevel?: number;
   currency?: string;
   lastSyncedAt?: string;
+  killSwitchActive?: boolean;
+  killSwitchUntil?: string | null;
 }
 
 // ClientProfile data from MT5 API
@@ -161,12 +163,10 @@ export const fetchUserAccountsFromDb = createAsyncThunk(
       const normalized = normalizeOk(response);
 
       if (!normalized.success || !normalized.data?.accounts) {
-        console.log("⚠️ No accounts found in database");
         return [];
       }
 
       const accounts = normalized.data.accounts as MT5AccountDB[];
-      console.log(`✅ Fetched ${accounts.length} accounts from database`);
 
       return accounts.map(acc => ({
         ...acc,
@@ -289,13 +289,8 @@ export const createMt5Account = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      console.log("🔄 Redux slice - Calling MT5 service with data:", data);
       const response = await mt5Service.createMt5Account(data);
-      console.log("✅ Redux slice - MT5 service response:", response);
-      console.log("📊 Redux slice - Response data:", response.data);
-      console.log("📊 Redux slice - Response data type:", typeof response.data);
 
-      // Handle different response formats
       if (!response.data) {
         console.error("❌ No response data received");
         return rejectWithValue("No response data received from MT5 API");
@@ -314,7 +309,6 @@ export const createMt5Account = createAsyncThunk(
       // Handle new backend response format: { success: true, data: { mt5Login, accountId } }
       if (response.data?.data?.mt5Login) {
         mt5Login = response.data.data.mt5Login;
-        console.log("📊 Using new backend response format with mt5Login:", mt5Login);
 
         // Create minimal account data from what we have
         accountData = {
@@ -330,19 +324,16 @@ export const createMt5Account = createAsyncThunk(
       else if (response.data?.Data) {
         accountData = response.data.Data;
         mt5Login = accountData.Login || accountData.login;
-        console.log("📊 Using response.data.Data:", accountData);
       }
       // Handle direct Login in response
       else if (response.data?.Login) {
         accountData = response.data;
         mt5Login = accountData.Login;
-        console.log("📊 Using response.data directly:", accountData);
       }
       // Handle array response
       else if (Array.isArray(response.data) && response.data.length > 0) {
         accountData = response.data[0];
         mt5Login = accountData.Login || accountData.login;
-        console.log("📊 Using first array element:", accountData);
       }
       else {
         console.error("❌ Unexpected response structure:", response.data);
@@ -358,8 +349,6 @@ export const createMt5Account = createAsyncThunk(
         console.error("❌ Account creation failed - Login is 0 or undefined:", { mt5Login, accountData });
         return rejectWithValue("MT5 account creation failed - account was not actually created");
       }
-
-      console.log("📊 Redux slice - Account data with Login:", mt5Login);
 
       // Transform to match expected MT5Account format
       const transformedAccount: MT5Account = {
@@ -387,7 +376,6 @@ export const createMt5Account = createAsyncThunk(
         lastProfileUpdateAt: Date.now(),
       };
 
-      console.log("🔄 Redux slice - Transformed account:", transformedAccount);
       return transformedAccount;
     } catch (error: any) {
       console.error("❌ Redux slice - Error:", error);
@@ -453,7 +441,6 @@ export const refreshMt5AccountProfile = createAsyncThunk(
   "mt5/refreshProfile",
   async (login: number, { rejectWithValue }) => {
     try {
-      console.log(`[MT5] 🔄 refreshMt5AccountProfile → requesting profile for login=${login}`);
       const response = await mt5Service.getMt5UserProfile(login);
       // Handle .NET Core API response format
       if (response.data?.Success === false) {
@@ -462,7 +449,6 @@ export const refreshMt5AccountProfile = createAsyncThunk(
       }
 
       const profileData = response.data?.Data ?? response.data;
-      console.log(`[MT5] ✅ refreshMt5AccountProfile response for login=${login}:`, profileData);
 
       // Guard: API sometimes returns 200 with empty/undefined body. Do not access properties.
       if (!profileData || profileData.Login === undefined || profileData.Login === 0) {
@@ -512,7 +498,6 @@ export const fetchAllAccountsWithBalance = createAsyncThunk(
   "mt5/fetchAllAccountsWithBalance",
   async (_, { rejectWithValue }) => {
     try {
-      console.log(`[MT5] 🚀 fetchAllAccountsWithBalance → fetching all accounts with balances in parallel`);
 
       // Call optimized backend endpoint that fetches all balances in parallel with cache busting
       const response = await mt5Service.getUserAccountsWithBalance({ signal: undefined });
@@ -523,7 +508,6 @@ export const fetchAllAccountsWithBalance = createAsyncThunk(
       }
 
       const { accounts, totalBalance } = response.data;
-      console.log(`[MT5] ✅ fetchAllAccountsWithBalance → fetched ${accounts.length} accounts. Total balance: ${totalBalance}`);
 
       // Transform accounts to match our state structure
       const accountsData = accounts.map((acc: any) => ({
@@ -536,6 +520,8 @@ export const fetchAllAccountsWithBalance = createAsyncThunk(
         marginFree: Number(acc.marginFree ?? 0),
         marginLevel: Number(acc.marginLevel ?? 0),
         leverage: Number(acc.leverage ?? 0),
+        killSwitchActive: Boolean(acc.killSwitchActive ?? false),
+        killSwitchUntil: acc.killSwitchUntil ?? null,
       }));
 
       return {
@@ -589,13 +575,11 @@ export const fetchAccountDetailsFromMT5 = createAsyncThunk(
   "mt5/fetchAccountDetails",
   async ({ accountId, forceRefresh = false }: { accountId: string; forceRefresh?: boolean }, { rejectWithValue }) => {
     try {
-      console.log(`[MT5] 🔄 fetchAccountDetailsFromMT5 → requesting details for account=${accountId}${forceRefresh ? ' (force refresh)' : ''}`);
 
       // Call backend endpoint which fetches from MT5 API with access token
       // Use forceRefresh to bypass cache and get fresh data
       const response = await mt5Service.getMt5AccountProfile(accountId, { forceRefresh });
 
-      console.log(`[MT5] 📥 Raw response for account=${accountId}:`, JSON.stringify(response, null, 2));
 
       if (!response.success || !response.data) {
         console.error(`[MT5] ❌ Invalid response structure for account=${accountId}:`, response);
@@ -603,7 +587,6 @@ export const fetchAccountDetailsFromMT5 = createAsyncThunk(
       }
 
       const profileData = response.data;
-      console.log(`[MT5] ✅ fetchAccountDetailsFromMT5 profileData for account=${accountId}:`, JSON.stringify(profileData, null, 2));
 
       // Extract and return account details
       // The API returns: { Success: true, Data: { Balance: 22556, Equity: 22556, ... } }
@@ -614,13 +597,6 @@ export const fetchAccountDetailsFromMT5 = createAsyncThunk(
         ? Number(profileData.Floating)
         : (profileData.Profit !== undefined ? Number(profileData.Profit ?? profileData.profit ?? 0) : (equity - balance));
 
-      console.log(`[MT5] 📊 Extracted values for account=${accountId}:`, {
-        balance,
-        equity,
-        profit,
-        credit: profileData.Credit ?? profileData.credit ?? 0,
-        margin: profileData.Margin ?? profileData.margin ?? 0
-      });
 
       return {
         accountId: String(accountId),
@@ -722,7 +698,6 @@ const mt5AccountSlice = createSlice({
       );
       if (account) {
         account.nameOnAccount = action.payload.name;
-        console.log(`[MT5] ✅ Updated account ${action.payload.accountId} name to "${action.payload.name}" in Redux state`);
       }
     },
     updateAccountLeverage: (
@@ -734,7 +709,6 @@ const mt5AccountSlice = createSlice({
       );
       if (account) {
         account.leverage = action.payload.leverage;
-        console.log(`[MT5] ✅ Updated account ${action.payload.accountId} leverage to ${action.payload.leverage} in Redux state`);
       }
     },
     addAccountOptimistically: (state, action: PayloadAction<MT5Account>) => {
@@ -745,9 +719,6 @@ const mt5AccountSlice = createSlice({
         // Only add to total balance if it's a Live account
         if ((action.payload.accountType || 'Live') === 'Live') {
           state.totalBalance += (action.payload.equity || 0);
-          console.log('🚀 Live account added optimistically:', action.payload.accountId);
-        } else {
-          console.log('🚀 Demo/Non-Live account added (not included in balance):', action.payload.accountId);
         }
       }
       // Reset throttling to allow immediate refresh
@@ -793,8 +764,6 @@ const mt5AccountSlice = createSlice({
         state.isLoading = false;
         state.isFetchingGroups = false;                // ✅ ADD
         state.lastGroupsFetchAt = Date.now();          // ✅ ADD
-
-        console.log("Debugger - API Groups Payload:", action.payload); // <--- LOG ADDED
 
         // Remove hardcoded filter to allow all valid groups from backend
         state.groups = action.payload;
@@ -908,20 +877,12 @@ const mt5AccountSlice = createSlice({
         // Don't set isLoading to true - allow concurrent fetches for 300ms polling
         // Setting isLoading blocks UI updates
         state.error = null;
-        console.log(`[MT5] 🔄 fetchAllAccountsWithBalance PENDING - fetching fresh balances`);
         // Don't clear balances on pending - keep showing last known values until new ones arrive
         // This prevents flickering and ensures smooth updates
       })
       .addCase(fetchAllAccountsWithBalance.fulfilled, (state, action) => {
         state.isLoading = false;
         const { accounts: accountsWithBalance, totalBalance } = action.payload;
-
-        console.log(`[MT5] 🔄 Updating ${accountsWithBalance.length} accounts with FRESH balances from DATABASE...`);
-        console.log(`[MT5] 📊 Balance data received from DB:`, accountsWithBalance.map((acc: any) => ({
-          accountId: acc.accountId,
-          balance: acc.balance,
-          equity: acc.equity
-        })));
 
         // Update balances for all accounts that match - FORCE UPDATE (no checks)
         // These values come from DATABASE, not MT5 API (database is source of truth)
@@ -938,13 +899,6 @@ const mt5AccountSlice = createSlice({
             account.marginFree = Number(details.marginFree ?? 0);
             account.marginLevel = Number(details.marginLevel ?? 0);
             if (details.leverage) account.leverage = Number(details.leverage ?? 0);
-
-            console.log(`[MT5] 💰 Account ${details.accountId} UPDATED:`, {
-              balance: `${oldBalance} → ${account.balance}`,
-              equity: `${account.equity}`,
-              profit: `${account.profit}`,
-              rawData: { balance: details.balance, equity: details.equity, profit: details.profit }
-            });
           } else {
             console.warn(`[MT5] ⚠️ Account ${details.accountId} not found in state - cannot update balance`);
           }
@@ -962,11 +916,7 @@ const mt5AccountSlice = createSlice({
 
         if (Math.abs(state.totalBalance - calculatedTotal) > 0.01) {
           console.warn(`[MT5] ⚠️ Total balance mismatch: API=${state.totalBalance}, Calculated=${calculatedTotal}. Using API value.`);
-        } else {
-          console.log(`[MT5] ✅ Total balance verified: $${state.totalBalance} (from DB equity values)`);
         }
-
-        console.log(`[MT5] ✅ Updated balances for ${accountsWithBalance.length} accounts. Total: ${oldTotalBalance} → ${state.totalBalance}`);
       })
       .addCase(fetchAllAccountsWithBalance.rejected, (state, action) => {
         state.isLoading = false;
@@ -978,12 +928,6 @@ const mt5AccountSlice = createSlice({
         const details = action.payload;
         const account = state.accounts.find(acc => acc.accountId === details.accountId);
         if (account) {
-          console.log(`[MT5] 🔄 Updating account ${details.accountId} with details:`, {
-            balance: details.balance,
-            equity: details.equity,
-            profit: details.profit
-          });
-
           // Update all account details from MT5 API
           account.balance = details.balance;
           account.equity = details.equity;
@@ -994,8 +938,6 @@ const mt5AccountSlice = createSlice({
           account.marginLevel = details.marginLevel;
           if (details.leverage) account.leverage = details.leverage;
           if (details.server) account.server = details.server;
-
-          console.log(`[MT5] ✅ Account ${details.accountId} updated. New balance: ${account.balance}, equity: ${account.equity}`);
 
           // Recalculate total balance from Live accounts only
           state.totalBalance = state.accounts
@@ -1063,7 +1005,6 @@ const mt5AccountSlice = createSlice({
         state.isLoading = false;
         // Immediately add the new account to state (optimistic update)
         const newAccount = action.payload;
-        console.log('🚀 Adding new account to state immediately:', newAccount);
 
         // Check if account already exists to avoid duplicates
         const exists = state.accounts.some(acc => acc.accountId === newAccount.accountId);
@@ -1072,9 +1013,6 @@ const mt5AccountSlice = createSlice({
           // Only add to total balance if it's a Live account
           if ((newAccount.accountType || 'Live') === 'Live') {
             state.totalBalance += (newAccount.balance || 0);
-            console.log(`✅ New Live account added! Total accounts: ${state.accounts.length}`);
-          } else {
-            console.log(`✅ New Demo/Non-Live account added (not included in balance). Total accounts: ${state.accounts.length}`);
           }
         }
 

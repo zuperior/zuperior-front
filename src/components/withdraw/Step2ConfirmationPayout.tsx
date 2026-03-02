@@ -35,7 +35,7 @@ export function Step2ConfirmationPayout({
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
-  
+
   // Get user email from Redux store
   const userData = useAppSelector((state) => state.user.data);
   const userEmail = userData?.email1 || userData?.email || 'your email';
@@ -74,7 +74,7 @@ export function Step2ConfirmationPayout({
 
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
-      
+
       // Request withdrawal (sends OTP)
       const resp = await fetch('/api/withdraw/request', {
         method: 'POST',
@@ -89,14 +89,14 @@ export function Step2ConfirmationPayout({
           bankDetails: isBank ? selectedDest?.bank : undefined,
         }),
       });
-      
+
       const json = await resp.json();
       if (!resp.ok || !json?.success) throw new Error(json?.message || 'Failed to request withdrawal');
-      
+
       setOtpKey(json.data?.otpKey);
       setShowOtpInput(true);
       toast.success('OTP sent to your email. Please verify to complete withdrawal.');
-      
+
     } catch (err: unknown) {
       toast.error((err as Error).message || 'An error occurred while requesting withdrawal');
     } finally {
@@ -115,7 +115,7 @@ export function Step2ConfirmationPayout({
 
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
-      
+
       // Create withdrawal with OTP verification
       const resp = await fetch('/api/withdraw/create', {
         method: 'POST',
@@ -128,7 +128,7 @@ export function Step2ConfirmationPayout({
           otp: otp.join(''),
         }),
       });
-      
+
       const json = await resp.json();
       if (!resp.ok || !json?.success) throw new Error(json?.message || 'Failed to create withdrawal');
 
@@ -164,7 +164,6 @@ export function Step2ConfirmationPayout({
   };
 
   useEffect(() => {
-    console.log('Selected network changed:', selectedNetwork);
   }, [selectedNetwork]);
 
   return (

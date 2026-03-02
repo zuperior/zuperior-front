@@ -9,8 +9,8 @@ import {
 } from "@/components/ui/dialog";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../store";
-import btc from "@/assets/bitcoin.png";
-import usdt from "@/assets/tether.png";
+import btc from "@/assets/bitcoin.avif";
+import usdt from "@/assets/tether.avif";
 import usdc from "@/assets/binance.png";
 import ethereum from "@/assets/binance.png";
 import solana from "@/assets/binance.png";
@@ -36,9 +36,9 @@ export function WithdrawPayoutDialog({
   );
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
- /*  const [accountDetails, setAccountDetails] = useState<AccountDetails | null>(
-    null
-  ); */
+  /*  const [accountDetails, setAccountDetails] = useState<AccountDetails | null>(
+     null
+   ); */
   // Prefer MT5 accounts from the new flow; fall back to legacy snapshot
   const mt5Accounts = useSelector((state: RootState) => state.mt5.accounts);
   const legacyAccounts = useSelector((state: RootState) => state.accounts.data)?.filter((a) => a.account_type === 'Live') || [];
@@ -197,33 +197,28 @@ export function WithdrawPayoutDialog({
           <div className="flex items-center justify-between w-full pt-6">
             <div className="flex items-center space-x-2 w-full mx-10">
               <div
-                className={`flex h-8 w-8 px-4 mx-0 items-center justify-center rounded-full ${
-                  step >= 1 ? "bg-[#9F8BCF]" : "bg-[#594B7A]"
-                }`}
+                className={`flex h-8 w-8 px-4 mx-0 items-center justify-center rounded-full ${step >= 1 ? "bg-[#9F8BCF]" : "bg-[#594B7A]"
+                  }`}
               >
                 <span className="text-sm font-medium">1</span>
               </div>
               <div
-                className={`h-[4px] w-full mx-0 ${
-                  step >= 2 ? "bg-[#6B5993]" : "bg-[#392F4F]"
-                }`}
+                className={`h-[4px] w-full mx-0 ${step >= 2 ? "bg-[#6B5993]" : "bg-[#392F4F]"
+                  }`}
               ></div>
               <div
-                className={`flex h-8 w-8 p-4 mx-0 items-center justify-center rounded-full ${
-                  step >= 2 ? "bg-[#9F8BCF]" : "bg-[#594B7A]"
-                }`}
+                className={`flex h-8 w-8 p-4 mx-0 items-center justify-center rounded-full ${step >= 2 ? "bg-[#9F8BCF]" : "bg-[#594B7A]"
+                  }`}
               >
                 <span className="text-sm font-medium ">2</span>
               </div>
               <div
-                className={`h-[4px] w-full mx-0 ${
-                  step >= 3 ? "bg-[#6B5993]" : "bg-[#392F4F]"
-                }`}
+                className={`h-[4px] w-full mx-0 ${step >= 3 ? "bg-[#6B5993]" : "bg-[#392F4F]"
+                  }`}
               ></div>
               <div
-                className={`flex h-8 w-8 p-4 items-center justify-center rounded-full ${
-                  step >= 3 ? " bg-[#9F8BCF]" : "bg-[#594B7A]"
-                }`}
+                className={`flex h-8 w-8 p-4 items-center justify-center rounded-full ${step >= 3 ? " bg-[#9F8BCF]" : "bg-[#594B7A]"
+                  }`}
               >
                 <span className="text-sm font-medium">3</span>
               </div>

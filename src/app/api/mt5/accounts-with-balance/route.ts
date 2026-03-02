@@ -2,7 +2,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // Prefer a server-only var if provided, else fall back to NEXT_PUBLIC_*
-const API_URL = process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+const RAW_API_URL = process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+// Normalize URL: remove trailing slashes to avoid double slashes in concatenated paths
+const API_URL = RAW_API_URL.replace(/\/+$/, '');
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,11 +27,8 @@ export async function GET(request: NextRequest) {
 
     // Aggressive cache busting - multiple query params
     const cacheBuster2 = Date.now();
+    // Use normalized API_URL
     const url = `${API_URL}/mt5/accounts-with-balance?_t=${cacheBuster}&_nocache=${cacheBuster2}&_fresh=${Date.now()}`;
-
-    console.log(`[Next.js API] 🚀 Fetching accounts with balance from: ${url}`);
-    console.log(`[Next.js API] 🔍 API_URL: ${API_URL}`);
-    console.log(`[Next.js API] 🔍 Full URL: ${url}`);
 
     const response = await fetch(url, {
       method: 'GET',
@@ -66,12 +65,6 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json();
-
-    // Log the response to debug
-    console.log(`[Next.js API] 📥 Accounts with balance response:`, {
-      accountCount: data?.data?.accounts?.length || 0,
-      totalBalance: data?.data?.totalBalance || 0
-    });
 
     // The backend returns: { success: true, data: { accounts: [...], totalBalance: ... } }
     return NextResponse.json(data);

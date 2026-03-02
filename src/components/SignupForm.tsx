@@ -34,7 +34,6 @@ const SignupForm = () => {
       authService.setAuthData(data.token, data.clientId);
 
       // 2. Update Redux/Context (Mocked - replace with your actual state update)
-      console.log(`User logged in. ClientID: ${data.clientId}`);
 
       // 3. Redirect to the Dashboard
       router.push('/dashboard');
@@ -53,11 +52,11 @@ const SignupForm = () => {
       <h2 className="text-2xl font-bold mb-4">Create Account</h2>
 
       {/* Input Fields */}
-      <input type="text" name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} required className="mb-3 p-2 border w-full"/>
-      <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required className="mb-3 p-2 border w-full"/>
-      <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} required className="mb-3 p-2 border w-full"/>
-      <input type="text" name="phone" placeholder="Phone" value={formData.phone} onChange={handleChange} className="mb-3 p-2 border w-full"/>
-      <input type="text" name="country" placeholder="Country" value={formData.country} onChange={handleChange} className="mb-3 p-2 border w-full"/>
+      <input type="text" name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} required className="mb-3 p-2 border w-full" />
+      <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required className="mb-3 p-2 border w-full" />
+      <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} required className="mb-3 p-2 border w-full" />
+      <input type="text" name="phone" placeholder="Phone" value={formData.phone} onChange={handleChange} className="mb-3 p-2 border w-full" />
+      <input type="text" name="country" placeholder="Country" value={formData.country} onChange={handleChange} className="mb-3 p-2 border w-full" />
 
       {error && <p className="text-red-500 mb-4">{error}</p>}
 

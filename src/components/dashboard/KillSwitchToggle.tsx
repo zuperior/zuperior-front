@@ -115,14 +115,9 @@ export function KillSwitchToggle() {
                 toast.error(response.message || "Failed to toggle kill switch");
             }
         } catch (error: any) {
-            console.log('[Kill Switch] Error caught:', error);
-            console.log('[Kill Switch] Error response:', error.response);
-            console.log('[Kill Switch] Error data:', error.response?.data);
-
             // Check if error is due to validation (400 status from kill-switch)
             if (error.response?.status === 400) {
                 const errorData = error.response?.data;
-                console.log('[Kill Switch] 400 error data:', errorData);
 
                 // IMPORTANT: Ensure Kill Switch stays OFF by refreshing from server FIRST
                 try {
@@ -132,7 +127,6 @@ export function KillSwitchToggle() {
                             active: response.data.killSwitchActive ?? false,
                             until: response.data.killSwitchUntil ?? null
                         }));
-                        console.log('[Kill Switch] State refreshed - active:', response.data.killSwitchActive);
                     }
                 } catch (refreshError) {
                     console.error("Failed to refresh kill switch status:", refreshError);
@@ -140,16 +134,13 @@ export function KillSwitchToggle() {
 
                 // Always show modal for 400 errors from kill-switch
                 if (errorData?.accountsWithOpenPositions && Array.isArray(errorData.accountsWithOpenPositions) && errorData.accountsWithOpenPositions.length > 0) {
-                    console.log('[Kill Switch] Showing modal with account data:', errorData.accountsWithOpenPositions);
                     setOpenPositionsData(errorData.accountsWithOpenPositions);
                 } else if (errorData?.accountsWithOpenPositions) {
                     // Handle case where it might be a single object or different structure
-                    console.log('[Kill Switch] Showing modal with non-array account data:', errorData.accountsWithOpenPositions);
                     const data = Array.isArray(errorData.accountsWithOpenPositions) ? errorData.accountsWithOpenPositions : [errorData.accountsWithOpenPositions];
                     setOpenPositionsData(data);
                 } else {
                     // Show modal with generic message if no account details
-                    console.log('[Kill Switch] No account data, showing modal with generic info');
                     setOpenPositionsData([{
                         accountId: 'one or more accounts',
                         openPositions: 1
@@ -179,8 +170,8 @@ export function KillSwitchToggle() {
                     <TooltipContent side="bottom" className="max-w-[250px] bg-popover text-popover-foreground border-border">
                         <p className="text-xs font-medium leading-relaxed">
                             {isActive
-                                ? "It will automatically reactivate at 2:00 AM UTC"
-                                : "By enabling this, the trading functionality of all your accounts will be disabled until 2:00 AM UTC tomorrow."}
+                                ? "Trading accounts will be enabled at UTC+2 00:00 hrs"
+                                : "By enabling this, the trading functionality of all your accounts will be disabled until next trading session UTC +2 00:00 hrs"}
                         </p>
                     </TooltipContent>
                 </Tooltip>
@@ -221,7 +212,7 @@ export function KillSwitchToggle() {
                             <DialogDescription className="text-base text-muted-foreground/90 leading-relaxed pt-2">
                                 This will disable trading on all your accounts for the current trading session.
                                 <br /><br />
-                                <span className="text-red-400/90 font-medium">It will automatically be enabled in the next trading session UTC+2 00:00.</span>
+                                <span className="text-red-400/90 font-medium">It will automatically be enabled in the next trading session UTC+2 00:00 hrs.</span>
                             </DialogDescription>
                         </DialogHeader>
                         <DialogFooter className="flex gap-3 sm:justify-end border-t border-white/5 pt-6 mt-2">

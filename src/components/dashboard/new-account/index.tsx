@@ -123,14 +123,11 @@ export function NewAccountDialog({
     }
   }, [open]);
 
-  // Auto-select first group when entering step 2 or when accountType changes in step 2
+  // Auto-select group when entering step 2 or when accountType changes in step 2
   useEffect(() => {
-    // Auto-select if:
-    // 1. We just entered step 2 and no group is selected, OR
-    // 2. We're in step 2 and accountType changed (which resets accountPlan to null)
     if (step === 2 && accountType) {
-      // Check if accountPlan is null or invalid
-      const needsSelection = !accountPlan || (typeof accountPlan === 'object' && !accountPlan.group);
+      const needsSelection =
+        !accountPlan || (typeof accountPlan === "object" && !accountPlan.group);
 
       if (needsSelection) {
         const autoSelectGroup = async () => {
@@ -164,9 +161,12 @@ export function NewAccountDialog({
           } catch (error) {
             console.error("❌ Error auto-selecting group:", error);
           }
-        };
-        autoSelectGroup();
-      }
+        } catch (error) {
+          console.error('❌ Error auto-selecting group:', error);
+        }
+      };
+
+      autoSelectGroup();
     }
   }, [step, accountType]);
 
@@ -288,11 +288,15 @@ export function NewAccountDialog({
     try {
       setLoadingStep2(true);
 
+      if (!accountPlan) {
+        toast.error("Please select an account plan");
+        setLoadingStep2(false);
+        return;
+      }
+
       // Use group from selected account plan
       const group = accountPlan.group;
       const isDemo = accountType.toLowerCase() === "demo";
-
-      console.log("✅ Account type:", accountType, "| Selected Group:", group);
 
       // Generate passwords for MT5 (master and investor)
       const masterPassword = password.trim();
@@ -313,13 +317,11 @@ export function NewAccountDialog({
         accountPlan: accountPlan.dedicated_name || accountPlan.group.split('\\').pop() || "Account" // Include accountPlan name for reference
       };
 
-      console.log("🚀 Creating MT5 Account - Type:", accountType, "| Final payload:", JSON.stringify(payload, null, 2));
-
       const result = await dispatch(createMt5Account(payload)).unwrap();
 
-      // Handle .NET Core API response format
-      if (result) {
-        console.log("✅ MT5 Account creation response:", result);
+      // Handle .NET Core API response format and new MT5Account object format
+      const resAny = result as any;
+      if (result && (typeof result === 'boolean' ? result : resAny.success === true || resAny.success === 'true' || !!result.accountId)) {
 
         // Check if account was actually created (accountId should not be empty)
         if (!result.accountId || result.accountId === "0") {
@@ -330,11 +332,11 @@ export function NewAccountDialog({
           return;
         }
 
-        console.log("✅ Account created successfully - Account ID:", result.accountId);
         toast.success(`Your MT5 account has been created successfully! Account ID: ${result.accountId}`);
 
         // Set the latest account data for the success step
         setLatestAccount({
+          ...(result as any),
           status: "success",
           status_code: "200",
           message: "Account created successfully",
@@ -345,8 +347,6 @@ export function NewAccountDialog({
             tp_id: result.accountId,
             tp_creation_error: ""
           },
-          // Use the transformed account data from Redux result
-          ...result
         });
 
         // Advance to success step immediately
@@ -376,7 +376,14 @@ export function NewAccountDialog({
 
     } catch (err: any) {
       console.error("MT5 account creation failed:", err);
-      const errorMessage = err?.message || err?.data?.message || "Failed to create MT5 account. Please try again.";
+      let errorMessage = "Failed to create MT5 account. Please try again.";
+      if (typeof err === 'string') {
+        errorMessage = err;
+      } else if (err?.message) {
+        errorMessage = err.message;
+      } else if (err?.data?.message) {
+        errorMessage = err.data.message;
+      }
       toast.error(errorMessage);
     } finally {
       setLoadingStep2(false);
@@ -386,9 +393,8 @@ export function NewAccountDialog({
 
   const handleAccountChange = (value: string) => {
     setAccountType(value);
-    // Reset account plan when account type changes
-    // The useEffect will auto-select the first group for the new account type
-    setAccountPlan(null);
+    // DO NOT reset account plan here! 
+    // The useEffect will handle finding the matching group for the new accountType
   };
 
   const nextStep = () => {
@@ -480,6 +486,8 @@ export function NewAccountDialog({
           <StepPrepareAccount
             accountType={accountType}
             handleAccountChange={handleAccountChange}
+            accountPlan={accountPlan}
+            setAccountPlan={setAccountPlan}
             leverage={leverage}
             setLeverage={setLeverage}
             currency={currency}

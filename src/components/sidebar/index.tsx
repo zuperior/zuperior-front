@@ -6,7 +6,6 @@ import { getMenuItems } from "@/lib/sidebar-config";
 import { SidebarHeader } from "@/components/sidebar/sidebar-header";
 import { SidebarMenu } from "@/components/sidebar/sidebar-menu";
 import { SidebarToggle } from "@/components/sidebar/sidebar-toggle";
-import { ReferralBanner } from "@/components/sidebar/referral-banner";
 import { X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -94,10 +93,6 @@ export function Sidebar({ mobileOpen = false, setMobileOpen = () => { } }: { mob
           </nav>
         </div>
 
-        {/* Hide referral banner on mobile */}
-        <div className={cn("lg:block", isMobileView && "hidden")}>
-          <ReferralBanner collapsed={displayCollapsed} />
-        </div>
       </div>
 
       {/* Toggle only visible on desktop - positioned outside sidebar to appear above border */}

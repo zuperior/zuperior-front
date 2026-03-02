@@ -7,10 +7,10 @@ const API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:500
 export async function POST(request: NextRequest) {
   try {
     console.log('[Logout All Devices API] Starting request...');
-    
+
     // Try to get token from Authorization header (from axios interceptor)
-    let token = request.headers.get('authorization')?.replace('Bearer ', '') || 
-                request.headers.get('Authorization')?.replace('Bearer ', '');
+    let token = request.headers.get('authorization')?.replace('Bearer ', '') ||
+      request.headers.get('Authorization')?.replace('Bearer ', '');
 
     console.log('[Logout All Devices API] Token from header:', token ? 'Found' : 'Not found');
 
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       } catch (parseError) {
         console.error('[Logout All Devices API] Error parsing backend response:', parseError);
       }
-      
+
       console.error('[Logout All Devices API] Backend error:', errorData);
       return NextResponse.json(
         {
@@ -71,11 +71,11 @@ export async function POST(request: NextRequest) {
 
     // Clear cookies in the response
     const jsonResponse = NextResponse.json(data);
-    
+
     // Clear token and clientId cookies
     jsonResponse.cookies.delete('token');
     jsonResponse.cookies.delete('clientId');
-    
+
     // Also set them to expire in the past
     jsonResponse.cookies.set('token', '', {
       expires: new Date(0),
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     console.error('[Logout All Devices API] Error type:', typeof error);
     console.error('[Logout All Devices API] Error message:', error?.message);
     console.error('[Logout All Devices API] Error stack:', error?.stack);
-    
+
     // Check if it's a network error
     if (error?.code === 'ECONNREFUSED' || error?.message?.includes('fetch failed')) {
       return NextResponse.json(

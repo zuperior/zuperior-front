@@ -111,7 +111,7 @@ export function Step2Confirmation({
   return (
     <div className="w-full">
       <h2 className="text-2xl text-center font-bold dark:text-white/75 text-black">
-        {selectedCrypto && usdAmount 
+        {selectedCrypto && usdAmount
           ? `Pay ${amount} ${selectedCrypto.symbol}-${selectedNetwork} (${usdAmount} USD)`
           : `Pay ${amount} ${selectedCrypto ? `${selectedCrypto.symbol}-${selectedNetwork}` : "USD"}`}
       </h2>
@@ -179,19 +179,19 @@ export function Step2Confirmation({
                     // Fallback to paymentImages if available, otherwise use fallback
                     return paymentImages[paymentMethod] || fallbackImg;
                   };
-                  
+
                   const iconSrc = getPaymentMethodIcon(paymentMethod);
-                  
+
                   return (
                     <>
-                  <Image
+                      <Image
                         src={iconSrc}
-                    alt="Payment Method"
-                    className="h-6 w-6 mr-2"
-                    width={24}
-                    height={24}
-                  />
-                <p className="dark:text-white/75 text-black">{paymentMethod}</p>
+                        alt="Payment Method"
+                        className="h-6 w-6 mr-2"
+                        width={24}
+                        height={24}
+                      />
+                      <p className="dark:text-white/75 text-black">{paymentMethod}</p>
                     </>
                   );
                 })()}
@@ -214,7 +214,7 @@ export function Step2Confirmation({
         <div className="md:p-3 pt-4 flex justify-between items-center text-sm dark:bg-[#221D22] rounded-lg ">
           <p className="dark:text-white/75 text-black  text-xs font-semibold">To be Deposited</p>
           <p className="text-[#945393] text-lg font-bold">
-            {selectedCrypto && usdAmount 
+            {selectedCrypto && usdAmount
               ? `${amount} ${selectedCrypto.symbol} (${usdAmount} USD)`
               : `${amount} ${selectedCrypto?.name || "USD"}`}
           </p>

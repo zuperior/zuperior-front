@@ -48,7 +48,7 @@ const TradeNowDialouge = ({
   const handleWebTerminalClick = useCallback(async () => {
     const token = localStorage.getItem('userToken');
     const clientId = localStorage.getItem('clientId');
-    
+
     if (!token || !clientId) {
       console.error('No authentication credentials found');
       return;
@@ -72,7 +72,7 @@ const TradeNowDialouge = ({
           // Persist locally so terminal launcher and UI can read immediately
           localStorage.setItem('defaultMt5Account', String(mtLogin));
           sessionStorage.setItem('defaultMt5Account', String(mtLogin));
-        } catch (_e) {}
+        } catch (_e) { }
       } else {
         console.warn('⚠️ Failed to set default account:', data.message);
       }
@@ -83,9 +83,9 @@ const TradeNowDialouge = ({
 
     // Get terminal URL from environment variable
     const terminalBaseUrl = process.env.NEXT_PUBLIC_TERMINAL_URL || 'https://trade.zuperior.com';
-    const terminalUrl = `${terminalBaseUrl}/login?token=${encodeURIComponent(token)}&clientId=${encodeURIComponent(clientId)}&autoLogin=true&accountId=${encodeURIComponent(mtLogin)}`;
+    const terminalUrl = `${terminalBaseUrl}/terminal?token=${encodeURIComponent(token)}&clientId=${encodeURIComponent(clientId)}&autoLogin=true&accountId=${encodeURIComponent(mtLogin)}`;
     window.open(terminalUrl, '_blank');
-    
+
     // Close the dialog after opening terminal
     setTradeNowDialog(false);
     resetAllStates();
@@ -122,7 +122,7 @@ const TradeNowDialouge = ({
                 className="space-y-4"
               >
                 {/* Exness terminal */}
-                
+
 
                 <div
                   onClick={handleWebTerminalClick}

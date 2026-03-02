@@ -55,10 +55,9 @@ export default function ResetPasswordPage() {
   }, [token, router]);
 
   const getInputClassName = (fieldName: string) =>
-    `w-full bg-[#1a1a1a] p-3 rounded text-white text-sm focus:outline-none ${
-      validationErrors[fieldName]
-        ? "border border-red-500/50 bg-red-500/5 shadow-lg shadow-red-500/20"
-        : "border border-transparent focus:border-purple-500/50 focus:shadow-lg focus:shadow-purple-500/20"
+    `w-full bg-[#1a1a1a] p-3 rounded text-white text-sm focus:outline-none ${validationErrors[fieldName]
+      ? "border border-red-500/50 bg-red-500/5 shadow-lg shadow-red-500/20"
+      : "border border-transparent focus:border-purple-500/50 focus:shadow-lg focus:shadow-purple-500/20"
     }`;
 
   const clearFieldError = (fieldName: string) => {

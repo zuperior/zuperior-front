@@ -49,14 +49,14 @@ export function Step1FormPayout({
   type ApprovedMethod = { type: 'crypto' | 'bank'; label: string; value: string; bank?: WithdrawDest['bank'] };
   const [approvedMethods, setApprovedMethods] = useState<ApprovedMethod[]>([]);
   const [wallet, setWallet] = useState<any>(null);
-  
+
   // State for withdrawal limits from group_management
   const [withdrawalLimits, setWithdrawalLimits] = useState<{
     minWithdrawal: number | null;
     maxWithdrawal: number | null;
   } | null>(null);
   const [loadingWithdrawalLimits, setLoadingWithdrawalLimits] = useState(false);
-  
+
   // Compute available balance for display and quick-fill
   const availableBalance = useMemo(() => {
     const raw = useWallet
@@ -64,6 +64,11 @@ export function Step1FormPayout({
       : parseFloat(String(selectedAccount?.balance || 0));
     return isNaN(raw) ? 0 : raw;
   }, [useWallet, wallet?.balance, selectedAccount?.balance]);
+
+  const effectiveMaxWithdrawal = useMemo(() => {
+    if (useWallet) return Infinity;
+    return withdrawalLimits?.maxWithdrawal ?? Infinity;
+  }, [useWallet, withdrawalLimits]);
 
   // KYC Step
   useEffect(() => {
@@ -98,16 +103,10 @@ export function Step1FormPayout({
             minWithdrawal: data.data.minWithdrawal,
             maxWithdrawal: data.data.maxWithdrawal,
           });
-          console.log('📊 Withdrawal limits fetched:', {
-            minWithdrawal: data.data.minWithdrawal,
-            maxWithdrawal: data.data.maxWithdrawal,
-          });
         } else {
           setWithdrawalLimits(null);
-          console.warn('⚠️ No withdrawal limits found for account:', accountNumber);
         }
       } catch (error) {
-        console.error('❌ Error fetching withdrawal limits:', error);
         setWithdrawalLimits(null);
       } finally {
         setLoadingWithdrawalLimits(false);
@@ -140,13 +139,15 @@ export function Step1FormPayout({
               const type = (pm.methodType ?? 'crypto') as 'crypto' | 'bank';
               if (type === 'bank') {
                 const label = `${pm.bankName || 'Bank'} • ${pm.accountNumber || ''}`.trim();
-                return { type: 'bank', label, value: pm.accountNumber || label, bank: {
-                  bankName: pm.bankName,
-                  accountName: pm.accountName,
-                  accountNumber: pm.accountNumber,
-                  ifscSwiftCode: pm.ifscSwiftCode,
-                  accountType: pm.accountType,
-                }};
+                return {
+                  type: 'bank', label, value: pm.accountNumber || label, bank: {
+                    bankName: pm.bankName,
+                    accountName: pm.accountName,
+                    accountNumber: pm.accountNumber,
+                    ifscSwiftCode: pm.ifscSwiftCode,
+                    accountType: pm.accountType,
+                  }
+                };
               }
               return { type: 'crypto', label: pm.address, value: pm.address };
             });
@@ -162,7 +163,7 @@ export function Step1FormPayout({
             }
           }
         }
-      } catch {}
+      } catch { }
     };
     load();
   }, [setToWallet, toWallet, allowedMethodType]);
@@ -176,7 +177,7 @@ export function Step1FormPayout({
     }
     const amountNum = parseFloat(amount);
     // Use account balance for withdrawal availability display/validation
-    const balance = useWallet ? parseFloat(String(wallet?.balance || 0)) : parseFloat(selectedAccount.balance);
+    const balance = useWallet ? parseFloat(String(wallet?.balance || 0)) : parseFloat(selectedAccount?.balance || "0");
 
     if (isNaN(amountNum) || amountNum <= 0) {
       toast.error("Please enter a valid amount");
@@ -253,13 +254,13 @@ export function Step1FormPayout({
   const getLimitMessage = () => {
     // Priority: Use group-based withdrawal limits from database if available
     if (!useWallet && withdrawalLimits) {
-      const minText = withdrawalLimits.minWithdrawal !== null && withdrawalLimits.minWithdrawal !== undefined 
-        ? `$${withdrawalLimits.minWithdrawal.toFixed(2)}` 
+      const minText = withdrawalLimits.minWithdrawal !== null && withdrawalLimits.minWithdrawal !== undefined
+        ? `$${withdrawalLimits.minWithdrawal.toFixed(2)}`
         : "$1";
-      const maxText = withdrawalLimits.maxWithdrawal !== null && withdrawalLimits.maxWithdrawal !== undefined 
-        ? `$${withdrawalLimits.maxWithdrawal.toFixed(2)}` 
+      const maxText = withdrawalLimits.maxWithdrawal !== null && withdrawalLimits.maxWithdrawal !== undefined
+        ? `$${withdrawalLimits.maxWithdrawal.toFixed(2)}`
         : "Unlimited";
-      
+
       if (withdrawalLimits.minWithdrawal !== null && withdrawalLimits.maxWithdrawal !== null) {
         return `Withdrawal limit: ${minText} - ${maxText}`;
       } else if (withdrawalLimits.maxWithdrawal !== null) {
@@ -268,7 +269,7 @@ export function Step1FormPayout({
         return `Minimum withdrawal limit: ${minText}`;
       }
     }
-    
+
     // Fallback to KYC-based limits if no group limits
     switch (kycStep) {
       case "unverified":
@@ -376,8 +377,8 @@ export function Step1FormPayout({
             className="hover:opacity-80 cursor-pointer font-medium"
             onClick={() => {
               // Set amount to the minimum of available balance and max withdrawal limit
-              const maxAllowed = effectiveMaxWithdrawal === Infinity 
-                ? availableBalance 
+              const maxAllowed = effectiveMaxWithdrawal === Infinity
+                ? availableBalance
                 : Math.min(availableBalance, effectiveMaxWithdrawal);
               setAmount(maxAllowed.toFixed(2));
             }}

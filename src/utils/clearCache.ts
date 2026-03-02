@@ -1,7 +1,7 @@
 // Utility to clear cached balance data from localStorage
 export const clearBalanceCache = () => {
   if (typeof window === 'undefined') return;
-  
+
   try {
     const persistRoot = localStorage.getItem('persist:root');
     if (persistRoot) {
@@ -13,7 +13,6 @@ export const clearBalanceCache = () => {
         mt5Data.totalBalance = 0;
         parsed.mt5 = JSON.stringify(mt5Data);
         localStorage.setItem('persist:root', JSON.stringify(parsed));
-        console.log('✅ Cleared cached balance data from localStorage');
         return true;
       }
     }
@@ -23,4 +22,3 @@ export const clearBalanceCache = () => {
   }
   return false;
 };
-

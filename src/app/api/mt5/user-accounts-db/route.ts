@@ -1,7 +1,8 @@
 // client/src/app/api/mt5/user-accounts-db/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+const RAW_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+const API_URL = RAW_API_URL.replace(/\/+$/, '');
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,10 +18,19 @@ export async function GET(request: NextRequest) {
     // Check if we should fetch all accounts (including archived)
     const searchParams = request.nextUrl.searchParams;
     const includeArchived = searchParams.get('includeArchived') === 'true';
-    
+
     // Fetch accounts - if includeArchived=true, get all accounts; otherwise get only non-archived
     const includeArchivedParam = includeArchived ? 'true' : 'false';
-    const response = await fetch(`${API_URL}/mt5/user-accounts?includeArchived=${includeArchivedParam}`, {
+    const url = `${API_URL}/mt5/user-accounts?includeArchived=${includeArchivedParam}`;
+
+    console.log(`[Next.js API] 🚀 Proxying to user-accounts-db:`, {
+      method: 'GET',
+      rawApiUrl: RAW_API_URL,
+      targetUrl: url,
+      timestamp: new Date().toISOString()
+    });
+
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -41,7 +51,7 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
     const allAccounts = data?.Data?.accounts || data?.data?.accounts || data?.accounts || [];
-    
+
     // When includeArchived=true, server returns all accounts (both archived and non-archived)
     // When includeArchived=false, server returns only non-archived accounts
 

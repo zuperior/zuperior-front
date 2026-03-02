@@ -1,7 +1,8 @@
 // client/src/app/api/proxy/groups/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+const RAW_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+const API_URL = RAW_API_URL.replace(/\/+$/, '');
 
 export async function GET(request: NextRequest) {
   // Groups endpoint on backend is public, but forward auth if present
@@ -12,7 +13,15 @@ export async function GET(request: NextRequest) {
   const timeout = setTimeout(() => controller.abort(), 60000); // 60 seconds timeout
 
   try {
-    const response = await fetch(`${API_URL}/mt5/groups`, {
+    const url = `${API_URL}/mt5/groups`;
+    console.log(`[Next.js API] 🚀 Proxying to groups:`, {
+      method: 'GET',
+      rawApiUrl: RAW_API_URL,
+      targetUrl: url,
+      timestamp: new Date().toISOString()
+    });
+
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         ...(token ? { Authorization: token } : {}),
@@ -21,7 +30,7 @@ export async function GET(request: NextRequest) {
       cache: 'no-store',
       signal: controller.signal,
     });
-    
+
     clearTimeout(timeout);
 
     if (!response.ok) {
@@ -40,7 +49,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data);
   } catch (error: any) {
     clearTimeout(timeout);
-    
+
     // Handle timeout errors gracefully
     if (error.name === 'AbortError' || error.message?.includes('aborted')) {
       console.error('Timeout fetching MT5 groups:', error);
@@ -49,7 +58,7 @@ export async function GET(request: NextRequest) {
         { status: 504 }
       );
     }
-    
+
     console.error('Error fetching MT5 groups:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error' },

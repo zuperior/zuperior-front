@@ -45,8 +45,6 @@ const mapMT5AccountToTpAccount = (mt5Account: MT5Account): TpAccountSnapshot => 
     ? Number(mt5Account.profit)
     : 0;
 
-  console.log(`[AccountsSection] 📊 Mapping account ${mt5Account.accountId} - Balance: ${balance}, Equity: ${equity}, Profit: ${profit}`);
-
   return {
     tradingplatformaccountsid: parseInt(mt5Account.accountId),
     account_name: parseInt(mt5Account.accountId),
@@ -349,11 +347,7 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
         {/* Archived Accounts */}
         <TabsContent value="archived">
           {(() => {
-            // Debug logging
-            console.log('[AccountsSection] All Accounts:', accounts.map(a => ({ id: a.accountId, archived: a.archived, type: typeof a.archived })));
-
             const archivedAccounts = accounts.filter((account) => !!account.archived);
-            console.log('[AccountsSection] Archived Accounts Filtered:', archivedAccounts.length);
 
             if (archivedAccounts.length > 0) {
               return archivedAccounts.map((account, index) => {

@@ -301,7 +301,7 @@ export default function WithdrawalDepositPage() {
                 <TransferAmountCard
                   icon={arrowSideways}
                   name="Between your accounts"
-                  unverified={isUnverified}
+                  unverified={false}
                   onOpenNewAccount={() => {
                     setTransferMethod("between_accounts");
                     handleTransferSelect();

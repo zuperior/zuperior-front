@@ -43,7 +43,6 @@ export function DashboardContent() {
   // Log current API URL for debugging
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5000/api";
-    console.log("🔗 Dashboard - Current NEXT_PUBLIC_BACKEND_API_URL:", apiUrl);
   }, []);
 
   // Memoized wallet balance calculation
@@ -58,7 +57,6 @@ export function DashboardContent() {
 
     // When dialog closes (open = false), force refresh MT5 accounts to show newly created account
     if (!open) {
-      console.log("🔄 Dialog closed after account creation - forcing data refresh...");
       fetchAllData(true); // Force refresh to show new account
     }
   }, [fetchAllData]);

@@ -6,11 +6,11 @@ import { getKycStatus, getLocalKycStatus } from "@/services/kycService";
 function mapDatabaseStatusToLocal(dbStatus: string): "unverified" | "partial" | "verified" {
   if (!dbStatus) return "unverified";
   const normalizedStatus = dbStatus.toLowerCase();
-  
+
   if (normalizedStatus === "verified") return "verified";
   if (normalizedStatus === "partially verified" || normalizedStatus === "partial") return "partial";
   if (normalizedStatus === "pending" || normalizedStatus === "declined" || normalizedStatus === "unverified" || normalizedStatus === "rejected") return "unverified";
-  
+
   return "unverified";
 }
 

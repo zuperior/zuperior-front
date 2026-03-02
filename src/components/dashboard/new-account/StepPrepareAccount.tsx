@@ -39,6 +39,8 @@ interface StepPrepareAccountProps {
   loadingStep2: boolean;
   handleSubmit: () => Promise<void>;
   prevStep: () => void;
+  accountPlan: any;
+  setAccountPlan?: (plan: any) => void;
 }
 
 export const StepPrepareAccount: React.FC<StepPrepareAccountProps> = ({
@@ -60,6 +62,8 @@ export const StepPrepareAccount: React.FC<StepPrepareAccountProps> = ({
   loadingStep2,
   handleSubmit,
   prevStep,
+  accountPlan,
+  setAccountPlan,
 }) => (
   <div className="mx-auto w-[250px] md:w-[400px]">
     <DialogTitle className=" text-[20px] md:text-[28px] mt-3 text-center font-bold text-black dark:text-[#D9D9D9]">
@@ -150,6 +154,21 @@ export const StepPrepareAccount: React.FC<StepPrepareAccountProps> = ({
           <p className="text-red-400 text-[10px] mt-1">{errors.accountName}</p>
         )}
       </div>
+      <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg mb-6 border border-primary/20">
+        <div className="flex flex-col">
+          <span className="text-[12px] opacity-70">Selected Plan</span>
+          <span className="text-sm font-bold text-primary">
+            {accountPlan?.dedicated_name || accountPlan?.group?.split('\\').pop() || "Select a plan"}
+          </span>
+        </div>
+        <div className="flex flex-col items-end">
+          <span className="text-[12px] opacity-70">Type</span>
+          <span className="text-sm font-semibold">
+            {accountType === 'Live' ? 'Real' : 'Demo'}
+          </span>
+        </div>
+      </div>
+
       <div className="space-y-1">
         <Label htmlFor="password" className="text-black dark:text-white/75 text-[14px]">
           Trading Password
@@ -205,13 +224,6 @@ export const StepPrepareAccount: React.FC<StepPrepareAccountProps> = ({
         <Button
           className="flex-1 cursor-pointer bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:bg-[#9d6ad9] flex items-center justify-center"
           onClick={async () => {
-            console.log('📋 Form data collected (for reference only):', {
-              accountName,
-              accountType,
-              leverage,
-              password: password.substring(0, 3) + '***' // Hide password in logs
-            });
-            console.log('⚠️ NOTE: This is form data, not the API payload. Check "🚀 Creating MT5 Account - Final API payload:" for actual API data.');
             await handleSubmit();
           }}
           disabled={loadingStep2}

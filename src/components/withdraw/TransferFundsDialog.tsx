@@ -120,10 +120,8 @@ const TransferFundsDialog = ({
             minLimit: data.data.minLimit,
             maxLimit: data.data.maxLimit,
           });
-          console.log('📊 Transfer deposit limits fetched for destination account:', data.data);
         } else {
           setDepositLimits(null);
-          console.warn('⚠️ No deposit limits found for destination account:', toAccount);
         }
       } catch (error) {
         console.error('❌ Error fetching deposit limits for transfer:', error);
@@ -153,7 +151,6 @@ const TransferFundsDialog = ({
   // Fetch MT5 accounts from DB when dialog opens
   useEffect(() => {
     if (open) {
-      console.log('🔄 Fetching MT5 accounts for transfer dialog...');
       dispatch(fetchUserAccountsFromDb() as any);
       // Also fetch user's wallet number for wallet transfer option
       const token = localStorage.getItem('userToken');
@@ -167,17 +164,10 @@ const TransferFundsDialog = ({
 
   // Debug logging for accounts
   useEffect(() => {
-    console.log('📊 MT5 Accounts in TransferFundsDialog:', accounts);
-    console.log('📊 Number of accounts:', accounts.length);
-    console.log('📊 Filtered accounts:', filteredAccounts);
-    console.log('📊 Filtered accounts count:', filteredAccounts.length);
     if (filteredAccounts.length > 0) {
-      console.log('📋 Account details:');
       filteredAccounts.forEach((acc, index) => {
-        console.log(`  ${index + 1}. ID: ${acc.accountId}, Balance: ${acc.balance}, BalanceType: ${typeof acc.balance}`);
       });
     } else {
-      console.log('⚠️ No accounts available for transfer');
     }
   }, [accounts, filteredAccounts]);
 
@@ -243,23 +233,12 @@ const TransferFundsDialog = ({
         return;
       }
 
-      // Debug logging
-      console.log('🔄 Initiating transfer with data:', {
-        fromAccount,
-        toAccount,
-        amount: parseFloat(amount),
-        fromAccountType: typeof fromAccount,
-        toAccountType: typeof toAccount,
-      });
-
       const response = await InternalTransfer({
         fromAccount,
         toAccount,
         amount: parseFloat(amount),
         comment: "Internal transfer between MT5 accounts",
       });
-
-      console.log('[Transfer] 📦 Backend response:', JSON.stringify(response, null, 2));
 
       if (response.success) {
         const isTransferToWallet = String(toAccount).toUpperCase() === 'WALLET';
@@ -269,7 +248,6 @@ const TransferFundsDialog = ({
 
         // INSTANT UPDATE: Use optimistic updates from response data
         // This ensures no delay - balance updates immediately
-        console.log('[Transfer] ⚡ Applying optimistic updates from response...');
 
         // Step 1: Update source account balance instantly (if MT5 account)
         if (!isTransferFromWallet && responseData.fromBalance !== undefined) {
@@ -281,7 +259,6 @@ const TransferFundsDialog = ({
             balance: fromBalance,
             equity: fromBalance
           }));
-          console.log(`[Transfer] ✅ Updated source account ${fromAccount} balance instantly: $${fromBalance}`);
         }
 
         // Step 2: Update destination account balance instantly (if MT5 account)
@@ -292,7 +269,6 @@ const TransferFundsDialog = ({
             balance: toBalance,
             equity: toBalance
           }));
-          console.log(`[Transfer] ✅ Updated destination account ${toAccount} balance instantly: $${toBalance}`);
         }
 
         // Step 3: Update navbar total balance instantly
@@ -309,7 +285,6 @@ const TransferFundsDialog = ({
           dispatch(fetchUserAccountsFromDb() as any),
           dispatch(fetchAllAccountsWithBalance() as any)
         ]).then(() => {
-          console.log('[Transfer] ✅ Background refresh from database completed');
           // Dispatch refresh events again to ensure everything is in sync
           window.dispatchEvent(new CustomEvent('mt5:refresh'));
         }).catch((refreshError) => {

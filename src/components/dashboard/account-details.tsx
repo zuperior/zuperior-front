@@ -92,15 +92,6 @@ const AccountDetails = ({
   const bal = parseFloat(accountDetails.balance || "0");
   const eq = parseFloat(accountDetails.equity || "0");
 
-  // Log the balance and P/L being displayed for debugging
-  useEffect(() => {
-    console.log(`[AccountDetails] 💰 Account ${accountId} - Balance: ${bal}, Equity: ${eq}, closed_pnl: ${accountDetails.closed_pnl}`, {
-      accountDetailsBalance: accountDetails.balance,
-      accountDetailsEquity: accountDetails.equity,
-      closedPnl: accountDetails.closed_pnl
-    });
-  }, [accountId, bal, eq, accountDetails.balance, accountDetails.equity, accountDetails.closed_pnl]);
-
   // Calculate P/L: Use closed_pnl (profit from API) if available, otherwise calculate from Equity - Balance
   // CRITICAL: closed_pnl comes from the MT5 API Profit field and should be used directly for accuracy
   let pnl = 0;
@@ -108,7 +99,6 @@ const AccountDetails = ({
     const parsedPnl = parseFloat(accountDetails.closed_pnl);
     if (!isNaN(parsedPnl)) {
       pnl = parsedPnl;
-      console.log(`[AccountDetails] 📊 Account ${accountId} - Using P/L from API (closed_pnl): ${pnl}`);
     } else {
       // If parsing failed, fall back to calculation
       pnl = eq - bal;
@@ -117,7 +107,6 @@ const AccountDetails = ({
   } else {
     // Fallback: Calculate P/L as Equity - Balance
     pnl = eq - bal;
-    console.log(`[AccountDetails] 📊 Account ${accountId} - Using calculated P/L (Equity - Balance): ${pnl}`);
   }
 
   // Ensure relationships: Equity = Balance + P/L

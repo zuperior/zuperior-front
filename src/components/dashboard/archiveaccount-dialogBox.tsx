@@ -38,7 +38,6 @@ export const ArchiveAccountDialog = ({
 
         setLoading(true);
         try {
-            console.log("Archiving account:", internalId);
             const response = await mt5Service.archiveAccount(internalId);
 
             if (response.success) {

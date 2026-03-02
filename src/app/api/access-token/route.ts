@@ -24,8 +24,6 @@ export async function POST() {
     formData.append("client_id", process.env.CLIENT_API_CLIENT_ID);
     formData.append("client_secret", process.env.CLIENT_API_CLIENT_SECRET);
 
-    console.log("Fetching access token from:", "https://client.api.skaleapps.io/api/authorisation");
-
     const response = await axios.post(
       "https://client.api.skaleapps.io/api/authorisation",
       formData.toString(),
@@ -64,15 +62,13 @@ export async function POST() {
       );
     }
 
-    console.log("✅ Access token retrieved successfully");
-
     // Return the access token in a consistent format
     return NextResponse.json({
       access_token: response.data.access_token,
       expires_in: response.data.expires_in,
       token_type: response.data.token_type,
     });
-    
+
   } catch (error: unknown) {
     const err = error as AxiosError;
     let errorData: unknown = err.response?.data;

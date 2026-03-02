@@ -26,7 +26,7 @@ CheckIcon.displayName = "CheckIcon";
 
 const Page = () => {
   const dispatch = useAppDispatch();
-  
+
   // Use selector to subscribe to KYC state changes
   const addressVerified = useAppSelector((state) => state.kyc.isAddressVerified);
   const identityVerified = useAppSelector((state) => state.kyc.isDocumentVerified);
