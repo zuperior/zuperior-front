@@ -134,30 +134,71 @@ export function NewAccountDialog({
     }
   }, [open]);
 
-  // Auto-select first group when entering step 2 or when accountType changes in step 2
+  // Auto-select group when entering step 2 or when accountType changes in step 2
   useEffect(() => {
-    // Auto-select if:
-    // 1. We just entered step 2 and no group is selected, OR
-    // 2. We're in step 2 and accountType changed (which resets accountPlan to null)
     if (step === 2 && accountType) {
-      // Check if accountPlan is null or invalid
-      const needsSelection = !accountPlan || (typeof accountPlan === 'object' && !accountPlan.group);
+      // Remember the previous selection's name or keywords to try and match it
+      // This preserves "Startup" or "Pro" intent across Live/Demo switches
+      const prevPlan = accountPlan as any;
+      const currentPlanName = prevPlan?.dedicated_name ||
+        prevPlan?.group?.split('\\').pop() ||
+        prevPlan?.accountPlan;
 
-      if (needsSelection) {
-        const autoSelectGroup = async () => {
-          try {
-            const response = await groupManagementService.getActiveGroups(accountType);
-            if (response.success && response.data && response.data.length > 0) {
-              setAccountPlan(response.data[0]);
-            } else {
-              console.warn('⚠️ No groups available for account type:', accountType);
+      // Detect if user intended Startup or Pro based on keywords
+      const isStartupIntent = currentPlanName?.toLowerCase().includes('startup') ||
+        prevPlan?.group?.toLowerCase().includes('startup');
+      const isProIntent = currentPlanName?.toLowerCase().includes('pro') ||
+        prevPlan?.group?.toLowerCase().includes('pro');
+
+      const autoSelectGroup = async () => {
+        try {
+          const response = await groupManagementService.getActiveGroups(accountType);
+          if (response.success && response.data && response.data.length > 0) {
+            // 1. Try to find a group with matching dedicated_name (e.g., "Startup")
+            let matchedGroup = response.data.find((g: any) =>
+              g.dedicated_name === currentPlanName
+            );
+
+            // 2. Fallback: Try matching by keywords in the group path (Startup/Pro)
+            if (!matchedGroup) {
+              if (isStartupIntent) {
+                matchedGroup = response.data.find((g: any) =>
+                  g.group.toLowerCase().includes('startup') ||
+                  g.dedicated_name?.toLowerCase().includes('startup')
+                );
+              } else if (isProIntent) {
+                matchedGroup = response.data.find((g: any) =>
+                  g.group.toLowerCase().includes('pro') ||
+                  g.dedicated_name?.toLowerCase().includes('pro')
+                );
+              }
             }
-          } catch (error) {
-            console.error('❌ Error auto-selecting group:', error);
+
+            // 3. Last fallback: Try matching by name in the group path
+            if (!matchedGroup && currentPlanName) {
+              matchedGroup = response.data.find((g: any) =>
+                g.group.toLowerCase().includes(currentPlanName.toLowerCase())
+              );
+            }
+
+            // 4. Ultimate fallback: select the first group (current behavior)
+            const finalSelection = matchedGroup || response.data[0];
+
+            console.log('🔄 Auto-selecting group for', accountType, ':', {
+              prevIntent: { name: currentPlanName, isStartup: isStartupIntent, isPro: isProIntent },
+              selected: finalSelection.dedicated_name || finalSelection.group
+            });
+
+            setAccountPlan(finalSelection);
+          } else {
+            console.warn('⚠️ No groups available for account type:', accountType);
           }
-        };
-        autoSelectGroup();
-      }
+        } catch (error) {
+          console.error('❌ Error auto-selecting group:', error);
+        }
+      };
+
+      autoSelectGroup();
     }
   }, [step, accountType]);
 
@@ -355,9 +396,8 @@ export function NewAccountDialog({
 
   const handleAccountChange = (value: string) => {
     setAccountType(value);
-    // Reset account plan when account type changes
-    // The useEffect will auto-select the first group for the new account type
-    setAccountPlan(null);
+    // DO NOT reset account plan here! 
+    // The useEffect will handle finding the matching group for the new accountType
   };
 
   const nextStep = () => {
@@ -449,6 +489,8 @@ export function NewAccountDialog({
           <StepPrepareAccount
             accountType={accountType}
             handleAccountChange={handleAccountChange}
+            accountPlan={accountPlan}
+            setAccountPlan={setAccountPlan}
             leverage={leverage}
             setLeverage={setLeverage}
             currency={currency}
