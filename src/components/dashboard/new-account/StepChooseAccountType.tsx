@@ -4,7 +4,7 @@ import { DialogTitle } from "../../ui/dialog";
 import { AccountTypeCard } from "./accountTypeCard";
 import { groupManagementService } from "@/services/api.service";
 
-interface Group {
+export interface Group {
   id: number;
   group: string;
   dedicated_name: string | null;
@@ -15,6 +15,32 @@ interface Group {
   commission: number | null;
   is_active: boolean;
 }
+
+// Static demo groups – used ONLY for Demo accounts
+export const DEMO_STATIC_GROUPS: Group[] = [
+  {
+    id: 1,
+    group: "demo\\Startup\\dynamic-2000x-20PAbook",
+    dedicated_name: "Startup",
+    account_type: "Demo",
+    leverage: null,
+    min_deposit: null,
+    spread: null,
+    commission: null,
+    is_active: true,
+  },
+  {
+    id: 2,
+    group: "demo\\Pro\\dynamic-2000x-10PAbook",
+    dedicated_name: "Professional",
+    account_type: "Demo",
+    leverage: null,
+    min_deposit: null,
+    spread: null,
+    commission: null,
+    is_active: true,
+  },
+];
 
 interface StepChooseAccountTypeProps {
   accountPlan: string | Group | null;
@@ -61,18 +87,26 @@ export const StepChooseAccountType: React.FC<StepChooseAccountTypeProps> = ({
     const fetchGroups = async () => {
       try {
         setLoading(true);
-        console.log('🔄 Fetching active groups for account type:', accountType);
+
+        // For Demo accounts, use static demo groups only
+        if (accountType.toLowerCase() === "demo") {
+          console.log("🔄 Using static demo groups for Demo account type");
+          setGroups(DEMO_STATIC_GROUPS);
+          return;
+        }
+
+        console.log("🔄 Fetching active groups for account type:", accountType);
         const response = await groupManagementService.getActiveGroups(accountType);
-        console.log('✅ Active Groups Response:', response);
+        console.log("✅ Active Groups Response:", response);
 
         if (response.success && response.data) {
-          console.log('✅ Groups received:', response.data);
-          console.log('✅ First group leverage:', response.data[0]?.leverage);
+          console.log("✅ Groups received:", response.data);
+          console.log("✅ First group leverage:", response.data[0]?.leverage);
 
           // Sort groups: Startup first
           const sortedGroups = [...response.data].sort((a, b) => {
-            const titleA = a.dedicated_name || a.group.split('\\').pop() || "Account";
-            const titleB = b.dedicated_name || b.group.split('\\').pop() || "Account";
+            const titleA = a.dedicated_name || a.group.split("\\").pop() || "Account";
+            const titleB = b.dedicated_name || b.group.split("\\").pop() || "Account";
 
             if (titleA === "Startup") return -1;
             if (titleB === "Startup") return 1;
@@ -81,11 +115,11 @@ export const StepChooseAccountType: React.FC<StepChooseAccountTypeProps> = ({
 
           setGroups(sortedGroups);
         } else {
-          console.error('❌ Invalid response format:', response);
+          console.error("❌ Invalid response format:", response);
           setGroups([]);
         }
       } catch (error) {
-        console.error('❌ Error fetching active groups:', error);
+        console.error("❌ Error fetching active groups:", error);
         setGroups([]);
       } finally {
         setLoading(false);
