@@ -386,7 +386,14 @@ export function NewAccountDialog({
 
     } catch (err: any) {
       console.error("MT5 account creation failed:", err);
-      const errorMessage = err?.message || err?.data?.message || "Failed to create MT5 account. Please try again.";
+      let errorMessage = "Failed to create MT5 account. Please try again.";
+      if (typeof err === 'string') {
+        errorMessage = err;
+      } else if (err?.message) {
+        errorMessage = err.message;
+      } else if (err?.data?.message) {
+        errorMessage = err.data.message;
+      }
       toast.error(errorMessage);
     } finally {
       setLoadingStep2(false);
