@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "standalone",   // <-- required for Azure
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "static.cregis.io" },
@@ -12,10 +11,6 @@ const nextConfig = {
     ],
   },
   typescript: {
-    // !! WARN !!
-    // Dangerously allow production builds to successfully complete even if
-    // your project has type errors.
-    // !! WARN !!
     ignoreBuildErrors: true,
   },
 };

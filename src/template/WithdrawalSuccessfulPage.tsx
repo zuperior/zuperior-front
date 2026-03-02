@@ -1,7 +1,7 @@
 import React from "react";
 import EmailHeader from "./common/EmailHeader";
 import EmailFooter from "./common/EmailFooter";
-import Success from "../../assets/emails/Image 34@4x 1.svg";
+import Success from "../../assets/emails/image-34@4x-1.svg";
 
 interface WithdrawalSuccessfulPageProps {
   userName?: string;

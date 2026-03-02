@@ -1,6 +1,6 @@
 import React from "react";
 import EmailFooter from "./common/EmailFooter";
-import Bar from "../../assets/emails/R-Chart Bar.svg"
+import Bar from "../../assets/emails/r-chart-bar.svg"
 import EmailHeader from "./common/EmailHeader";
 interface AccountStatementPageProps {
   userName?: string;

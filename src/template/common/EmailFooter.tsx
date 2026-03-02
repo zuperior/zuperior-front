@@ -1,7 +1,7 @@
 import React from "react";
 import Image from "next/image";
-import googlePlayBadge from "../../../assets/emails/Google Play.jpg";
-import appleStoreBadge from "../../../assets/emails/Apple Store Image .jpg";
+import googlePlayBadge from "../../../assets/emails/google-play.jpg";
+import appleStoreBadge from "../../../assets/emails/apple-store-image.jpg";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
