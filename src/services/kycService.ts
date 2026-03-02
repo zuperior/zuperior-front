@@ -47,31 +47,26 @@ function isCacheValid(): boolean {
   }
 }
 
-export interface KYCData {
-  id: string;
-  isDocumentVerified: boolean;
-  isAddressVerified: boolean;
-  verificationStatus: string;
-  documentReference?: string;
-  addressReference?: string;
-  amlReference?: string;
-  documentSubmittedAt?: string;
-  addressSubmittedAt?: string;
-  rejectionReason?: string;
-  userId?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface UpdateKycResponse {
+interface UpdateKycResponse {
   status: string;
   status_code: string;
 }
 
-export interface KycStatusResponse {
+interface KycStatusResponse {
   success: boolean;
   message: string;
-  data: KYCData;
+  data: {
+    id: string;
+    isDocumentVerified: boolean;
+    isAddressVerified: boolean;
+    verificationStatus: string;
+    documentReference?: string;
+    addressReference?: string;
+    amlReference?: string;
+    documentSubmittedAt?: string;
+    addressSubmittedAt?: string;
+    rejectionReason?: string;
+  };
 }
 
 // Create KYC record

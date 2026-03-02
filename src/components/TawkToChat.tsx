@@ -21,13 +21,11 @@ export default function TawkToChat() {
         window.Tawk_LoadStart = new Date();
 
         // Minimization handler
-        if ((window as any).Tawk_API) {
-          (window as any).Tawk_API.onLoad = function () {
-            if (window.Tawk_API && typeof window.Tawk_API.minimize === "function") {
-              window.Tawk_API.minimize();
-            }
-          };
-        }
+        window.Tawk_API.onLoad = function () {
+          if (window.Tawk_API && typeof window.Tawk_API.minimize === "function") {
+            window.Tawk_API.minimize();
+          }
+        };
 
         // Create and append the script
         const script = document.createElement("script");

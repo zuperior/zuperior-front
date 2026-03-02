@@ -35,7 +35,7 @@ const Page = () => {
   // Refresh KYC status when page loads and periodically
   useEffect(() => {
     console.log('🔄 Refreshing KYC status on page load...');
-    dispatch(fetchKycStatus(false)).catch((error) => {
+    dispatch(fetchKycStatus()).catch((error) => {
       console.error("Failed to refresh KYC status:", error);
     });
 
@@ -44,7 +44,7 @@ const Page = () => {
       // Only auto-refresh if not fully verified
       if (verificationStatus !== "verified") {
         console.log('🔄 Auto-refreshing KYC status...');
-        dispatch(fetchKycStatus(false)).catch((error) => {
+        dispatch(fetchKycStatus()).catch((error) => {
           console.error("Failed to refresh KYC status:", error);
         });
       }

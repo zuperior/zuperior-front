@@ -194,7 +194,7 @@ export async function POST(req: NextRequest) {
       network: network || 'TRC20',
       cregisOrderId: thirdPartyId, // order_id (for reference)
       cregisId: cregisResult.data.cregis_id, // CRITICAL: This is what the callback uses to find the deposit
-      paymentUrl: cregisResult.data.checkout_url,
+      paymentUrl: cregisResult.data.checkout_url || cregisResult.data.paymentUrl,
     };
 
     console.log('📤 [CHECKOUT] Deposit payload:', JSON.stringify(depositPayload, null, 2));
@@ -231,7 +231,7 @@ export async function POST(req: NextRequest) {
           } catch {
             // Not JSON, use as text
           }
-        } catch (e: any) {
+        } catch (e) {
           errorText = `Failed to read error response: ${e.message}`;
         }
 

@@ -171,7 +171,7 @@ export function Step2Confirmation({
               <>
                 {paymentMethod && (() => {
                   // Map payment method names to their icon paths
-                  const getPaymentMethodIcon = (method: string): any => {
+                  const getPaymentMethodIcon = (method: string): string => {
                     const methodLower = method.toLowerCase();
                     if (methodLower.includes('upi')) return '/pm_upi.png';
                     if (methodLower.includes('card') || methodLower.includes('credit') || methodLower.includes('debit')) return '/pm_card.png';

@@ -40,7 +40,7 @@ const initialState: KYCState = getInitialState();
 // Async thunk to fetch KYC status from database
 export const fetchKycStatus = createAsyncThunk(
   "kyc/fetchStatus",
-  async (forceRefresh: boolean | undefined = false, { rejectWithValue }) => {
+  async (forceRefresh: boolean = false, { rejectWithValue }) => {
     try {
       const response = await getKycStatus(forceRefresh);
       if (response.success && response.data) {

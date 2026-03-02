@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     // If no token in header, try to get from cookie
     if (!token) {
       const cookieStore = await cookies();
-      token = request.cookies.get('userToken')?.value || undefined;
+      token = cookieStore.get('token')?.value || null;
     }
 
     if (!token) {

@@ -1,12 +1,31 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getKycStatus, getLocalKycStatus, type KYCData } from "@/services/kycService";
+import { getKycStatus, getLocalKycStatus } from "@/services/kycService";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Clock, XCircle, AlertCircle, FileText, Home } from "lucide-react";
 
+interface KYCData {
+  id: string;
+  userId: string;
+  isDocumentVerified: boolean;
+  isAddressVerified: boolean;
+  verificationStatus: string;
+  documentReference: string | null;
+  addressReference: string | null;
+  documentSubmittedAt: string | null;
+  addressSubmittedAt: string | null;
+  rejectionReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
+interface KYCStatusResponse {
+  success: boolean;
+  message: string;
+  data: KYCData;
+}
 
 export function KYCStatusDisplay() {
   // Initialize with cached data if available

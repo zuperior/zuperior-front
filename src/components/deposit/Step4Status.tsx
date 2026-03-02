@@ -90,34 +90,6 @@ const statusConfig: StatusConfigType = {
     color: "text-gray-500",
     bgColor: "bg-gray-500/10",
   },
-  paid_partial: {
-    icon: <AlertTriangle className="h-8 w-8 text-orange-500" />,
-    title: "Partial Payment",
-    description: "Part of the payment has been received",
-    color: "text-orange-500",
-    bgColor: "bg-orange-500/10",
-  },
-  complete: {
-    icon: <Check className="h-8 w-8 text-green-500" />,
-    title: "Payment Complete",
-    description: "Your payment is complete",
-    color: "text-green-500",
-    bgColor: "bg-green-500/10",
-  },
-  success: {
-    icon: <Check className="h-8 w-8 text-green-500" />,
-    title: "Payment Successful",
-    description: "Your payment was successful",
-    color: "text-green-500",
-    bgColor: "bg-green-500/10",
-  },
-  confirmed: {
-    icon: <Check className="h-8 w-8 text-green-500" />,
-    title: "Payment Confirmed",
-    description: "Your payment has been confirmed",
-    color: "text-green-500",
-    bgColor: "bg-green-500/10",
-  },
 };
 
 export function Step4Status({
@@ -630,7 +602,7 @@ export function Step4Status({
                 order_currency: statusData.order_currency || "USDT",
                 received_amount: receivedAmount || statusData.order_amount,
                 pay_amount: receivedAmount || statusData.order_amount,
-                payment_detail: (statusData as any).payment_detail || [],
+                payment_detail: statusData.payment_detail || [],
               }),
             });
 
@@ -780,8 +752,8 @@ Time: ${new Date(statusData.timestamp * 1000).toLocaleString()}`;
                 <div className="flex flex-col items-center">
                   <div
                     className={`flex h-8 w-8 items-center justify-center rounded-full ${currentStep >= step.num
-                      ? "bg-[#9F8BCF]"
-                      : "bg-[#594B7A]"
+                        ? "bg-[#9F8BCF]"
+                        : "bg-[#594B7A]"
                       }`}
                   >
                     {currentStep > step.num ? (
@@ -791,8 +763,8 @@ Time: ${new Date(statusData.timestamp * 1000).toLocaleString()}`;
                     )}
                   </div>
                   <span className={`text-xs mt-1 ${currentStep >= step.num
-                    ? "text-[#9F8BCF]"
-                    : "text-gray-500"
+                      ? "text-[#9F8BCF]"
+                      : "text-gray-500"
                     }`}>
                     {step.label}
                   </span>
@@ -800,8 +772,8 @@ Time: ${new Date(statusData.timestamp * 1000).toLocaleString()}`;
                 {index < 2 && (
                   <div
                     className={`h-[4px] flex-1 mx-2 ${currentStep > step.num
-                      ? "bg-[#6B5993]"
-                      : "bg-[#392F4F]"
+                        ? "bg-[#6B5993]"
+                        : "bg-[#392F4F]"
                       }`}
                   />
                 )}
@@ -821,12 +793,12 @@ Time: ${new Date(statusData.timestamp * 1000).toLocaleString()}`;
       </h2>
       <p
         className={`mb-6 ${depositCompleted || processingStage === 'completed'
-          ? "text-green-500"
-          : processingStage === 'updating_mt5'
-            ? "text-blue-500"
-            : processingStage === 'payment_received'
-              ? "text-green-500"
-              : "text-gray-300"
+            ? "text-green-500"
+            : processingStage === 'updating_mt5'
+              ? "text-blue-500"
+              : processingStage === 'payment_received'
+                ? "text-green-500"
+                : "text-gray-300"
           }`}
       >
         {processingStage === 'payment_received'

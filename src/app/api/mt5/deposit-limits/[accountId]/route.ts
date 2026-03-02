@@ -22,7 +22,7 @@ export async function GET(
 
     // If no token in header, try to get from cookie
     if (!token) {
-      token = request.cookies.get('token')?.value || undefined;
+      token = request.cookies.get('token')?.value || null;
     }
 
     if (!token) {

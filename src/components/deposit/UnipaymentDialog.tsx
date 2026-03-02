@@ -238,13 +238,16 @@ export function UnipaymentDialog({
       }
 
       setLoadingLimits(true);
-      let currentPaymentMethodLimits = paymentMethodLimits;
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
         const response = await fetch(`/api/mt5/deposit-limits/${accountNumber}`, {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         });
         const data = await response.json();
+
+        // ✅ FIX: Always re-fetch payment method limits to ensure we have the latest data
+        // This handles cases where limits might be updated or parsed from metadata
+        let currentPaymentMethodLimits = paymentMethodLimits;
         try {
           const pmResponse = await fetch('/api/deposit-payment-methods', { cache: 'no-store' });
           const pmData = await pmResponse.json();

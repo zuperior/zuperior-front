@@ -236,7 +236,7 @@ export async function POST(req: NextRequest) {
               mt5AccountId: account_number,
               amount: formattedAmount,
               cregisOrderId: result.data?.orderId,
-              paymentUrl: result.data?.checkout_url,
+              paymentUrl: result.data?.paymentUrl,
               currency: 'USDT',
               network: selectedNetwork, // TRC20 or BEP20
             }),
@@ -259,8 +259,8 @@ export async function POST(req: NextRequest) {
       // Return data in format expected by frontend
       return NextResponse.json({
         orderId: result.data?.orderId,
-        transactionId: result.data?.cregis_id,
-        redirectUrl: result.data?.checkout_url,
+        transactionId: result.data?.cregisId,
+        redirectUrl: result.data?.paymentUrl,
       }, { status: 200 });
 
     } catch (createOrderError) {

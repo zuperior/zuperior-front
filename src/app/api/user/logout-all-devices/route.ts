@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     if (!token) {
       try {
         const cookieStore = await cookies();
-        token = cookieStore.get('token')?.value || undefined;
+        token = cookieStore.get('token')?.value || null;
         console.log('[Logout All Devices API] Token from cookie:', token ? 'Found' : 'Not found');
       } catch (cookieError: any) {
         console.warn('[Logout All Devices API] Error reading cookies:', cookieError.message);

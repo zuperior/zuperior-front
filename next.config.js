@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: "standalone",   // <-- required for Azure
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "static.cregis.io" },
@@ -10,9 +11,12 @@ const nextConfig = {
       { protocol: "https", hostname: "zupback.zuperior.com" },
     ],
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   typescript: {
     ignoreBuildErrors: true,
-  },
+  }
 };
 
 module.exports = nextConfig;

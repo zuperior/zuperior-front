@@ -1,7 +1,7 @@
 import React from "react";
 import EmailHeader from "./common/EmailHeader";
 import EmailFooter from "./common/EmailFooter";
-import ChatBubble from "../../assets/emails/r-chat-bubbles.svg";
+import ChatBubble from "../../assets/emails/R-Chat Bubbles.svg";
 
 interface FeedbackPageProps {
   userName?: string;

@@ -1,7 +1,7 @@
 import React from "react";
 import EmailHeader from "./common/EmailHeader";
 import EmailFooter from "./common/EmailFooter";
-import Cross from "../../assets/emails/r-close-square-2.svg";
+import Cross from "../../assets/emails/R-Close Square (2).svg";
 
 interface WithdrawalRejectedPageProps {
   userName?: string;

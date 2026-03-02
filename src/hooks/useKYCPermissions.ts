@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react';
-import { getKycStatus, getLocalKycStatus, type KYCData } from '@/services/kycService';
+import { getKycStatus, getLocalKycStatus } from '@/services/kycService';
 
-
+interface KYCData {
+  isDocumentVerified: boolean;
+  isAddressVerified: boolean;
+  verificationStatus: string;
+  documentSubmittedAt: string | null;
+  addressSubmittedAt: string | null;
+}
 
 interface KYCPermissions {
   canUploadDocument: boolean;

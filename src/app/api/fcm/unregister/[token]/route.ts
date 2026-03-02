@@ -4,10 +4,10 @@ const BACKEND_API_BASE = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://loca
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ token: string }> }
+  { params }: { params: { token: string } }
 ) {
   try {
-    const { token } = await params;
+    const { token } = params;
     const authToken = req.headers.get('authorization');
 
     const response = await fetch(`${BACKEND_API_BASE}/fcm/unregister/${token}`, {
@@ -33,3 +33,4 @@ export async function DELETE(
     );
   }
 }
+
