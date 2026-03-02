@@ -16,7 +16,7 @@ import { WalletMoveDialog } from '@/components/wallet/WalletMoveDialog';
 import Image from 'next/image';
 import { useTheme } from 'next-themes';
 import { wallet as walletIcon } from '@/lib/sidebar-assets';
-import bitcoinLoop from '@/assets/home/bitcoin-loop.png';
+import bitcoinLoop from "@/assets/home/bitcoin-loop.avif";
 import { ArrowRight, ArrowLeft } from 'lucide-react';
 
 export default function WalletPage() {
