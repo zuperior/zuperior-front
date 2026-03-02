@@ -86,7 +86,6 @@ function ProfileComponent({ profile, loading, onProfileRefresh }: ProfileCompone
       ["Password", passwordMask || null],
       ["Language", "English"],
       ["Country of Residence", profile?.country?.trim() || null],
-      ["Time Region", "Asia"],
     ];
   }, [profile, passwordMask, formatPhoneNumber]);
 
