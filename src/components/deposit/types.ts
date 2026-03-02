@@ -22,7 +22,12 @@ export type PaymentStatus =
   | 'overpaid'
   | 'refunded'
   | 'new'
-  | 'paid_remain';
+  | 'paid_remain'
+  | 'paid_over'
+  | 'paid_partial'
+  | 'complete'
+  | 'success'
+  | 'confirmed';
 
 export interface PaymentStatusData {
   event_name: string;

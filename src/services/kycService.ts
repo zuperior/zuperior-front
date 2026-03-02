@@ -39,7 +39,7 @@ function isCacheValid(): boolean {
   try {
     const timestamp = localStorage.getItem(KYC_CACHE_TIMESTAMP_KEY);
     if (!timestamp) return false;
-    
+
     const cacheAge = Date.now() - parseInt(timestamp, 10);
     return cacheAge < KYC_CACHE_TTL;
   } catch (e) {
@@ -47,26 +47,31 @@ function isCacheValid(): boolean {
   }
 }
 
-interface UpdateKycResponse {
+export interface KYCData {
+  id: string;
+  isDocumentVerified: boolean;
+  isAddressVerified: boolean;
+  verificationStatus: string;
+  documentReference?: string;
+  addressReference?: string;
+  amlReference?: string;
+  documentSubmittedAt?: string;
+  addressSubmittedAt?: string;
+  rejectionReason?: string;
+  userId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface UpdateKycResponse {
   status: string;
   status_code: string;
 }
 
-interface KycStatusResponse {
+export interface KycStatusResponse {
   success: boolean;
   message: string;
-  data: {
-    id: string;
-    isDocumentVerified: boolean;
-    isAddressVerified: boolean;
-    verificationStatus: string;
-    documentReference?: string;
-    addressReference?: string;
-    amlReference?: string;
-    documentSubmittedAt?: string;
-    addressSubmittedAt?: string;
-    rejectionReason?: string;
-  };
+  data: KYCData;
 }
 
 // Create KYC record
@@ -188,7 +193,7 @@ export function getLocalKycStatus(): KycStatusResponse | null {
   if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
     return null;
   }
-  
+
   try {
     const cached = localStorage.getItem(KYC_CACHE_KEY);
     if (cached) {

@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
       network: selectedNetwork,
       callbackUrl: callbackUrl.toString(),
     });
-    
+
     // First, fetch available currency list to verify USDT support
     console.log('📋 [EPAY] Fetching available payment currencies from Cregis...');
     const currencyListResult = await getOrderCurrencyList();
@@ -172,7 +172,7 @@ export async function POST(req: NextRequest) {
     // Note: Cregis may require payer_id, using account number as unique ID
     const payerId = account_number || `${Date.now()}`;
     const paymentCurrency = config.PAYMENT_CURRENCY;
-    
+
     console.log('📝 [EPAY] Using payer_id:', payerId);
     console.log('💎 [EPAY] Using payment currency:', paymentCurrency, `(USDT ${selectedNetwork})`);
     console.log('📝 [EPAY] Calling createPaymentOrder with:', {
@@ -184,7 +184,7 @@ export async function POST(req: NextRequest) {
       payerId,
       validTime: Number(config.VALID_TIME) || 30, // Default 30 minutes (range: 10-60 minutes)
     });
-    
+
     try {
       const result = await createPaymentOrder({
         orderAmount: formattedAmount,
@@ -225,7 +225,7 @@ export async function POST(req: NextRequest) {
 
         if (token) {
           console.log('📞 [EPAY] Calling backend to create deposit record...');
-          
+
           const backendResponse = await fetch(`${BACKEND_API_URL}/deposit/cregis-crypto`, {
             method: 'POST',
             headers: {
@@ -236,7 +236,7 @@ export async function POST(req: NextRequest) {
               mt5AccountId: account_number,
               amount: formattedAmount,
               cregisOrderId: result.data?.orderId,
-              paymentUrl: result.data?.paymentUrl,
+              paymentUrl: result.data?.checkout_url,
               currency: 'USDT',
               network: selectedNetwork, // TRC20 or BEP20
             }),
@@ -259,16 +259,16 @@ export async function POST(req: NextRequest) {
       // Return data in format expected by frontend
       return NextResponse.json({
         orderId: result.data?.orderId,
-        transactionId: result.data?.cregisId,
-        redirectUrl: result.data?.paymentUrl,
+        transactionId: result.data?.cregis_id,
+        redirectUrl: result.data?.checkout_url,
       }, { status: 200 });
-    
+
     } catch (createOrderError) {
       console.error('❌ [EPAY] Error creating payment order:', createOrderError);
       console.error('❌ [EPAY] createOrderError type:', typeof createOrderError);
       console.error('❌ [EPAY] createOrderError details:', JSON.stringify(createOrderError, null, 2));
       console.error('❌ [EPAY] createOrderError message:', createOrderError instanceof Error ? createOrderError.message : String(createOrderError));
-      
+
       // Return error response directly instead of throwing
       const errorMsg = createOrderError instanceof Error ? createOrderError.message : String(createOrderError);
       return NextResponse.json(
@@ -286,16 +286,16 @@ export async function POST(req: NextRequest) {
     console.error("❌ [EPAY] Error stack:", error.stack);
     console.error("❌ [EPAY] Error type:", typeof error);
     console.error("❌ [EPAY] Error details:", JSON.stringify(error, null, 2));
-    
+
     // Provide helpful error message
     const errorMessage = error instanceof Error ? error.message : String(error);
-    
+
     console.error("❌ [EPAY] Returning error response:", {
       error: "Payment initiation failed",
       details: errorMessage,
       code: "INTERNAL_ERROR"
     });
-    
+
     return NextResponse.json(
       {
         error: "Payment initiation failed",

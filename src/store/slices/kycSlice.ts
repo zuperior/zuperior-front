@@ -6,11 +6,11 @@ import { getKycStatus, getLocalKycStatus } from "@/services/kycService";
 function mapDatabaseStatusToLocal(dbStatus: string): "unverified" | "partial" | "verified" {
   if (!dbStatus) return "unverified";
   const normalizedStatus = dbStatus.toLowerCase();
-  
+
   if (normalizedStatus === "verified") return "verified";
   if (normalizedStatus === "partially verified" || normalizedStatus === "partial") return "partial";
   if (normalizedStatus === "pending" || normalizedStatus === "declined" || normalizedStatus === "unverified" || normalizedStatus === "rejected") return "unverified";
-  
+
   return "unverified";
 }
 
@@ -40,7 +40,7 @@ const initialState: KYCState = getInitialState();
 // Async thunk to fetch KYC status from database
 export const fetchKycStatus = createAsyncThunk(
   "kyc/fetchStatus",
-  async (forceRefresh: boolean = false, { rejectWithValue }) => {
+  async (forceRefresh: boolean | undefined = false, { rejectWithValue }) => {
     try {
       const response = await getKycStatus(forceRefresh);
       if (response.success && response.data) {

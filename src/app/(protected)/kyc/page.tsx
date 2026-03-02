@@ -26,7 +26,7 @@ CheckIcon.displayName = "CheckIcon";
 
 const Page = () => {
   const dispatch = useAppDispatch();
-  
+
   // Use selector to subscribe to KYC state changes
   const addressVerified = useAppSelector((state) => state.kyc.isAddressVerified);
   const identityVerified = useAppSelector((state) => state.kyc.isDocumentVerified);
@@ -35,7 +35,7 @@ const Page = () => {
   // Refresh KYC status when page loads and periodically
   useEffect(() => {
     console.log('🔄 Refreshing KYC status on page load...');
-    dispatch(fetchKycStatus()).catch((error) => {
+    dispatch(fetchKycStatus(false)).catch((error) => {
       console.error("Failed to refresh KYC status:", error);
     });
 
@@ -44,7 +44,7 @@ const Page = () => {
       // Only auto-refresh if not fully verified
       if (verificationStatus !== "verified") {
         console.log('🔄 Auto-refreshing KYC status...');
-        dispatch(fetchKycStatus()).catch((error) => {
+        dispatch(fetchKycStatus(false)).catch((error) => {
           console.error("Failed to refresh KYC status:", error);
         });
       }

@@ -7,13 +7,13 @@ const API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:500
 export async function GET(request: NextRequest) {
   try {
     // Try to get token from Authorization header (from axios interceptor)
-    let token = request.headers.get('authorization')?.replace('Bearer ', '') || 
-                request.headers.get('Authorization')?.replace('Bearer ', '');
+    let token = request.headers.get('authorization')?.replace('Bearer ', '') ||
+      request.headers.get('Authorization')?.replace('Bearer ', '');
 
     // If no token in header, try to get from cookie
     if (!token) {
       const cookieStore = await cookies();
-      token = cookieStore.get('token')?.value || null;
+      token = request.cookies.get('userToken')?.value || undefined;
     }
 
     if (!token) {

@@ -39,7 +39,7 @@ import { CopyIcon } from "lucide-react";
 const formatCryptoAmount = (amount: string | number, symbol?: string): string => {
   const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
   if (isNaN(numAmount)) return '0';
-  
+
   const upperSymbol = symbol?.toUpperCase();
   if (upperSymbol === 'BTC' || upperSymbol === 'ETH') {
     return numAmount.toFixed(5);
@@ -101,8 +101,8 @@ export function UnipaymentDialog({
   availableCryptos,
   lifetimeDeposit,
   displayName,
-}: NewAccountDialogProps & { 
-  paymentMethod: PaymentMethod; 
+}: NewAccountDialogProps & {
+  paymentMethod: PaymentMethod;
   selectedCrypto?: Cryptocurrency | null;
   availableCryptos?: Cryptocurrency[];
   lifetimeDeposit: number;
@@ -129,7 +129,7 @@ export function UnipaymentDialog({
   const [inrAmount, setInrAmount] = useState<string>("");
   const [usdAmountFromInr, setUsdAmountFromInr] = useState<string>("");
   const [fixedRate, setFixedRate] = useState<number>(92.00); // Default 1 USD = 92 INR
-  
+
   // State for deposit limits from group_management
   const [depositLimits, setDepositLimits] = useState<{
     minLimit: number | null;
@@ -137,20 +137,20 @@ export function UnipaymentDialog({
     source: 'group' | 'payment_method';
   } | null>(null);
   const [loadingLimits, setLoadingLimits] = useState(false);
-  
+
   // State for payment method limits (fallback)
   const [paymentMethodLimits, setPaymentMethodLimits] = useState<{
     minLimit: number | null;
     maxLimit: number | null;
   } | null>(null);
-  
+
   // ✅ FIX: Fetch payment method limits when dialog opens
   useEffect(() => {
     const fetchPaymentMethodLimits = async () => {
       try {
         const response = await fetch('/api/deposit-payment-methods', { cache: 'no-store' });
         const data = await response.json();
-        
+
         if (data.ok && Array.isArray(data.methods)) {
           // Map payment method to method_key
           const methodKeyMap: Record<string, string> = {
@@ -159,14 +159,14 @@ export function UnipaymentDialog({
             'google_apple_pay': 'unipayment_google_apple_pay',
             'upi': 'unipayment_upi',
           };
-          
+
           const methodKey = methodKeyMap[paymentMethod] || `unipayment_${paymentMethod}`;
           const method = data.methods.find((m: any) => m.method_key === methodKey);
-          
+
           if (method) {
             const parsedMinLimit = method.min_limit !== undefined && method.min_limit !== null ? Number(method.min_limit) : null;
             const parsedMaxLimit = method.max_limit !== undefined && method.max_limit !== null ? Number(method.max_limit) : null;
-            
+
             setPaymentMethodLimits({
               minLimit: parsedMinLimit,
               maxLimit: parsedMaxLimit,
@@ -197,12 +197,12 @@ export function UnipaymentDialog({
         setPaymentMethodLimits(null);
       }
     };
-    
+
     if (open) {
       fetchPaymentMethodLimits();
     }
   }, [open, paymentMethod]);
-  
+
   // Initialize deposit limits with payment method limits when dialog opens (before account selection)
   useEffect(() => {
     if (!selectedAccount && paymentMethodLimits) {
@@ -238,20 +238,17 @@ export function UnipaymentDialog({
       }
 
       setLoadingLimits(true);
+      let currentPaymentMethodLimits = paymentMethodLimits;
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
         const response = await fetch(`/api/mt5/deposit-limits/${accountNumber}`, {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         });
         const data = await response.json();
-
-        // ✅ FIX: Always re-fetch payment method limits to ensure we have the latest data
-        // This handles cases where limits might be updated or parsed from metadata
-        let currentPaymentMethodLimits = paymentMethodLimits;
         try {
           const pmResponse = await fetch('/api/deposit-payment-methods', { cache: 'no-store' });
           const pmData = await pmResponse.json();
-          
+
           if (pmData.ok && Array.isArray(pmData.methods)) {
             const methodKeyMap: Record<string, string> = {
               'card': 'unipayment_card',
@@ -259,21 +256,21 @@ export function UnipaymentDialog({
               'google_apple_pay': 'unipayment_google_apple_pay',
               'upi': 'unipayment_upi',
             };
-            
+
             const methodKey = methodKeyMap[paymentMethod] || `unipayment_${paymentMethod}`;
             const method = pmData.methods.find((m: any) => m.method_key === methodKey);
-            
+
             if (method) {
               const fetchedLimits = {
                 minLimit: method.min_limit !== undefined && method.min_limit !== null ? Number(method.min_limit) : null,
                 maxLimit: method.max_limit !== undefined && method.max_limit !== null ? Number(method.max_limit) : null,
               };
-              
+
               // Use fetched limits if available, otherwise keep existing
               if (fetchedLimits.minLimit !== null || fetchedLimits.maxLimit !== null) {
                 currentPaymentMethodLimits = fetchedLimits;
               }
-              
+
               console.log('📊 Payment method limits fetched during account selection:', {
                 methodKey,
                 methodData: {
@@ -301,17 +298,17 @@ export function UnipaymentDialog({
         if (data.success && data.data) {
           const groupMinLimit = data.data.minLimit;
           const groupMaxLimit = data.data.maxLimit;
-          
+
           // ✅ FIX: Use group limits if available, otherwise fallback to payment method limits
           // Handle partial limits: if group has min but not max, use payment method's max, and vice versa
           // This ensures we always show complete limits when possible
-          const finalMinLimit = (groupMinLimit !== null && groupMinLimit !== undefined) 
-            ? groupMinLimit 
+          const finalMinLimit = (groupMinLimit !== null && groupMinLimit !== undefined)
+            ? groupMinLimit
             : (currentPaymentMethodLimits?.minLimit ?? null);
-          const finalMaxLimit = (groupMaxLimit !== null && groupMaxLimit !== undefined) 
-            ? groupMaxLimit 
+          const finalMaxLimit = (groupMaxLimit !== null && groupMaxLimit !== undefined)
+            ? groupMaxLimit
             : (currentPaymentMethodLimits?.maxLimit ?? null);
-          
+
           console.log('🔍 [Unipayment] Limit resolution details:', {
             groupMinLimit,
             groupMaxLimit,
@@ -321,16 +318,16 @@ export function UnipaymentDialog({
             finalMaxLimit,
             willUsePaymentMethodMax: (groupMaxLimit === null || groupMaxLimit === undefined) && currentPaymentMethodLimits?.maxLimit !== null,
           });
-          
+
           // Determine source: if either limit comes from group, source is 'group', otherwise 'payment_method'
           const limitSource = (groupMinLimit !== null || groupMaxLimit !== null) ? 'group' : 'payment_method';
-          
+
           setDepositLimits({
             minLimit: finalMinLimit,
             maxLimit: finalMaxLimit,
             source: limitSource,
           });
-          
+
           console.log('📊 Deposit limits resolved for Unipayment:', {
             accountId: accountNumber,
             accountGroup: data.data.group,
@@ -347,7 +344,7 @@ export function UnipaymentDialog({
               max: (groupMaxLimit === null || groupMaxLimit === undefined) && currentPaymentMethodLimits?.maxLimit !== null,
             },
           });
-          
+
           // Log warning if both group and payment method limits are null
           if (finalMinLimit === null && finalMaxLimit === null) {
             console.warn('⚠️ No deposit limits found (neither group nor payment method):', {
@@ -384,14 +381,14 @@ export function UnipaymentDialog({
 
     fetchDepositLimits();
   }, [selectedAccount, paymentMethodLimits]);
-  
+
   // Update network when currentSelectedCrypto changes
   useEffect(() => {
     if (currentSelectedCrypto && currentSelectedCrypto.networks.length > 0) {
       setSelectedNetwork(currentSelectedCrypto.networks[0].blockchain);
     }
   }, [currentSelectedCrypto]);
-  
+
   // Fetch fixed rate for UPI when dialog opens
   useEffect(() => {
     if (open && paymentMethod === 'upi') {
@@ -412,7 +409,7 @@ export function UnipaymentDialog({
       })();
     }
   }, [open, paymentMethod]);
-  
+
   // Reset selected crypto when dialog opens/closes
   useEffect(() => {
     if (!open) {
@@ -441,7 +438,7 @@ export function UnipaymentDialog({
       setUsdAmountFromInr("");
     }
   }, [inrAmount, paymentMethod, fixedRate]);
-  
+
   // Fetch exchange rate and convert USD to crypto when amount or crypto changes
   useEffect(() => {
     if (paymentMethod === 'crypto' && currentSelectedCrypto && amount && parseFloat(amount) > 0) {
@@ -457,8 +454,8 @@ export function UnipaymentDialog({
       const fetchRate = async () => {
         setIsLoadingRate(true);
         try {
-            const usdAmount = parseFloat(amount);
-          
+          const usdAmount = parseFloat(amount);
+
           // Skip if amount is too low (less than $10)
           if (usdAmount < 10) {
             setExchangeRate(null);
@@ -466,7 +463,7 @@ export function UnipaymentDialog({
             setIsLoadingRate(false);
             return;
           }
-          
+
           // Use Get Quote API - returns netAmount directly from Unipayment
           const result = await unipaymentService.getExchangeRate('USD', currentSelectedCrypto.symbol, usdAmount);
           if (result.success && result.netAmount !== undefined) {
@@ -481,7 +478,7 @@ export function UnipaymentDialog({
           // Don't log error if it's a minimum amount error (expected behavior)
           const errorMessage = error instanceof Error ? error.message : String(error);
           if (!errorMessage.includes('minimum amount') && !errorMessage.includes('below the minimum')) {
-          console.error('Error fetching exchange rate:', error);
+            console.error('Error fetching exchange rate:', error);
           }
           setExchangeRate(null);
           setCryptoAmount("");
@@ -489,7 +486,7 @@ export function UnipaymentDialog({
           setIsLoadingRate(false);
         }
       };
-      
+
       fetchRate();
     } else {
       setExchangeRate(null);
@@ -590,12 +587,12 @@ export function UnipaymentDialog({
   useEffect(() => {
     if (step === 3 && invoiceData) {
       let intervalId: NodeJS.Timeout;
-      
+
       // Calculate initial countdown
       const calculateCountdown = () => {
         if (invoiceData?.expiresAt) {
-      const expireAt = new Date(invoiceData.expiresAt).getTime();
-      const now = Date.now();
+          const expireAt = new Date(invoiceData.expiresAt).getTime();
+          const now = Date.now();
           const remaining = Math.max(0, Math.floor((expireAt - now) / 1000));
           return remaining;
         } else {
@@ -615,7 +612,7 @@ export function UnipaymentDialog({
       intervalId = setInterval(() => {
         const remaining = calculateCountdown();
         setCountdown(remaining);
-        
+
         if (remaining <= 0) {
           clearInterval(intervalId);
         }
@@ -718,7 +715,7 @@ export function UnipaymentDialog({
       // This is the authoritative amount that matches what Unipayment dashboard shows
       const invoicePayAmount = invoiceData.payAmount || (cryptoAmount && paymentMethod === 'crypto' ? cryptoAmount : undefined);
       const invoicePayCurrency = invoiceData.payCurrency || (currentSelectedCrypto?.symbol && paymentMethod === 'crypto' ? currentSelectedCrypto.symbol : undefined);
-      
+
       console.log('📊 [Unipayment] Invoice created with amounts:', {
         priceAmount: invoiceData.priceAmount,
         priceCurrency: invoiceData.priceCurrency,
@@ -732,7 +729,7 @@ export function UnipaymentDialog({
       // For other methods: Use expirationTime from API or 1 hour fallback
       let expiresAtTime: string;
       const now = Date.now();
-      
+
       if (paymentMethod === 'upi') {
         // UPI uses 5-minute expiration time
         expiresAtTime = new Date(now + 5 * 60 * 1000).toISOString(); // 5 minutes
@@ -767,21 +764,21 @@ export function UnipaymentDialog({
       let resolvedQrCode = invoiceData.qrCode;
       if (resolvedQrCode && typeof resolvedQrCode === 'string') {
         const trimmedPath = resolvedQrCode.trim();
-        const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 
-                                process.env.NEXT_PUBLIC_ADMIN_API_URL || 
-                                'http://localhost:5003';
-        
+        const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL ||
+          process.env.NEXT_PUBLIC_ADMIN_API_URL ||
+          'http://localhost:5003';
+
         // If it's already a full URL, check if it has the wrong domain and fix it
         if (trimmedPath.startsWith('http://') || trimmedPath.startsWith('https://')) {
           try {
             const url = new URL(trimmedPath);
             const path = url.pathname;
-            
+
             // If it's a kyc_proofs path, replace the entire URL with the correct admin backend URL
             if (path.includes('/kyc_proofs/') || path.startsWith('/kyc_proofs/')) {
               resolvedQrCode = `${adminBackendUrl}${path}`;
-              console.log('[UnipaymentDialog] Fixed QR code URL (wrong domain):', { 
-                original: invoiceData.qrCode, 
+              console.log('[UnipaymentDialog] Fixed QR code URL (wrong domain):', {
+                original: invoiceData.qrCode,
                 resolved: resolvedQrCode,
                 originalHost: url.hostname,
                 correctHost: new URL(adminBackendUrl).hostname
@@ -791,9 +788,9 @@ export function UnipaymentDialog({
               const adminUrlObj = new URL(adminBackendUrl);
               if (url.hostname !== adminUrlObj.hostname && path.includes('/kyc_proofs/')) {
                 resolvedQrCode = `${adminBackendUrl}${path}`;
-                console.log('[UnipaymentDialog] Fixed QR code URL (hostname mismatch):', { 
-                  original: invoiceData.qrCode, 
-                  resolved: resolvedQrCode 
+                console.log('[UnipaymentDialog] Fixed QR code URL (hostname mismatch):', {
+                  original: invoiceData.qrCode,
+                  resolved: resolvedQrCode
                 });
               }
             }
@@ -813,7 +810,7 @@ export function UnipaymentDialog({
           }
         }
       }
-      
+
       setInvoiceData({
         invoiceId: invoiceData.invoiceId,
         invoiceUrl: invoiceData.invoiceUrl,
@@ -827,7 +824,7 @@ export function UnipaymentDialog({
         priceAmount: invoiceData.priceAmount || amount,
         priceCurrency: invoiceData.priceCurrency || 'USD',
       });
-      
+
       // Update cryptoAmount to use the invoice's payAmount if available
       if (paymentMethod === 'crypto' && invoicePayAmount) {
         setCryptoAmount(invoicePayAmount);
@@ -836,7 +833,7 @@ export function UnipaymentDialog({
       // For redirect-based payments (card, google_apple_pay, upi), open in new tab
       // Only crypto payments with host_to_host_mode=true show payment details in the dialog
       const redirectBasedMethods = ['card', 'google_apple_pay', 'upi'];
-      
+
       if (redirectBasedMethods.includes(paymentMethod)) {
         if (invoiceData.invoiceUrl) {
           console.log('🔄 Opening Unipayment checkout in new tab:', invoiceData.invoiceUrl);
@@ -920,13 +917,13 @@ export function UnipaymentDialog({
       }
       return displayName;
     }
-    
+
     // For crypto payments, format as crypto-BTC, crypto-USDT-BEP20, etc.
     if (paymentMethod === 'crypto' && currentSelectedCrypto && selectedNetwork) {
       const networkPart = selectedNetwork ? `-${selectedNetwork.toUpperCase()}` : '';
       return `crypto-${currentSelectedCrypto.symbol.toUpperCase()}${networkPart}`;
     }
-    
+
     // Fallback to default names
     const names: Record<PaymentMethod, string> = {
       crypto: 'Crypto',
@@ -1031,12 +1028,12 @@ export function UnipaymentDialog({
               {/* Header */}
               <h3 className="text-xl font-bold text-center dark:text-white text-black">
                 {paymentMethod === 'crypto' && invoiceData.payAmount && invoiceData.payCurrency
-                  ? `Pay ${formatCryptoAmount(invoiceData.payAmount, invoiceData.payCurrency)} ${invoiceData.payCurrency}-${selectedNetwork}` 
+                  ? `Pay ${formatCryptoAmount(invoiceData.payAmount, invoiceData.payCurrency)} ${invoiceData.payCurrency}-${selectedNetwork}`
                   : paymentMethod === 'crypto' && cryptoAmount && currentSelectedCrypto
-                  ? `Pay ${cryptoAmount} ${currentSelectedCrypto.symbol}-${selectedNetwork}` 
-                  : `Pay ${amount} ${currentSelectedCrypto ? `${currentSelectedCrypto.symbol}-${selectedNetwork}` : 'USD'}`}
+                    ? `Pay ${cryptoAmount} ${currentSelectedCrypto.symbol}-${selectedNetwork}`
+                    : `Pay ${amount} ${currentSelectedCrypto ? `${currentSelectedCrypto.symbol}-${selectedNetwork}` : 'USD'}`}
               </h3>
-              
+
               {/* Redirect Message for Card/APM Payments */}
               {['card', 'google_apple_pay', 'upi'].includes(paymentMethod) && (
                 <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-6 space-y-4 text-center">
@@ -1064,7 +1061,7 @@ export function UnipaymentDialog({
                   </div>
                 </div>
               )}
-              
+
               {/* Payment Summary */}
               {paymentMethod === 'crypto' && invoiceData.cryptoAddress && (
                 <div className="space-y-4">
@@ -1074,9 +1071,9 @@ export function UnipaymentDialog({
                       <span className="text-sm font-semibold dark:text-white text-black">
                         {invoiceData.payAmount && invoiceData.payCurrency
                           ? `${formatCryptoAmount(invoiceData.payAmount, invoiceData.payCurrency)} ${invoiceData.payCurrency} (${invoiceData.priceAmount || amount} ${invoiceData.priceCurrency || 'USD'})`
-                          : cryptoAmount && currentSelectedCrypto 
-                          ? `${cryptoAmount} ${currentSelectedCrypto.symbol} (${amount} USD)` 
-                          : `${amount} ${currentSelectedCrypto ? currentSelectedCrypto.symbol : 'USD'}`}
+                          : cryptoAmount && currentSelectedCrypto
+                            ? `${cryptoAmount} ${currentSelectedCrypto.symbol} (${amount} USD)`
+                            : `${amount} ${currentSelectedCrypto ? currentSelectedCrypto.symbol : 'USD'}`}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
@@ -1131,15 +1128,15 @@ export function UnipaymentDialog({
                     <h4 className="text-lg font-semibold dark:text-white text-black">
                       Pay with {currentSelectedCrypto ? currentSelectedCrypto.name : 'Crypto'}
                     </h4>
-                    
+
                     <div className="flex flex-col md:flex-row gap-6 items-start">
                       {/* QR Code */}
                       <div className="flex-1 flex flex-col items-center">
                         {invoiceData.cryptoAddress && (
                           <>
                             <div className="bg-white p-4 rounded-lg mb-2">
-                              <QRCode 
-                                value={invoiceData.cryptoAddress} 
+                              <QRCode
+                                value={invoiceData.cryptoAddress}
                                 size={250}
                               />
                             </div>
@@ -1148,9 +1145,9 @@ export function UnipaymentDialog({
                         )}
                         {invoiceData.qrCode && !invoiceData.cryptoAddress && (
                           <div className="flex justify-center mb-2">
-                            <img 
-                              src={invoiceData.qrCode} 
-                              alt="Payment QR Code" 
+                            <img
+                              src={invoiceData.qrCode}
+                              alt="Payment QR Code"
                               className="max-w-[250px]"
                               onError={(e) => {
                                 console.error('[UnipaymentDialog] Failed to load QR code:', invoiceData.qrCode);
@@ -1166,14 +1163,14 @@ export function UnipaymentDialog({
                           <p className="text-sm text-gray-400 mb-1">Network</p>
                           <p className="text-sm font-semibold dark:text-white text-black">
                             {selectedNetwork === 'BEP20' ? 'BNB Smart Chain' :
-                             selectedNetwork === 'TRC20' ? 'TRON' :
-                             selectedNetwork === 'ERC20' ? 'Ethereum' :
-                             selectedNetwork === 'BTC' ? 'Bitcoin' :
-                             selectedNetwork === 'SOL' ? 'Solana' :
-                             selectedNetwork}
+                              selectedNetwork === 'TRC20' ? 'TRON' :
+                                selectedNetwork === 'ERC20' ? 'Ethereum' :
+                                  selectedNetwork === 'BTC' ? 'Bitcoin' :
+                                    selectedNetwork === 'SOL' ? 'Solana' :
+                                      selectedNetwork}
                           </p>
                         </div>
-                        
+
                         <div>
                           <p className="text-sm text-gray-400 mb-2">Payment Address</p>
                           <div className="bg-gray-800 dark:bg-[#1a1a1a] p-3 rounded-lg break-all">
@@ -1197,11 +1194,11 @@ export function UnipaymentDialog({
                           <p className="text-xs text-red-400">
                             Please make sure the transfer network is {
                               selectedNetwork === 'BEP20' ? 'BNB Smart Chain' :
-                              selectedNetwork === 'TRC20' ? 'TRON' :
-                              selectedNetwork === 'ERC20' ? 'Ethereum' :
-                              selectedNetwork === 'BTC' ? 'Bitcoin' :
-                              selectedNetwork === 'SOL' ? 'Solana' :
-                              selectedNetwork
+                                selectedNetwork === 'TRC20' ? 'TRON' :
+                                  selectedNetwork === 'ERC20' ? 'Ethereum' :
+                                    selectedNetwork === 'BTC' ? 'Bitcoin' :
+                                      selectedNetwork === 'SOL' ? 'Solana' :
+                                        selectedNetwork
                             }, otherwise the assets will be permanently lost.
                           </p>
                         </div>
@@ -1238,7 +1235,7 @@ export function UnipaymentDialog({
                 <div className="space-y-4">
                   <div className="text-center">
                     <p className="text-sm text-gray-400 mb-4">
-                      {paymentMethod === 'upi' 
+                      {paymentMethod === 'upi'
                         ? 'Scan QR code or click to complete payment via UPI'
                         : 'Click below to complete your payment on Unipayment checkout page'
                       }
@@ -1367,7 +1364,7 @@ function UnipaymentStep1Form({
       setSelectedNetwork(selectedCrypto.networks[0].blockchain);
     }
   }, [selectedCrypto, setSelectedNetwork]);
-  
+
   // If crypto is selected, use its networks; otherwise show common networks
   const availableNetworks = selectedCrypto?.networks.map(n => n.blockchain) || ['TRC20', 'ERC20', 'BEP20', 'BTC', 'ETH', 'SOL'];
 
@@ -1404,21 +1401,21 @@ function UnipaymentStep1Form({
       toast.error("Please enter a valid amount");
       return;
     }
-    
+
     // Validate minimum and maximum limits from group_management
     // ONLY use group-based limits from database - NO static fallbacks
     if (!depositLimits) {
       toast.error("Deposit limits not configured for this account. Please contact support.");
       return;
     }
-    
+
     const minLimit = depositLimits.minLimit;
     const maxLimit = depositLimits.maxLimit;
-    
+
     if (paymentMethod === 'upi') {
       // For UPI, convert USD amount to INR for validation
       const inrAmount = amountNum * fixedRate;
-      
+
       // Check group-based limits (in USD, then convert to INR for display)
       if (minLimit !== null && minLimit !== undefined && amountNum < minLimit) {
         const minInr = minLimit * fixedRate;
@@ -1442,7 +1439,7 @@ function UnipaymentStep1Form({
         return;
       }
     }
-    
+
     nextStep();
   };
 
@@ -1457,20 +1454,20 @@ function UnipaymentStep1Form({
     if (!depositLimits) {
       return { min: 'N/A', max: 'N/A', clickAmount: '0', message: 'Limits not configured' };
     }
-    
+
     const minLimit = depositLimits.minLimit;
     const maxLimit = depositLimits.maxLimit;
-    
+
     // If both limits are null, it means limits are not configured in the database
     if (minLimit === null && maxLimit === null) {
       return { min: 'N/A', max: 'N/A', clickAmount: '0', message: 'Limits not configured in admin panel' };
     }
-    
+
     if (paymentMethod === 'upi') {
       // For UPI, convert USD limits to INR
       const minInr = minLimit !== null && minLimit !== undefined ? minLimit * fixedRate : null;
       const maxInr = maxLimit !== null && maxLimit !== undefined ? maxLimit * fixedRate : null;
-      
+
       // Show actual limits from database only
       return {
         min: minInr !== null ? `₹${minInr.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : 'Not set',
@@ -1641,7 +1638,7 @@ function UnipaymentStep1Form({
               </Select>
             </div>
           </div>
-          
+
           {selectedCrypto && (
             <div className="rounded-lg">
               <div className="mt-4">
@@ -1663,12 +1660,12 @@ function UnipaymentStep1Form({
                         value={network}
                       >
                         {network === 'BEP20' ? 'BNB Smart Chain (BEP20)' :
-                         network === 'TRC20' ? 'TRON (TRC20)' :
-                         network === 'ERC20' ? 'Ethereum (ERC20)' :
-                         network === 'BTC' ? 'Bitcoin' :
-                         network === 'ETH' ? 'Ethereum' :
-                         network === 'SOL' ? 'Solana' :
-                         network}
+                          network === 'TRC20' ? 'TRON (TRC20)' :
+                            network === 'ERC20' ? 'Ethereum (ERC20)' :
+                              network === 'BTC' ? 'Bitcoin' :
+                                network === 'ETH' ? 'Ethereum' :
+                                  network === 'SOL' ? 'Solana' :
+                                    network}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1690,11 +1687,11 @@ function UnipaymentStep1Form({
                     // For INR, only allow integers (no decimals)
                     if (!/^\d*$/.test(e.target.value)) return;
                   } else {
-                  if (!/^\d*\.?\d*$/.test(e.target.value)) return;
+                    if (!/^\d*\.?\d*$/.test(e.target.value)) return;
                   }
                   const value = e.target.value;
                   setAmount(value);
-                  
+
                   // Real-time validation with group-based limits - ONLY from database
                   toast.dismiss(); // Dismiss previous toasts
                   const amountNum = parseFloat(value);
@@ -1703,14 +1700,14 @@ function UnipaymentStep1Form({
                       toast.error("Deposit limits not configured for this account");
                       return;
                     }
-                    
+
                     const minLimit = depositLimits.minLimit;
                     const maxLimit = depositLimits.maxLimit;
-                    
+
                     if (paymentMethod === 'upi') {
                       // For UPI, convert USD amount to INR for validation
                       const inrAmount = amountNum * fixedRate;
-                      
+
                       // Check group-based limits only
                       if (minLimit !== null && minLimit !== undefined && amountNum < minLimit) {
                         const minInr = minLimit * fixedRate;
@@ -1738,7 +1735,7 @@ function UnipaymentStep1Form({
             </div>
             {(() => {
               const limits = getLimitMessage();
-              
+
               // Show limit message - only from database
               if (limits.message) {
                 return (
@@ -1747,16 +1744,16 @@ function UnipaymentStep1Form({
                   </p>
                 );
               }
-              
+
               // Check if limits are configured (not "Not set" or "N/A")
               const hasLimits = limits.min !== 'Not set' && limits.max !== 'Not set' && limits.min !== 'N/A' && limits.max !== 'N/A';
-              const limitText = paymentMethod === 'upi' 
+              const limitText = paymentMethod === 'upi'
                 ? `${limits.min} - ${limits.max} INR`
                 : `${limits.min} - ${limits.max}`;
-              
+
               return paymentMethod === 'upi' ? (
                 <>
-                  <p 
+                  <p
                     className={`text-xs mt-2 font-medium ${hasLimits ? 'text-[#945393] cursor-pointer hover:text-[#b366b3] transition-colors' : 'text-yellow-600'}`}
                     onClick={() => {
                       if (hasLimits && limits.clickAmount !== '0') {
@@ -1775,7 +1772,7 @@ function UnipaymentStep1Form({
                   )}
                 </>
               ) : (
-                <p 
+                <p
                   className={`text-xs mt-2 font-medium ${hasLimits ? 'text-[#945393] cursor-pointer hover:text-[#b366b3] transition-colors' : 'text-yellow-600'}`}
                   onClick={() => {
                     if (hasLimits && limits.clickAmount !== '0') {

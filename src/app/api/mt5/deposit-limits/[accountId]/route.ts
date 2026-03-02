@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     const { accountId } = await params;
-    
+
     if (!accountId) {
       return NextResponse.json(
         { success: false, error: 'Account ID is required' },
@@ -18,11 +18,11 @@ export async function GET(
 
     // Get auth token from Authorization header or cookies
     let token = request.headers.get('authorization')?.replace('Bearer ', '') ||
-                request.headers.get('Authorization')?.replace('Bearer ', '');
-    
+      request.headers.get('Authorization')?.replace('Bearer ', '');
+
     // If no token in header, try to get from cookie
     if (!token) {
-      token = request.cookies.get('token')?.value || null;
+      token = request.cookies.get('token')?.value || undefined;
     }
 
     if (!token) {
