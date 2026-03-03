@@ -161,9 +161,7 @@ export function NewAccountDialog({
           } catch (error) {
             console.error("❌ Error auto-selecting group:", error);
           }
-        } catch (error) {
-          console.error('❌ Error auto-selecting group:', error);
-        }
+        };
       };
 
       autoSelectGroup();
