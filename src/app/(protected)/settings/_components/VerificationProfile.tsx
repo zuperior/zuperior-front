@@ -10,6 +10,7 @@ import {
 import { useState, useEffect } from "react";
 import { useAppSelector } from "@/store/hooks";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 interface VerificationProfileProps {
   fullName?: string | null;
@@ -116,12 +117,11 @@ export default function VerificationProfile({
               onClick={() => toggleStep(1)}>
               <div className="flex items-center">
                 <div
-                  className={`w-8 h-8 ${
-                  resolvedStatus === "partial" ||
-                  resolvedStatus === "verified"
-                      ? "bg-green-500"
-                      : "bg-gray-400"
-                  } rounded-full flex items-center justify-center mr-4`}>
+                  className={`w-8 h-8 ${resolvedStatus === "partial" ||
+                    resolvedStatus === "verified"
+                    ? "bg-green-500"
+                    : "bg-gray-400"
+                    } rounded-full flex items-center justify-center mr-4`}>
                   <span className="text-white font-semibold text-sm">1</span>
                 </div>
                 <div>
@@ -135,7 +135,7 @@ export default function VerificationProfile({
               </div>
               <div className="flex items-center">
                 {resolvedStatus === "partial" ||
-                resolvedStatus === "verified" ? (
+                  resolvedStatus === "verified" ? (
                   <>
                     <span className="dark:text-white/75 text-sm font-medium mr-2">
                       Confirmed
@@ -171,28 +171,17 @@ export default function VerificationProfile({
                       Upload government-issued ID to unlock higher deposit
                       limits ($10,000)
                     </div>
-                {resolvedStatus === "unverified" && (
+                    {resolvedStatus === "unverified" && (
                       <div className="text-sm text-yellow-500">
                         Complete your identity verification now
                       </div>
                     )}
                     {resolvedStatus === "unverified" && (
                       <Link href="/kyc" passHref>
-                        <button
-                          className="cssbuttons-io-button ml-auto"
-                          type="button"
-                          aria-label="Go to KYC">
+                        <Button className="ml-auto bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:opacity-90 font-semibold px-6 py-2 rounded-[8px] shadow-md transition-all duration-200 ease-in-out mt-2 flex items-center gap-2">
                           Go to KYC
-                          <div className="icon">
-                            <ArrowRight
-                              size={24}
-                              stroke="black"
-                              strokeWidth={2}
-                              fill="none"
-                              style={{ pointerEvents: "none" }}
-                            />
-                          </div>
-                        </button>
+                          <ArrowRight size={16} className="text-white" />
+                        </Button>
                       </Link>
                     )}
                   </div>
@@ -208,11 +197,10 @@ export default function VerificationProfile({
               onClick={() => toggleStep(2)}>
               <div className="flex items-center">
                 <div
-                  className={`w-8 h-8 ${
-                    resolvedStatus === "verified"
-                      ? "bg-green-500"
-                      : "bg-gray-400"
-                  } rounded-full flex items-center justify-center mr-4`}>
+                  className={`w-8 h-8 ${resolvedStatus === "verified"
+                    ? "bg-green-500"
+                    : "bg-gray-400"
+                    } rounded-full flex items-center justify-center mr-4`}>
                   <span className="dark:text-white/75 font-semibold text-sm">
                     2
                   </span>
@@ -262,27 +250,16 @@ export default function VerificationProfile({
 
                     {(resolvedStatus === "partial" ||
                       resolvedStatus === "unverified") && (
-                      <div className="text-sm text-yellow-500">
-                        Complete your address verification now
-                      </div>
-                    )}
+                        <div className="text-sm text-yellow-500">
+                          Complete your address verification now
+                        </div>
+                      )}
                     {resolvedStatus !== "verified" && (
                       <Link href="/kyc" passHref>
-                        <button
-                          className="cssbuttons-io-button ml-auto"
-                          type="button"
-                          aria-label="Go to KYC">
+                        <Button className="ml-auto bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:opacity-90 font-semibold px-6 py-2 rounded-[8px] shadow-md transition-all duration-200 ease-in-out mt-2 flex items-center gap-2">
                           Go to KYC
-                          <div className="icon">
-                            <ArrowRight
-                              size={24}
-                              stroke="black"
-                              strokeWidth={2}
-                              fill="none"
-                              style={{ pointerEvents: "none" }}
-                            />
-                          </div>
-                        </button>
+                          <ArrowRight size={16} className="text-white" />
+                        </Button>
                       </Link>
                     )}
                   </div>
