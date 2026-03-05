@@ -226,7 +226,7 @@ export default function WalletPage() {
               <div className="text-xs text-white/50 mt-2">Move funds into your wallet</div>
             </div>
             <div className="ml-4 flex-shrink-0">
-              <ArrowLeft className="h-6 w-6 text-white/60 group-hover:text-white/90 transition-colors" />
+              <ArrowRight className="h-6 w-6 text-white/60 group-hover:text-white/90 transition-colors" />
             </div>
           </div>
         </button>

@@ -245,7 +245,7 @@ const AccountDetails = ({
           {/* Show these on xl */}
           <div className="hidden xl:flex items-center gap-2.5">
             <AnimatePresence>
-              {expanded && !isDemoAccount && (
+              { !isDemoAccount && (
                 <motion.div
                   key="deposit"
                   variants={buttonAnimation}
@@ -261,7 +261,7 @@ const AccountDetails = ({
                   />
                 </motion.div>
               )}
-              {expanded && !isDemoAccount && (
+              { !isDemoAccount && (
                 <motion.div
                   key="withdrawal"
                   variants={buttonAnimation}

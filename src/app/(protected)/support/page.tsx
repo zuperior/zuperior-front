@@ -145,15 +145,15 @@ export default function SupportHub() {
       
 
       {/* Help Section */}
-      <section className="relative rounded-lg border-2 border-gray-300 dark:border-[#1D1825] dark:bg-gradient-to-r from-[#FFFFFF] to-[#f4e7f6] p-5 sm:p-7 dark:from-[#110F17] dark:to-[#1E1429] overflow-hidden">
+      <section className="relative rounded-lg border-2 border-gray-300 dark:border-[#1D1825] dark:bg-gradient-to-r from-[#FFFFFF] to-[#f4e7f6] p-5 sm:p-7 dark:from-[#110F17] dark:to-[#1E1429] ">
         {/* Support Image */}
-        <div className="absolute top-0 right-0 -mt-4 -mr-4 md:-mt-8 md:-mr-8 pointer-events-none opacity-20 dark:opacity-30">
+        <div className="absolute top-0 right-0 -mt-4 -mr-4 md:-mt-8 md:-mr-[15px] pointer-events-none opacity-20 dark:opacity-30">
           <Image
-            src="/support.png"
+            src="24_support.png"
             alt="Support"
-            width={300}
-            height={300}
-            className="w-48 h-48 md:w-64 md:h-64"
+            width={50}
+            height={50}
+            className="w-48 h-48 md:w-[190px] md:h-[190px] "
             unoptimized
           />
         </div>
