@@ -87,13 +87,12 @@ export function AccountTypeCard({
                     className="absolute inset-0 rounded-[15px] pointer-events-none"
                     style={{
                         background: "conic-gradient(from var(--border-angle, 0deg) at 50% 50%, transparent 0deg, transparent 270deg, rgb(163, 92, 162) 300deg, rgb(163, 92, 162) 330deg, transparent 360deg)",
-                        padding: "1px",
                         zIndex: 0,
                         animation: "border-rotate 3s linear infinite",
                     }}
                 >
                     <div
-                        className="w-full h-full rounded-[14px] bg-gradient-to-br from-purple-50/80 via-white to-purple-50/50 dark:bg-gradient-to-br dark:from-purple-950/20 dark:via-black dark:to-purple-900/10"
+                        className="absolute inset-[1px] rounded-[14px] bg-white dark:bg-black"
                     />
                 </div>
             )}
