@@ -107,7 +107,6 @@ export const StepChooseAccountType: React.FC<StepChooseAccountTypeProps> = ({
             if (titleB === "Startup") return 1;
             return 0;
           });
-
           setGroups(sortedGroups);
         } else {
           console.error("❌ Invalid response format:", response);
@@ -152,7 +151,7 @@ export const StepChooseAccountType: React.FC<StepChooseAccountTypeProps> = ({
 
             <div
               ref={scrollRef}
-              className="flex space-x-4 w-full overflow-x-auto pb-4 px-1 scrollbar-hide cursor-grab active:cursor-grabbing select-none"
+              className="flex justify-center space-x-4 w-full overflow-x-auto pb-4 px-1 scrollbar-hide cursor-grab active:cursor-grabbing select-none"
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}

@@ -162,9 +162,8 @@ export function NewAccountDialog({
             console.error("❌ Error auto-selecting group:", error);
           }
         };
+        autoSelectGroup();
       };
-
-      autoSelectGroup();
     }
   }, [step, accountType]);
 
