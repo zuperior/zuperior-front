@@ -3,99 +3,85 @@
 import type React from "react";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { TextAnimate } from "@/components/ui/text-animate";
-import {
-  ArrowRight,
-  Calculator,
-  Calendar,
-  TrendingUp,
-  LucideIcon,
-  CandlestickChart,
-  Bitcoin,
-  Map,
-  Presentation,
-  AreaChart,
-  ChartNoAxesCombined,
-  LineChart,
-  BookHeart,
-} from "lucide-react";
-
+import { ArrowRight } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 export default function TradingToolsPage() {
   const data = [
     {
       id: 3,
-      icon: TrendingUp,
+      image: "/trading_tools/Zuperior ai tech analysis.png",
       heading: "Zuper Ai Technical Analysis",
       link: "/tools/ai-technical-analysis",
       category: "Tech Analysis",
     },
     {
       id: 4,
-      icon: TrendingUp,
+      image: "/trading_tools/Zuperior price range volatility.png",
       heading: "Zuper Price Range Volatility",
       link: "/tools/price-range-volatility",
       category: "Tech Analysis",
     },
     {
       id: 5,
-      icon: Calendar,
+      image: "/trading_tools/Zuperior News Senitment Analysis.png",
       heading: "Zuper News Sentiment Analysis",
       link: "/tools/news-sentiment-analysis",
       category: "Tech Analysis",
     },
     {
       id: 7,
-      icon: TrendingUp,
+      image: "/trading_tools/Market News & Update.png",
       heading: "Market News & Updates",
       link: "/tools/market-news-updates",
       category: "Tech Analysis",
     },
     {
       id: 8,
-      icon: CandlestickChart,
+      image: "/trading_tools/Cross Rates.png",
       heading: "Cross Rates",
       link: "/tools/cross-rates",
       category: "Tech Analysis",
     },
     {
       id: 9,
-      icon: Bitcoin,
+      image: "/trading_tools/Crypto Market Cap.png",
       heading: "Crypto Market Cap",
       link: "/tools/crypto-market-cap",
       category: "Tech Analysis",
     },
     {
       id: 10,
-      icon: Map,
+      image: "/trading_tools/Heat Maps.png",
       heading: "Heat Maps",
       link: "/tools/heat-maps",
       category: "Tech Analysis",
     },
     {
       id: 11,
-      icon: AreaChart,
+      image: "/trading_tools/economic calender.png",
       heading: "Zuper Economic Calendar",
       link: "/tools/calendar",
       category: "Tech Analysis",
     },
     {
       id: 12,
-      icon: BookHeart,
+      image: "/trading_tools/Our Favourites.png",
       heading: "Our Favourites",
       link: "/tools/our-favourites",
       category: "Tech Analysis",
     },
     {
       id: 13,
-      icon: ChartNoAxesCombined,
+      image: "/trading_tools/Performance Statics.png",
       heading: "Performance Statics",
       link: "/tools/performance-statics",
       category: "Tech Analysis",
     },
     {
       id: 15,
-      icon: LineChart,
+      image: "/trading_tools/Top Stories.png",
       heading: "Top Stories",
       link: "/tools/top-stories",
       category: "Tech Analysis",
@@ -140,13 +126,12 @@ export default function TradingToolsPage() {
 
           <TabsContent value="calculators" className="mt-4">
             <div className="grid gap-12 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
-              {data.map(({ id, icon, heading, link }) => (
+              {data.map(({ id, image, heading, link }) => (
                 <IBCard
                   key={id}
-                  icon={icon}
+                  image={image}
                   heading={heading}
                   link={link}
-                  // showDivider={index % 4 !== 3}
                 />
               ))}
             </div>
@@ -158,11 +143,11 @@ export default function TradingToolsPage() {
 }
 
 function IBCard({
-  icon: Icon,
+  image,
   heading,
   link,
 }: {
-  icon: LucideIcon;
+  image: string;
   heading: string;
   link: string;
 }) {
@@ -176,7 +161,7 @@ function IBCard({
       >
         <div className="flex flex-col h-full">
           <div className="flex items-center mb-4">
-            <Icon size={30} className="text-[#A35CA2] mr-2" />
+            <Image src={image} alt={heading} width={60} height={60} className="mr-2 object-contain" />
           </div>
           <div className="flex justify-between items-center w-full">
             <p className="text-lg font-medium text-start dark:text-white/75 text-black">
