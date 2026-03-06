@@ -40,7 +40,7 @@ const ForexAdBanner: React.FC = () => {
               src={slide.image}
               alt={`Promotion Banner ${slide.id}`}
               fill
-              className="object-cover select-none"
+              className="object-fill select-none"
               priority
             />
           </div>
@@ -53,9 +53,8 @@ const ForexAdBanner: React.FC = () => {
           <button
             key={index}
             onClick={() => setCurrentSlide(index)}
-            className={`h-1.5 rounded-full transition-all duration-300 ${
-              index === currentSlide ? "bg-white w-4" : "bg-white/40 w-1.5"
-            }`}
+            className={`h-1.5 rounded-full transition-all duration-300 ${index === currentSlide ? "bg-white w-4" : "bg-white/40 w-1.5"
+              }`}
           />
         ))}
       </div>

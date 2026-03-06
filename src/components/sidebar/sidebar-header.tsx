@@ -56,7 +56,7 @@ export function SidebarHeader({ collapsed }: SidebarHeaderProps) {
             >
               <Image
                 alt="Zuperior Logo"
-                src={collapsed ? "/logo_icon.png" : isDark ? "/logo.png" : "/dark-logo.png"}
+                src={collapsed ? "/zuperior-new-logo.png" : isDark ? "/logo.png" : "/dark-logo.png"}
                 width={collapsed ? 48 : 224}
                 height={collapsed ? 48 : 48}
                 quality={100}
@@ -94,12 +94,12 @@ export function SidebarHeader({ collapsed }: SidebarHeaderProps) {
                     target="_blank" // Opens in a new tab (optional)
                     rel="noopener noreferrer" // Security for new tabs
                   >
-                    <div className="w-6 h-6 mr-3 flex items-center justify-center shrink-0">
+                    <div className="w-4.5 h-4.5 mr-3 flex items-center justify-center shrink-0">
                       <Image
-                        src="/logo_icon.png"
+                        src="/zuperior-new-logo.png"
                         alt="Website"
-                        width={24}
-                        height={24}
+                        width={20}
+                        height={20}
                         quality={100}
                         unoptimized
                         className="object-contain transition-all duration-300"
@@ -119,7 +119,7 @@ export function SidebarHeader({ collapsed }: SidebarHeaderProps) {
                       <ArrowRight size={16} className="ml-12" />
                     </span>
                   </Link>
-                  <Link
+                  {/* <Link
                     href="https://zuperlearn.com"
                     className="flex items-center px-4 py-2 hover:bg-[#9a86cc] dark:hover:bg-[#1E1429]/40 transition-colors"
                     onClick={() => setIsDropdownOpen(false)}
@@ -141,7 +141,7 @@ export function SidebarHeader({ collapsed }: SidebarHeaderProps) {
                       Zuper Learn
                       <ArrowRight size={16} className="ml-21" />
                     </span>
-                  </Link>
+                  </Link> */}
                 </div>
               </motion.div>
             </AnimatePresence>
