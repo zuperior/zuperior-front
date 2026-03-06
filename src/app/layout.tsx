@@ -41,6 +41,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               <Toaster
                 position="bottom-right"
                 theme="dark"
+                offset={{ bottom: 20, right: 90 }}
                 toastOptions={{
                   style: {
                     background: "#1E1429",
