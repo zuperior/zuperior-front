@@ -18,7 +18,7 @@ const Page = () => {
       </div>
       <TickerTape />
       <div className="flex justify-center items-center px-15">
-        <MarketNews theme={theme === 'dark' ? 'dark' : 'light'} />
+        <MarketNews/>
       </div>
     </div>
   );

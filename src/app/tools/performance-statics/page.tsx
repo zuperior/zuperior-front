@@ -19,7 +19,6 @@ const Page = () => {
       <TickerTape />
       <div className="flex gap-6 justify-center items-center px-15">
         <PerformanceStats
-          theme={theme === 'dark' ? 'dark' : 'light'}
         />
       </div>
     </div>

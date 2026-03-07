@@ -18,7 +18,7 @@ const Page = () => {
       </div>
       <TickerTape />
       <div className="flex gap-6 justify-center items-center px-15">
-        <VolatilityAnalysis theme={theme === "dark" ? "dark" : "light"} />
+        <VolatilityAnalysis/>
       </div>
     </>
   );
