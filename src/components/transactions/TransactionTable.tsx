@@ -34,9 +34,9 @@ const getArrowIcon = (type: string) => {
   if (type === "Deposit" || type === "Internal Transfer In") {
     return <ArrowDown className="h-3 w-3 text-black bg-[#92F09A] rounded-full p-0.5" />;
   } else if (type === "Internal Transfer Out") {
-    return <ArrowLeftRight className="h-3 w-3 text-black bg-[#9F8ACF] rounded-full p-0.5" />;
+    return <ArrowLeftRight className="h-3 w-3 text-black bg-[#92F09A] rounded-full p-0.5" />;
   } else {
-    return <ArrowUpRight className="h-3 w-3 text-black bg-[#D97777] rounded-full p-0.5 rotate-[-10deg]" />;
+    return <ArrowUpRight className="h-3 w-3 text-black bg-[#92F09A] rounded-full p-0.5 rotate-[-10deg]" />;
   }
 };
 
