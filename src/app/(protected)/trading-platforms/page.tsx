@@ -7,9 +7,9 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image, { StaticImageData } from "next/image";
 
-import desktop from "@/assets/desktop.avif";
-import mobile from "@/assets/mobile.avif";
-import mobile2 from "@/assets/mobile2.avif";
+import desktop from "@/assets/meta-trader5.png";
+import mobile from "@/assets/zuperior-mobile.png";
+import mobile2 from "@/assets/trading-view.png";
 import { memo } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -33,7 +33,7 @@ export default function TradingPlatformsPage() {
     },
     {
       name: "Meta Trader Mobile App ios/Android",
-      image: mobile,
+      image: desktop,
       category: "metatraders",
       links: [
         {

@@ -26,10 +26,10 @@ export function BalanceSection({ balance }: BalanceSectionProps) {
       </AnimatePresence>
 
       <div className="flex w-full flex-col md:flex-row gap-2.5 h-auto md:h-[196px]">
-        <div className="w-full md:basis-[25%] flex-shrink-0">
+        <div className="w-full md:basis-[28%] shrink-0">
           <WalletBalance balance={balance} />
         </div>
-        <div className="w-full md:basis-[75%] min-h-[160px] md:min-h-0 flex-shrink-0">
+        <div className="w-full md:basis-[72%] min-h-[160px] md:min-h-0 shrink-0">
           <ForexAdBanner />
         </div>
       </div>

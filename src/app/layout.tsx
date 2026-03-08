@@ -18,9 +18,9 @@ export const metadata: Metadata = {
   title: "Think Superior, Trade Zuperior",
   description: "India's #1 Leading Forex Broker",
   icons: {
-    icon: "/favicon.ico",
-    shortcut: ["/favicon-16x16.png", "/favicon-32x32.png"],
-    apple: "/apple-touch-icon.png",
+    icon: "/zuperior-new-logo.png",
+    shortcut: "/zuperior-new-logo.png",
+    apple: "/zuperior-new-logo.png",
   },
 };
 
@@ -41,6 +41,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               <Toaster
                 position="bottom-right"
                 theme="dark"
+                offset={{ bottom: 20, right: 90 }}
                 toastOptions={{
                   style: {
                     background: "#1E1429",

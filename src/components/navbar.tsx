@@ -360,32 +360,6 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
             side="bottom"
             align="end"
             className="px-[25px] pt-2.5 pb-[15px] dark:bg-[#01040D] border border-t-0 border-[#9F8BCF]/25 rounded-b-[10px] rounded-t-none mt-[22px] space-y-2.5">
-            <DropdownMenuItem asChild>
-              <div className="flex items-center w-full gap-2 ">
-                <div className="h-8 w-8 rounded-full border-2 border-purple-400/60 dark:border-purple-400/60 p-0.5">
-                  <Image
-                    className="h-full w-full rounded-full"
-                    src="/userprofileicon.png"
-                    alt="Profile"
-                    width={32}
-                    height={32}
-                    quality={100}
-                    unoptimized
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <p className="text-sm text-black dark:text-white/75 font-bold">
-                    {userDetails?.name || firstName}
-                  </p>
-                  <p className="text-xs text-black dark:text-white/50 font-medium">
-                    {userDetails?.email ? `@${userDetails.email.split('@')[0]}` : userDetails?.email}
-                  </p>
-                </div>
-              </div>
-            </DropdownMenuItem>
-
-            <div className="w-full h-px dark:bg-white/10 bg-black/10" />
-
             <div className="flex flex-col gap-1 ">
               <DropdownMenuItem asChild>
                 <Link

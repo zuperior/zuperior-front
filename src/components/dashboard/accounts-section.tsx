@@ -1,23 +1,20 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "next-themes";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { Button } from "../ui/button";
 import { Tabs, TabsContent } from "../ui/tabs";
 import { Plus } from "lucide-react";
-import { Dialog, DialogTrigger } from "../ui/dialog";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { RootState } from "../../store";
 import AccountDetails from "./account-details";
 import { TpAccountSnapshot } from "@/types/user-details";
 import { MT5Account } from "@/store/slices/mt5AccountSlice";
-import {
-  fetchUserAccountsFromDb,
-} from "@/store/slices/mt5AccountSlice";
 import { useMT5WebSocket } from "@/hooks/useMT5WebSocket";
 import { KillSwitchToggle } from "./KillSwitchToggle";
+import { FloatingDots } from "../ui/floating-dots";
 
 interface AccountsSectionProps {
   onOpenNewAccount: () => void;
@@ -70,9 +67,7 @@ const mapMT5AccountToTpAccount = (mt5Account: MT5Account): TpAccountSnapshot => 
 };
 
 export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
-  const [open, setOpen] = useState(false);
   const { theme } = useTheme();
-  const dispatch = useDispatch();
 
   const { accounts, ownerClientId, isFetchingAccounts } = useSelector((state: RootState) => state.mt5);
   const currentClientId = typeof window !== 'undefined' ? localStorage.getItem('clientId') : null;
@@ -146,19 +141,6 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
   //   };
   // }, [accounts, dispatch]);
 
-  const maskStyle: React.CSSProperties = {
-    WebkitMaskImage:
-      "linear-gradient(100deg, rgba(255, 255, 255, 0.75) 10%, rgba(255, 255, 255, 0.25) 100%)",
-    maskImage:
-      "linear-gradient(100deg, rgba(255, 255, 255, 0.75) 10%, rgba(255, 255, 255, 0.25) 100%)",
-    borderRadius: "15px",
-    opacity: 0.75,
-    inset: 0,
-    overflow: "visible",
-    position: "absolute",
-    zIndex: 0,
-  };
-
 
   const cardMaskStyle: React.CSSProperties = {
     WebkitMaskImage:
@@ -197,15 +179,10 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
           <KillSwitchToggle />
           <Button
             onClick={onOpenNewAccount}
-            className="relative gap-1 cursor-pointer font-semibold text-white rounded-[15px] px-4 sm:px-6 py-2 sm:py-2.5 text-xs leading-6 h-9 sm:h-11 
-        [background:radial-gradient(ellipse_27%_80%_at_0%_0%,rgba(163,92,162,0.5),rgba(0,0,0,1))]
-         hover:bg-transparent dark:[background:black]"
+            className="relative z-10 flex items-center gap-2.5 bg-linear-to-r from-[#331032] to-black text-white py-2.5 px-4 rounded-[15px] h-fit"
           >
-            <Plus className="w-3 h-3" /> Open New Account
-            <div
-              style={maskStyle}
-              className="dark:border dark:border-white/50 pointer-events-none"
-            />
+            <FloatingDots dotCount={25}/>
+            Open New Account <div className="bg-[#a35ca2] rounded-full size-8 flex items-center justify-center z-10"><Plus className="w-3 h-3" /></div>
           </Button>
           {/* Refresh button removed as requested */}
         </div>

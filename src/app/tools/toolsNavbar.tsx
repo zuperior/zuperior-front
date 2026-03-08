@@ -8,13 +8,13 @@ const ToolNavbar = () => {
         <Image
           alt="Zuperior Logo"
           src="/logo.png"
-          width={48}
+          width={224}
           height={48}
-          className="h-12 w-12 object-contain"
+          className="h-24 w-52 object-contain"
         />
-        <span className="text-4xl font-bold tracking-tight dark:text-white/75">
+        {/* <span className="text-4xl font-bold tracking-tight dark:text-white/75">
           Zuperior
-        </span>
+        </span> */}
       </Link>
     </div>
   );

@@ -56,9 +56,13 @@ export default function TawkToChat() {
           const height = iframe.offsetHeight || parseInt(iframe.style.height) || 0;
 
           if (width > 0 && width < 100 && height < 100) {
-            iframe.classList.add('tawk-widget-icon');
+            iframe.classList.add("tawk-widget-icon");
+
+            // force smaller size
+            iframe.style.width = "45px";
+            iframe.style.height = "45px";
           } else {
-            iframe.classList.remove('tawk-widget-icon');
+            iframe.classList.remove("tawk-widget-icon");
           }
         });
       };

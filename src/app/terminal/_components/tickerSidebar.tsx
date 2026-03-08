@@ -64,9 +64,8 @@ const TickerSidebar: React.FC = () => {
       )}
 
       <div
-        className={`w-[300px] xl:w-1/6 py-[11px] space-y-4 bg-white dark:bg-[#01040D] border-r flex flex-col fixed left-0 top-0 h-screen transition-transform duration-300 lg:translate-x-0 ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:relative z-40`}
+        className={`w-[300px] xl:w-1/6 py-[11px] space-y-4 bg-white dark:bg-[#01040D] border-r flex flex-col fixed left-0 top-0 h-screen transition-transform duration-300 lg:translate-x-0 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } lg:relative z-40`}
       >
         {isSidebarOpen && (
           <button
@@ -87,7 +86,7 @@ const TickerSidebar: React.FC = () => {
             <div className="w-12 h-12 flex items-center justify-center shrink-0">
               <Image
                 alt="Zuperior Logo"
-                src="/logo_icon.png"
+                src="/zuperior-new-logo.png"
                 width={48}
                 height={48}
                 quality={100}
@@ -121,12 +120,12 @@ const TickerSidebar: React.FC = () => {
                       rel="noopener noreferrer"
                     >
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                        <div className="w-4.5 h-4.5 flex items-center justify-center shrink-0">
                           <Image
-                            src="/logo_icon.png"
+                            src="/zuperior-new-logo.png"
                             alt="Website"
-                            width={24}
-                            height={24}
+                            width={20}
+                            height={20}
                             quality={100}
                             unoptimized
                             className="object-contain"
@@ -138,7 +137,7 @@ const TickerSidebar: React.FC = () => {
                       </div>
                       <ArrowRight size={18} />
                     </Link>
-                    <Link
+                    {/* <Link
                       href="https://zuperlearn.com"
                       className="flex items-center justify-between px-4 py-2 hover:bg-[#9a86cc] dark:hover:bg-[#1E1429]/40 transition-colors"
                       onClick={() => setIsDropdownOpen(false)}
@@ -162,7 +161,7 @@ const TickerSidebar: React.FC = () => {
                         </span>
                       </div>
                       <ArrowRight size={18} />
-                    </Link>
+                    </Link> */}
                   </div>
                 </motion.div>
               )}

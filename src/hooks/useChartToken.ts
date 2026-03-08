@@ -11,32 +11,55 @@ export interface AutochartistConfig {
   nextDays?: number;
 }
 
-
 export const useAutochartist = (config: AutochartistConfig) => {
   const [url, setUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchUrl = async () => {
       try {
         setLoading(true);
-        const response = await axios.post("/api/token", config, {
-          headers: { "Content-Type": "application/json" }
+        
+        // Add a timestamp to prevent caching
+        const requestConfig = {
+          ...config,
+          _t: Date.now() // Add timestamp to force new request
+        };
+        
+        const response = await axios.post("/api/token", requestConfig, {
+          headers: { 
+            "Content-Type": "application/json",
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache"
+          }
         });
 
         const data = response.data;
-
-        setUrl(data.url);
+        
+        if (isMounted) {
+          setUrl(data.url);
+          setError(null);
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error");
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : "Unknown error");
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchUrl();
-  }, [config]); // ✅ safe now because config is memoized
+
+    return () => {
+      isMounted = false;
+    };
+  }, [JSON.stringify(config)]); // Use stringified config as dependency
 
   return { url, loading, error };
 };

@@ -16,7 +16,6 @@ import { WalletMoveDialog } from '@/components/wallet/WalletMoveDialog';
 import Image from 'next/image';
 import { useTheme } from 'next-themes';
 import { wallet as walletIcon } from '@/lib/sidebar-assets';
-import bitcoinLoop from "@/assets/home/bitcoin-loop.avif";
 import { ArrowRight, ArrowLeft } from 'lucide-react';
 
 export default function WalletPage() {
@@ -173,17 +172,18 @@ export default function WalletPage() {
           </div>
 
           {/* Graphics Card */}
-          <div className="rounded-[15px] border border-black/10 dark:border-white/10 bg-black/5 dark:bg-black/40 p-6 flex flex-col items-center justify-center text-center min-h-[140px] relative overflow-hidden">
-            <div className="absolute inset-0 flex items-center justify-center opacity-20">
-              <Image
-                alt="Crypto graphics"
-                src={bitcoinLoop}
-                className="slow-spin h-24 w-24"
-                width={96}
-                height={96}
-                unoptimized
-              />
-            </div>
+          <div className="rounded-[15px] border border-black/10 dark:border-white/10 bg-black/5 dark:bg-black/40 p-6 flex flex-col items-center justify-center text-center min-h-[140px] relative overflow-visible">
+
+            <video
+              className="absolute h-20 w-20 opacity-40 left-1/2 -translate-x-1/2 top-8 md:top-12"
+              autoPlay
+              loop
+              muted
+              playsInline
+            >
+              <source src="/rotatingCoins.webm" type="video/webm" />
+              Your browser does not support the video tag.
+            </video>
             <div className="relative z-10 text-sm opacity-70">Integrated</div>
             <div className="relative z-10 text-lg font-semibold tracking-tight">Wallet System</div>
           </div>
@@ -199,15 +199,17 @@ export default function WalletPage() {
           </span>
         </h2>
 
-        <div className="absolute top-1/2 -translate-y-1/2 right-2 md:-top-16 md:-right-20 md:translate-y-0 md:translate-y-1/4 pointer-events-none">
-          <Image
-            alt="Bitcoin loop"
-            src={bitcoinLoop}
-            className="slow-spin h-24 w-24 md:h-60 md:w-60"
-            width={240}
-            height={240}
-            unoptimized
-          />
+        <div className="absolute top-1/2 -translate-y-1/2 right-1 md:-top-16 md:-right-15 md:translate-y-16 pointer-events-none">
+          <video
+            className="h-32 w-32 md:h-60 md:w-60 opacity-90"
+            autoPlay
+            loop
+            muted
+            playsInline
+          >
+            <source src="/rotatingCoins.webm" type="video/webm" />
+            Your browser does not support the video tag.
+          </video>
         </div>
 
         <div
@@ -226,7 +228,7 @@ export default function WalletPage() {
               <div className="text-xs text-white/50 mt-2">Move funds into your wallet</div>
             </div>
             <div className="ml-4 flex-shrink-0">
-              <ArrowLeft className="h-6 w-6 text-white/60 group-hover:text-white/90 transition-colors" />
+              <ArrowRight className="h-6 w-6 text-white/60 group-hover:text-white/90 transition-colors" />
             </div>
           </div>
         </button>

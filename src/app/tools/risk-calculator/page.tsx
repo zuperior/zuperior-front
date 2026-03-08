@@ -18,7 +18,7 @@ const Page = () => {
       </div>
       <TickerTape />
       <div className="flex gap-6 justify-center items-center px-15">
-        <RiskCalculator theme={theme === "dark" ? "dark" : "light"} />
+        <RiskCalculator />
       </div>
     </>
   );
