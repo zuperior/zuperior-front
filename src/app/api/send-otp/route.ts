@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
   // If useBackend flag is set, use server API (for password reset/change)
   if (useBackend) {
     try {
-      const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5000/api";
+      const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5001/api";
       
       console.log("Sending OTP to server:", { email, name, purpose, API_URL: `${BACKEND_URL}/user/send-otp` });
       

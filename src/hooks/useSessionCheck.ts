@@ -45,7 +45,7 @@ export function useSessionCheck() {
     if (!token) return; // Not logged in, skip
 
     // Get backend URL - remove /api suffix for socket connection, keep it for fetch
-    const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+    const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001/api';
     const serverBaseUrl = backendApiUrl.replace('/api', ''); // Remove /api for socket.io
 
     // Centralized logout helper
@@ -84,7 +84,7 @@ export function useSessionCheck() {
 
       // Call server logout endpoint to clear server-side cookies
       try {
-        const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+        const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001/api';
         fetch(`${backendApiUrl}/logout`, {
           method: 'POST',
           credentials: 'include',
@@ -99,7 +99,7 @@ export function useSessionCheck() {
       const message = reason === 'deleted'
         ? 'Your account was deleted. For your security, you have been logged out.'
         : 'Your session has expired. Please log in again.';
-      toast.error(message, { duration: 5000 });
+      toast.error(message, { duration: 5001 });
 
       // Redirect to login
       setTimeout(() => {
@@ -194,7 +194,7 @@ export function useSessionCheck() {
           const timeSinceRegistration = Date.now() - registrationTime;
           if (timeSinceRegistration < 10000) { // 10 seconds grace period
             // Clear the flag after grace period
-            if (timeSinceRegistration >= 5000) {
+            if (timeSinceRegistration >= 5001) {
               localStorage.removeItem('_freshRegistration');
             }
             // Schedule next check after grace period
@@ -238,7 +238,7 @@ export function useSessionCheck() {
 
     // Start polling after a short delay (longer for fresh registrations)
     const freshRegistrationTime = localStorage.getItem('_freshRegistration');
-    const initialDelay = freshRegistrationTime ? 10000 : 5000; // 10s for fresh reg, 5s otherwise
+    const initialDelay = freshRegistrationTime ? 10000 : 5001; // 10s for fresh reg, 5s otherwise
     timer = setTimeout(poll, initialDelay);
 
     // Cleanup

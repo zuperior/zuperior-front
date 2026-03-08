@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyCallbackSignature } from "@/lib/cregis-payment.service";
 
 const PAYMENT_API_KEY = process.env.CREGIS_PAYMENT_API_KEY || "afe05cea1f354bc0a9a484e139d5f4af";
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001/api';
 
 export async function POST(req: NextRequest) {
   try {

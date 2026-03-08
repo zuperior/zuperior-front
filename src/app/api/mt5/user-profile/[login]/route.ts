@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // Prefer a server-only var if provided, else fall back to NEXT_PUBLIC_*
-const API_URL = process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001/api';
 
 export async function GET(
   request: NextRequest,
@@ -21,7 +21,7 @@ export async function GET(
 
     // Add a short timeout to fail fast if backend is unreachable
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
+    const timeout = setTimeout(() => controller.abort(), 15001);
 
     // Get cache-busting param from query string
     const { searchParams } = new URL(request.url);

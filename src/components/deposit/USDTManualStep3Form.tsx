@@ -36,7 +36,7 @@ export function USDTManualStep3Form({
       const timer = setTimeout(() => {
         toast.success("Payment Instructions", {
           description: "Please send the exact amount to the provided address.",
-          duration: 5000,
+          duration: 5001,
         });
         hasShownInitialToast.current = true;
       }, 2000);

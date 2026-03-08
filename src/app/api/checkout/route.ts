@@ -13,7 +13,7 @@ const config = {
   USDT_QR_CODE: process.env.CREGIS_USDT_QR_CODE || "",
 };
 
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001/api';
 
 export async function POST(req: NextRequest) {
   try {

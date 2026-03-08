@@ -22,8 +22,7 @@ const ForexAdBanner: React.FC = () => {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 5000);
-
+    }, 5001);
     return () => clearInterval(timer);
   }, []);
 

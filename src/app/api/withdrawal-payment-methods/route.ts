@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 // This endpoint calls zuperior-server, which queries the database directly
 // zuperior-server checks the withdrawal_payment_methods table and returns only enabled methods
-const SERVER_API_URL = process.env.NEXT_PUBLIC_SERVER_API_URL || process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+const SERVER_API_URL = process.env.NEXT_PUBLIC_SERVER_API_URL || process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001/api';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;

@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // Prefer a server-only var if provided, else fall back to NEXT_PUBLIC_*
-const RAW_API_URL = process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+const RAW_API_URL = process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001/api';
 // Normalize URL: remove trailing slashes to avoid double slashes in concatenated paths
 const API_URL = RAW_API_URL.replace(/\/+$/, '');
 
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
       console.error('❌ Backend server may not be running or route not found. Check:', {
         backendUrl: API_URL,
         expectedRoute: `${API_URL}/mt5/accounts-with-balance`,
-        message: 'Ensure backend server is running on port 5000'
+        message: 'Ensure backend server is running on port 5001'
       });
     }
 

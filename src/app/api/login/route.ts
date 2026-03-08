@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     }
 
     const baseUrl =
-      process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5000/api";
+      process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5001/api";
     const response = await axios.post(
       `${baseUrl}/login`,
       {

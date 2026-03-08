@@ -34,7 +34,7 @@
 //       const timer = setTimeout(() => {
 //         toast.success("Payment Instructions", {
 //           description: "Please send the exact amount to the provided address.",
-//           duration: 5000,
+//           duration: 5001,
 //         });
 //         hasShownInitialToast.current = true;
 //       }, 2000);
@@ -82,7 +82,7 @@
 //       } else if (countdown === 120 && previousCountdown.current !== 120) {
 //         toast.warning("2 Minutes Remaining", {
 //           description: "Time is running out. Complete your payment soon.",
-//           duration: 5000,
+//           duration: 5001,
 //         });
 //       }
 //     }
@@ -312,7 +312,7 @@ export function Step3Payment({
       const timer = setTimeout(() => {
         toast.success("Payment Instructions", {
           description: "Please send the exact amount to the provided address.",
-          duration: 5000,
+          duration: 5001,
         });
         hasShownInitialToast.current = true;
       }, 2000);
@@ -360,7 +360,7 @@ export function Step3Payment({
       } else if (countdown === 120 && previousCountdown.current !== 120) {
         toast.warning("2 Minutes Remaining", {
           description: "Time is running out. Complete your payment soon.",
-          duration: 5000,
+          duration: 5001,
         });
       }
     }

@@ -3,7 +3,7 @@ import axios from "axios";
 
 export async function POST(req: NextRequest) {
   const backendBase =
-    process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5000/api";
+    process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5001/api";
 
   try {
     let payload: Record<string, string | undefined> = {};

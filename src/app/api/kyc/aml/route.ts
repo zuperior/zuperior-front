@@ -3,7 +3,7 @@ import { AMLRequestBody, AMLResponse } from "@/types/kyc";
 import axios from "axios";
 import { NextResponse } from "next/server";
 
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001/api';
 
 export async function POST(request: Request) {
   let requestBody: AMLRequestBody | undefined;

@@ -163,7 +163,7 @@ export function NewAccountDialog({
           }
         };
         autoSelectGroup();
-      };
+      }
     }
   }, [step, accountType]);
 

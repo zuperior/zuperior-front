@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 // Import country list helper if available, otherwise just use text input or simple list
 // For now, using simple text input for Country to avoid dependency issues if react-select-country-list isn't there
 
-const API_URL = (process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5000").replace(/\/api$/, "");
+const API_URL = (process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5001").replace(/\/api$/, "");
 
 interface IBApplicationModalProps {
     trigger?: React.ReactNode;

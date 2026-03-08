@@ -74,7 +74,7 @@ export default function WalletPage() {
     dispatch(fetchUserAccountsFromDb() as any);
     load();
     loadTx();
-    const id = setInterval(() => { load(); }, 15000); // refresh wallet balance every 15s
+    const id = setInterval(() => { load(); }, 15001); // refresh wallet balance every 15s
     const onVis = () => { if (document.visibilityState === 'visible') { load(); loadTx(); } };
     document.addEventListener('visibilitychange', onVis);
     return () => { clearInterval(id); document.removeEventListener('visibilitychange', onVis); };

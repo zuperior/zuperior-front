@@ -139,7 +139,7 @@ export function Step4Status({
           config.title,
           {
             description: config.description,
-            duration: 5000,
+            duration: 5001,
           }
         );
         hasShownStatusToast.current = true;
@@ -266,7 +266,7 @@ export function Step4Status({
                 try {
                   const token = localStorage.getItem('userToken');
                   const verifyResponse = await fetch(
-                    `${process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api'}/deposit/by-cregis-id/${statusData.cregis_id}`,
+                    `${process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001/api'}/deposit/by-cregis-id/${statusData.cregis_id}`,
                     {
                       headers: {
                         'Authorization': `Bearer ${token}`,
@@ -301,7 +301,7 @@ export function Step4Status({
 
                       toast.success("Successful Payment", {
                         description: successMessage,
-                        duration: 5000,
+                        duration: 5001,
                       });
                       hasShownStatusToast.current = true;
                       break;
@@ -334,7 +334,7 @@ export function Step4Status({
                   : "Your payment has been processed. Please check your account balance.";
                 toast.success("Successful Payment", {
                   description: successMessage,
-                  duration: 5000,
+                  duration: 5001,
                 });
                 hasShownStatusToast.current = true;
               }
@@ -537,7 +537,7 @@ export function Step4Status({
             for (let attempt = 0; attempt < 10; attempt++) {
               try {
                 const verifyResponse = await fetch(
-                  `${process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api'}/deposit/by-invoice-id/${statusData.invoice_id}`,
+                  `${process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001/api'}/deposit/by-invoice-id/${statusData.invoice_id}`,
                   {
                     headers: {
                       'Authorization': `Bearer ${token}`,
@@ -558,7 +558,7 @@ export function Step4Status({
 
                     toast.success("Successful Payment", {
                       description: "Your payment has been processed and credited to your MT5 account.",
-                      duration: 5000,
+                      duration: 5001,
                     });
                     hasShownStatusToast.current = true;
                     break;
@@ -585,7 +585,7 @@ export function Step4Status({
               toast.dismiss("updating-mt5-unipayment");
               toast.success("Successful Payment", {
                 description: "Your payment has been processed. Please check your account balance.",
-                duration: 5000,
+                duration: 5001,
               });
               hasShownStatusToast.current = true;
             }

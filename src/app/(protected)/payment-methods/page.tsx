@@ -31,7 +31,7 @@ interface PaymentMethod {
   rejectionReason?: string;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001/api';
 
 export default function PaymentMethodsPage() {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);

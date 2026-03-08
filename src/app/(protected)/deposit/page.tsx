@@ -330,8 +330,8 @@ export default function DepositPage() {
     if (trimmedPath.startsWith('/')) {
       // Check if it's a known backend path
       if (trimmedPath.startsWith('/kyc_proofs/') || trimmedPath.startsWith('/uploads/')) {
-        // These are from server backend (port 5000)
-        const serverBackendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL?.replace('/api', '') || 'http://localhost:5000';
+        // These are from server backend (port 5001)
+        const serverBackendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL?.replace('/api', '') || 'http://localhost:5001';
         return `${serverBackendUrl}${trimmedPath}`;
       }
       // Otherwise, assume it's a frontend public path (Next.js serves from /public folder)
@@ -339,7 +339,7 @@ export default function DepositPage() {
     }
     
     // Relative path without leading slash - treat as backend path (server, not admin)
-    const serverBackendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL?.replace('/api', '') || 'http://localhost:5000';
+    const serverBackendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL?.replace('/api', '') || 'http://localhost:5001';
     return `${serverBackendUrl}/${trimmedPath}`;
   };
 
