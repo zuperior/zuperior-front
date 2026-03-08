@@ -80,6 +80,16 @@ const RegisterStep1Form: React.FC<RegisterStep1FormProps> = ({
     passwordRef,
   ];
 
+  const signupExcludedCountries = new Set<string>([
+    "Martinique",
+    "Belize",
+    "Iraq",
+  ]);
+
+  const signupAllowedCountries = countries.filter(
+    ({ name }) => !signupExcludedCountries.has(name)
+  );
+
   // Helper to focus input by index when pressing arrow keys
   const onKeyDown = (e: React.KeyboardEvent<Element>, index: number) => {
     if (e.key === "ArrowDown") {
@@ -177,7 +187,7 @@ const RegisterStep1Form: React.FC<RegisterStep1FormProps> = ({
             <SelectValue placeholder="Select Country" />
           </SelectTrigger>
           <SelectContent className="w-full">
-            {countries.map(({ name, code }) => (
+            {signupAllowedCountries.map(({ name, code }) => (
               <SelectItem key={code} value={code}>
                 <Image
                   src={`https://flagcdn.com/24x18/${code.toLowerCase()}.png`}

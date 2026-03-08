@@ -154,22 +154,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
-      const cookieStore = await cookies();
-      let token = cookieStore.get('token')?.value;
+    const cookieStore = await cookies();
+    let token = cookieStore.get('token')?.value;
 
-      // Fallback: try 'userToken' or other common names if 'token' is missing
-      if (!token) {
-        token = cookieStore.get('userToken')?.value || cookieStore.get('auth_token')?.value;
-      }
+    // Fallback: try 'userToken' or other common names if 'token' is missing
+    if (!token) {
+      token = cookieStore.get('userToken')?.value || cookieStore.get('auth_token')?.value;
+    }
 
-      // Fallback: try Authorization header
-      if (!token) {
-        const authHeader = req.headers.get('authorization');
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-          token = authHeader.substring(7);
-          console.log('🔑 [CHECKOUT] Token found in Authorization header');
-        }
+    // Fallback: try Authorization header
+    if (!token) {
+      const authHeader = req.headers.get('authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+        console.log('🔑 [CHECKOUT] Token found in Authorization header');
       }
+    }
 
     if (!token) {
       console.error('❌ [CHECKOUT] No auth token found - cannot create deposit record');
@@ -184,64 +184,64 @@ export async function POST(req: NextRequest) {
     }
 
     console.log('📞 [CHECKOUT] Creating deposit record in database (STEP 2)...');
-        const backendEndpoint = `${BACKEND_API_URL}/deposit/cregis-crypto`;
-        console.log('🔗 [CHECKOUT] Target Endpoint:', backendEndpoint);
+    const backendEndpoint = `${BACKEND_API_URL}/deposit/cregis-crypto`;
+    console.log('🔗 [CHECKOUT] Target Endpoint:', backendEndpoint);
 
-        const depositPayload = {
-          mt5AccountId: account_number,
-          amount: order_amount,
-          currency: order_currency,
-          network: network || 'TRC20',
-          cregisOrderId: thirdPartyId, // order_id (for reference)
-          cregisId: cregisResult.data.cregis_id, // CRITICAL: This is what the callback uses to find the deposit
-          paymentUrl: cregisResult.data.checkout_url || cregisResult.data.paymentUrl,
-        };
-        
-        console.log('📤 [CHECKOUT] Deposit payload:', JSON.stringify(depositPayload, null, 2));
-        console.log('🔍 [CHECKOUT] Payload validation:', {
-          hasMt5AccountId: !!depositPayload.mt5AccountId,
-          hasAmount: !!depositPayload.amount,
-          hasCregisId: !!depositPayload.cregisId,
-          hasCregisOrderId: !!depositPayload.cregisOrderId,
-          cregisId: depositPayload.cregisId,
-          cregisOrderId: depositPayload.cregisOrderId,
-        });
+    const depositPayload = {
+      mt5AccountId: account_number,
+      amount: order_amount,
+      currency: order_currency,
+      network: network || 'TRC20',
+      cregisOrderId: thirdPartyId, // order_id (for reference)
+      cregisId: cregisResult.data.cregis_id, // CRITICAL: This is what the callback uses to find the deposit
+      paymentUrl: cregisResult.data.checkout_url || cregisResult.data.paymentUrl,
+    };
 
-        try {
-          const backendResponse = await fetch(backendEndpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify(depositPayload),
-          });
+    console.log('📤 [CHECKOUT] Deposit payload:', JSON.stringify(depositPayload, null, 2));
+    console.log('🔍 [CHECKOUT] Payload validation:', {
+      hasMt5AccountId: !!depositPayload.mt5AccountId,
+      hasAmount: !!depositPayload.amount,
+      hasCregisId: !!depositPayload.cregisId,
+      hasCregisOrderId: !!depositPayload.cregisOrderId,
+      cregisId: depositPayload.cregisId,
+      cregisOrderId: depositPayload.cregisOrderId,
+    });
 
-          console.log('📡 [CHECKOUT] Backend Response Status:', backendResponse.status);
+    try {
+      const backendResponse = await fetch(backendEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(depositPayload),
+      });
+
+      console.log('📡 [CHECKOUT] Backend Response Status:', backendResponse.status);
 
       if (!backendResponse.ok) {
-            let errorText = '';
-            let errorData = null;
-            
-            try {
-              errorText = await backendResponse.text();
-              // Try to parse as JSON
-              try {
-                errorData = JSON.parse(errorText);
-              } catch {
-                // Not JSON, use as text
-              }
-            } catch (e) {
-              errorText = `Failed to read error response: ${e.message}`;
-            }
-            
-            console.error('❌ [CHECKOUT] Backend call failed with status:', backendResponse.status);
-            console.error('❌ [CHECKOUT] Backend response body:', errorText);
-            console.error('❌ [CHECKOUT] Backend error data:', errorData);
-            
-            // Extract actual error message from backend response
-            const actualError = errorData?.error || errorData?.message || errorData?.msg || errorText || 'Unknown error';
-            
+        let errorText = '';
+        let errorData = null;
+
+        try {
+          errorText = await backendResponse.text();
+          // Try to parse as JSON
+          try {
+            errorData = JSON.parse(errorText);
+          } catch {
+            // Not JSON, use as text
+          }
+        } catch (e) {
+          errorText = `Failed to read error response: ${e.message}`;
+        }
+
+        console.error('❌ [CHECKOUT] Backend call failed with status:', backendResponse.status);
+        console.error('❌ [CHECKOUT] Backend response body:', errorText);
+        console.error('❌ [CHECKOUT] Backend error data:', errorData);
+
+        // Extract actual error message from backend response
+        const actualError = errorData?.error || errorData?.message || errorData?.msg || errorText || 'Unknown error';
+
         return NextResponse.json(
           {
             code: "10000",
@@ -250,7 +250,7 @@ export async function POST(req: NextRequest) {
           },
           { status: backendResponse.status || 500 }
         );
-        }
+      }
 
       const backendData = await backendResponse.json();
       console.log('✅ [CHECKOUT] Deposit record created in database (pending status):', backendData);

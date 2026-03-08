@@ -17,6 +17,128 @@ import {
 import countries from "@/lib/countries.json";
 import Image from "next/image";
 
+const excludedKycCountries = new Set<string>([
+  // AFRICA
+  "Central African Republic",
+  "Comoros",
+  "Libya",
+  "Mali",
+  "Mauritius",
+  "Rwanda",
+  "Seychelles",
+  "Somalia",
+  "South Sudan",
+  "Sudan",
+  "Western Sahara",
+  "Mayotte",
+  "Réunion",
+
+  // ASIA & MIDDLE EAST
+  "Afghanistan",
+  "Iraq",
+  "Israel",
+  "Japan",
+  "Malaysia",
+  "Myanmar",
+  "Palestine, State of",
+  "Singapore",
+  "Korea (Republic of)",
+  "Syrian Arab Republic",
+  "Yemen",
+
+  // EUROPE & RUSSIA
+  "Albania",
+  "Andorra",
+  "Austria",
+  "Belarus",
+  "Belgium",
+  "Bosnia and Herzegovina",
+  "Bulgaria",
+  "Croatia",
+  "Cyprus",
+  "Denmark",
+  "Estonia",
+  "Finland",
+  "France",
+  "Germany",
+  "Greece",
+  "Hungary",
+  "Iceland",
+  "Ireland",
+  "Italy",
+  "Kosovo",
+  "Latvia",
+  "Liechtenstein",
+  "Lithuania",
+  "Luxembourg",
+  "Malta",
+  "North Macedonia",
+  "Monaco",
+  "Netherlands",
+  "Norway",
+  "Poland",
+  "Portugal",
+  "Romania",
+  "Russian Federation",
+  "San Marino",
+  "Slovakia",
+  "Slovenia",
+  "Spain",
+  "Svalbard and Jan Mayen",
+  "Sweden",
+  "Switzerland",
+  "Åland Islands",
+  "Faroe Islands",
+  "Greenland",
+
+  // CARIBBEAN & AMERICAS
+  "Anguilla",
+  "Bermuda",
+  "British Indian Ocean Territory",
+  "Cayman Islands",
+  "Cuba",
+  "Curaçao",
+  "Falkland Islands (Malvinas)",
+  "French Guiana",
+  "Guadeloupe",
+  "Haiti",
+  "Nicaragua",
+  "Saint Barthélemy",
+  "Saint Martin (French part)",
+  "Saint Pierre and Miquelon",
+  "Saint Vincent and the Grenadines",
+  "Sint Maarten (Dutch part)",
+  "South Georgia and the South Sandwich Islands",
+  "Bahamas",
+  "Turks and Caicos Islands",
+  "Uruguay",
+
+  // OCEANIA & PACIFIC
+  "Australia",
+  "Bouvet Island",
+  "Christmas Island",
+  "Cocos (Keeling) Islands",
+  "Fiji",
+  "French Polynesia",
+  "Heard Island and McDonald Islands",
+  "Kiribati",
+  "Micronesia",
+  "New Zealand",
+  "Niue",
+  "Norfolk Island",
+  "Palau",
+  "Pitcairn",
+  "Samoa",
+  "Tokelau",
+  "Tuvalu",
+  "Vanuatu",
+  "Wallis and Futuna",
+]);
+
+const kycAllowedCountries = countries.filter(
+  ({ name }) => !excludedKycCountries.has(name)
+);
+
 interface PersonalInfoStepProps {
   firstName: string;
   lastName: string;
@@ -75,7 +197,7 @@ export default function PersonalInfoStep({
                   <SelectValue placeholder="Select Country" />
                 </SelectTrigger>
                 <SelectContent>
-                  {countries.map(({ name, code }) => (
+                  {kycAllowedCountries.map(({ name, code }) => (
                     <SelectItem key={code} value={code}>
                       <div className="flex items-center">
                         <Image

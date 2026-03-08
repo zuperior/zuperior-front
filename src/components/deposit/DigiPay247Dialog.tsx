@@ -516,9 +516,17 @@ export function DigiPay247Dialog({
                     setIsCheckingStatus(true);
                     startStatusPolling();
                   }}
+                  disabled={isProcessing}
                   className="w-full bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:bg-[#9d6ad9] h-12 text-lg font-medium"
                 >
-                  I have transferred
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    "I have transferred"
+                  )}
                 </Button>
               </div>
             </div>

@@ -10,7 +10,7 @@ import {
 import { useAppDispatch } from "@/store/hooks";
 import { createMt5Account, fetchMt5Groups } from "@/store/slices/mt5AccountSlice";
 import { toast } from "sonner";
-import { StepChooseAccountType } from "./StepChooseAccountType";
+import { StepChooseAccountType, DEMO_STATIC_GROUPS, Group } from "./StepChooseAccountType";
 import { StepPrepareAccount } from "./StepPrepareAccount";
 import { StepAccountCreated } from "./StepAccountCreated";
 import { useFetchUserData } from "@/hooks/useFetchUserData";
@@ -51,18 +51,7 @@ export function NewAccountDialog({
   const dispatch = useAppDispatch();
   const [step, setStep] = useState(1);
   const [accountType, setAccountType] = useState("Live");
-  const [accountPlan, setAccountPlan] = useState<{
-    id: number;
-    group: string;
-    dedicated_name: string | null;
-    account_type: string | null;
-    leverage: number | null;
-    min_deposit: number | null;
-    spread: number | null;
-    commission: number | null;
-    is_active: boolean;
-    [key: string]: any;
-  } | null>(null);
+  const [accountPlan, setAccountPlan] = useState<Group | null>(null);
   // const [server, setServer] = useState("");
   const [leverage, setLeverage] = useState("");
   const [currency, setCurrency] = useState("USD");
@@ -134,30 +123,48 @@ export function NewAccountDialog({
     }
   }, [open]);
 
-  // Auto-select first group when entering step 2 or when accountType changes in step 2
+  // Auto-select group when entering step 2 or when accountType changes in step 2
   useEffect(() => {
-    // Auto-select if:
-    // 1. We just entered step 2 and no group is selected, OR
-    // 2. We're in step 2 and accountType changed (which resets accountPlan to null)
     if (step === 2 && accountType) {
-      // Check if accountPlan is null or invalid
-      const needsSelection = !accountPlan || (typeof accountPlan === 'object' && !accountPlan.group);
+      const needsSelection =
+        !accountPlan || (typeof accountPlan === "object" && !accountPlan.group);
 
       if (needsSelection) {
         const autoSelectGroup = async () => {
           try {
+            // For Demo accounts, use static demo groups only
+            if (accountType.toLowerCase() === "demo") {
+              if (DEMO_STATIC_GROUPS.length > 0) {
+                setAccountPlan(DEMO_STATIC_GROUPS[0]);
+                console.log(
+                  "✅ Auto-selected first static demo group for Demo:",
+                  DEMO_STATIC_GROUPS[0].dedicated_name || DEMO_STATIC_GROUPS[0].group
+                );
+              } else {
+                console.warn("⚠️ No static demo groups configured");
+              }
+              return;
+            }
+
             const response = await groupManagementService.getActiveGroups(accountType);
             if (response.success && response.data && response.data.length > 0) {
               setAccountPlan(response.data[0]);
+              console.log(
+                "✅ Auto-selected first group for",
+                accountType,
+                ":",
+                response.data[0].dedicated_name || response.data[0].group
+              );
             } else {
-              console.warn('⚠️ No groups available for account type:', accountType);
+              console.warn("⚠️ No groups available for account type:", accountType);
             }
           } catch (error) {
-            console.error('❌ Error auto-selecting group:', error);
+            console.error("❌ Error auto-selecting group:", error);
           }
         };
-        autoSelectGroup();
-      }
+      };
+
+      autoSelectGroup();
     }
   }, [step, accountType]);
 
@@ -236,15 +243,37 @@ export function NewAccountDialog({
     if (!accountPlan || !accountPlan.group) {
       console.warn("⚠️ No group selected, attempting to auto-select...");
       try {
-        const response = await groupManagementService.getActiveGroups(accountType);
-        if (response.success && response.data && response.data.length > 0) {
-          setAccountPlan(response.data[0]);
-          // Continue with the selected group
+        // For Demo accounts, use static demo groups only
+        if (accountType.toLowerCase() === "demo") {
+          if (DEMO_STATIC_GROUPS.length > 0) {
+            setAccountPlan(DEMO_STATIC_GROUPS[0]);
+            console.log(
+              "✅ Auto-selected first static demo group for Demo during submit:",
+              DEMO_STATIC_GROUPS[0].dedicated_name || DEMO_STATIC_GROUPS[0].group
+            );
+          } else {
+            console.error("❌ No static demo groups configured");
+            toast.error("Please go back and select an account type");
+            setLoadingStep2(false);
+            return;
+          }
         } else {
-          console.error("❌ Invalid account plan selected:", accountPlan);
-          toast.error("Please go back and select an account type");
-          setLoadingStep2(false);
-          return;
+          const response = await groupManagementService.getActiveGroups(accountType);
+          if (response.success && response.data && response.data.length > 0) {
+            setAccountPlan(response.data[0]);
+            console.log(
+              "✅ Auto-selected first group for",
+              accountType,
+              ":",
+              response.data[0].dedicated_name || response.data[0].group
+            );
+            // Continue with the selected group
+          } else {
+            console.error("❌ Invalid account plan selected:", accountPlan);
+            toast.error("Please go back and select an account type");
+            setLoadingStep2(false);
+            return;
+          }
         }
       } catch (error) {
         console.error("❌ Error auto-selecting group:", error);
@@ -345,7 +374,14 @@ export function NewAccountDialog({
 
     } catch (err: any) {
       console.error("MT5 account creation failed:", err);
-      const errorMessage = err?.message || err?.data?.message || "Failed to create MT5 account. Please try again.";
+      let errorMessage = "Failed to create MT5 account. Please try again.";
+      if (typeof err === 'string') {
+        errorMessage = err;
+      } else if (err?.message) {
+        errorMessage = err.message;
+      } else if (err?.data?.message) {
+        errorMessage = err.data.message;
+      }
       toast.error(errorMessage);
     } finally {
       setLoadingStep2(false);
@@ -355,9 +391,8 @@ export function NewAccountDialog({
 
   const handleAccountChange = (value: string) => {
     setAccountType(value);
-    // Reset account plan when account type changes
-    // The useEffect will auto-select the first group for the new account type
-    setAccountPlan(null);
+    // DO NOT reset account plan here! 
+    // The useEffect will handle finding the matching group for the new accountType
   };
 
   const nextStep = () => {
@@ -449,6 +484,8 @@ export function NewAccountDialog({
           <StepPrepareAccount
             accountType={accountType}
             handleAccountChange={handleAccountChange}
+            accountPlan={accountPlan}
+            setAccountPlan={setAccountPlan}
             leverage={leverage}
             setLeverage={setLeverage}
             currency={currency}
