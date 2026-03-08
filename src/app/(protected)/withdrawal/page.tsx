@@ -85,7 +85,7 @@ export default function WithdrawalDepositPage() {
           );
           if (bankTransfer?.icon_path) {
             // Use the icon_path from API, prepend admin backend URL if it's a relative path
-            // Payment method images are served from admin backend (port 5003), not server (port 5000)
+            // Payment method images are served from admin backend (port 5003), not server (port 5001)
             const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL ||
               process.env.NEXT_PUBLIC_ADMIN_API_URL ||
               'http://localhost:5003';

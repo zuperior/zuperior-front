@@ -40,7 +40,7 @@ const api = axios.create({
 
 // Normalized backend base URL for direct backend calls (used by some services)
 const RAW_BACKEND_API_URL =
-  process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+  process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001/api';
 const BACKEND_API_BASE = RAW_BACKEND_API_URL.replace(/\/+$/, '');
 
 // Track if token refresh is in progress to avoid multiple simultaneous refresh calls
@@ -81,12 +81,12 @@ const refreshToken = async (): Promise<string | null> => {
 
     // Try to validate session with backend (optional check)
     try {
-      const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+      const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001/api';
       const checkResponse = await axios.get(`${BACKEND_URL}/session/check-valid`, {
         headers: {
           'Authorization': `Bearer ${currentToken}`,
         },
-        timeout: 5000, // Reduced timeout to fail fast
+        timeout: 5001, // Reduced timeout to fail fast
       });
 
       // If session is valid, return current token
@@ -311,7 +311,7 @@ const authService = {
 
     // Call server logout endpoint to clear server-side cookies
     try {
-      const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+      const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001/api';
       await fetch(`${backendApiUrl}/logout`, {
         method: 'POST',
         credentials: 'include',

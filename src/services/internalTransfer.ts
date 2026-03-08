@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Normalize backend base URL to ensure it targets /api
-const RAW_BASE = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+const RAW_BASE = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001/api';
 const BASE_URL = RAW_BASE.endsWith('/api') ? RAW_BASE : `${RAW_BASE.replace(/\/+$/, '')}/api`;
 
 // Create axios instance with token interceptor

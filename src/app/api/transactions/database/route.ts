@@ -3,7 +3,7 @@ import axios from "axios";
 
 export async function GET(req: NextRequest) {
   const backendBase =
-    process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5000/api";
+    process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5001/api";
 
   try {
     // Get query parameters

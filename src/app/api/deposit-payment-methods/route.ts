@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 // This endpoint calls zuperior-server, which queries the database directly
 // zuperior-server checks the deposit_payment_methods table and returns only enabled methods
-const RAW_API_URL = process.env.NEXT_PUBLIC_SERVER_API_URL || process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+const RAW_API_URL = process.env.NEXT_PUBLIC_SERVER_API_URL || process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001/api';
 const API_URL = RAW_API_URL.replace(/\/+$/, '');
 
 export const dynamic = 'force-dynamic';

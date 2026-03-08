@@ -1,7 +1,7 @@
 // client/src/app/api/proxy/groups/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
-const RAW_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+const RAW_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001/api';
 const API_URL = RAW_API_URL.replace(/\/+$/, '');
 
 export async function GET(request: NextRequest) {

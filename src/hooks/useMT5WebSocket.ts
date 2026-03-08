@@ -149,7 +149,7 @@ export const useMT5WebSocket = (accountIds: string[]) => {
 
                 // Attempt reconnection with exponential backoff
                 if (!reconnectTimeoutRef.current) {
-                    const delay = 5000;
+                    const delay = 5001;
                     console.log(`[MT5 WebSocket] 🔄 Reconnecting in ${delay / 1000}s...`);
                     reconnectTimeoutRef.current = setTimeout(() => {
                         reconnectTimeoutRef.current = null;

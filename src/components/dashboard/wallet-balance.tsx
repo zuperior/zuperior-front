@@ -41,7 +41,7 @@ const WalletBalance = ({ balance }: { balance: string | number }) => {
     // Set up polling every 15 seconds
     const intervalId = setInterval(() => {
       fetchWalletBalance();
-    }, 15000);
+    }, 15001);
 
     // Listen for wallet refresh events
     const handleWalletRefresh = (e: Event) => {

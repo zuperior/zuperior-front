@@ -32,7 +32,7 @@ function DepositSuccessContent() {
           return;
         }
 
-        const backendBaseUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+        const backendBaseUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001/api';
         let depositId = depositData?.id;
 
         // Step 1: Lookup Deposit ID if using merchantTxnId (tr) and we don't have it yet

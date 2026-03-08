@@ -5,8 +5,8 @@
 ### Backend API URLs
 
 #### Main Server Backend
-- `NEXT_PUBLIC_BACKEND_API_URL` - Main server API URL (port 5000)
-  - Example: `http://localhost:5000/api`
+- `NEXT_PUBLIC_BACKEND_API_URL` - Main server API URL (port 5001)
+  - Example: `http://localhost:5001/api`
   - Production: `https://api.yourdomain.com/api`
 
 #### Admin Backend (for payment method images)
@@ -29,7 +29,7 @@
 
 ```env
 # Main server backend
-NEXT_PUBLIC_BACKEND_API_URL=http://localhost:5000/api
+NEXT_PUBLIC_BACKEND_API_URL=http://localhost:5001/api
 
 # Admin backend (for payment method images)
 NEXT_PUBLIC_ADMIN_BACKEND_URL=http://localhost:5003

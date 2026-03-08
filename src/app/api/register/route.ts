@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     }
 
     const baseUrl =
-      process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5000/api";
+      process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5001/api";
     // Include emailVerified if OTP was verified
     const cookieStore = await cookies();
     const isVerified = cookieStore.get("otp_verified")?.value === "true";

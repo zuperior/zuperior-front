@@ -7,7 +7,7 @@ import { NextResponse } from "next/server";
 export const maxDuration = 30; // 30 seconds max execution time
 export const runtime = 'nodejs'; // Use Node.js runtime
 
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001/api';
 
 // Create an AbortController for timeout
 function createFetchWithTimeout(url: string, options: RequestInit, timeoutMs: number = 30000) {

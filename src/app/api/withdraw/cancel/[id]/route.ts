@@ -5,7 +5,7 @@ export async function POST(
     { params }: { params: { id: string } }
 ) {
     try {
-        const backendBase = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+        const backendBase = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001/api';
         const authHeader = request.headers.get('authorization') || '';
 
         // In Next.js 15+, params is a promise

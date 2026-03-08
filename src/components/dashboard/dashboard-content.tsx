@@ -42,7 +42,7 @@ export function DashboardContent() {
 
   // Log current API URL for debugging
   useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5000/api";
+    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5001/api";
   }, []);
 
   // Memoized wallet balance calculation

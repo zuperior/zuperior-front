@@ -44,7 +44,7 @@ export function Step2Confirmation({
     if (error) {
       toast.error("Transaction Error", {
         description: error,
-        duration: 5000,
+        duration: 5001,
       });
     }
   }, [error]);

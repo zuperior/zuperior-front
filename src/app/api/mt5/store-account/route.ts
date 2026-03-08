@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Call server-side API to store MT5 account with password and leverage
-    const baseUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+    const baseUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001/api';
     const response = await axios.post(
       `${baseUrl}/mt5/store-account`,
       {

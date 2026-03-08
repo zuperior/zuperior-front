@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
 
       if (accountId) {
         try {
-          const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+          const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001/api';
           const token = request.headers.get('authorization');
 
           // Determine package from group or accountPlan

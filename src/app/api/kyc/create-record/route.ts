@@ -1,7 +1,7 @@
 // client/src/app/api/kyc/create-record/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001/api';
 
 export async function POST(request: NextRequest) {
   try {

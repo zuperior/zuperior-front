@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 // Proxies password change to the Express backend
 export async function PUT(request: NextRequest) {
   try {
-    const backendBase = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+    const backendBase = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001/api';
 
     // Pass through Authorization header (Bearer token) if present
     const authHeader = request.headers.get('authorization');

@@ -83,7 +83,7 @@ const config = {
   PAYMENT_CURRENCY: process.env.CREGIS_PAYMENT_CURRENCY || "USDT",
 };
 
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001/api';
 
 export async function POST(req: NextRequest) {
   console.log('🚀 [EPAY] Starting USDT payment request processing');

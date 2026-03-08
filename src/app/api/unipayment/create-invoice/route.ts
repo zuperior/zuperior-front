@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000/api';
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001/api';
 // Production API URL
 const UNIPAYMENT_API_URL = process.env.UNIPAYMENT_API_URL || 'https://api.unipayment.io';
 const UNIPAYMENT_CLIENT_ID = process.env.UNIPAYMENT_CLIENT_ID || 'd1bfecf2-5f65-429f-abf3-8006bfea64e1';
