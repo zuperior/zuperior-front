@@ -269,7 +269,10 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
             </div>
           ) : hasBasicAccountInfo ? (
             accounts
-              .filter((account) => account.accountType === "Live" && !account.archived)
+              .filter((account) => {
+                const type = (account.accountType || "Live").toLowerCase();
+                return type === "live" && !account.archived;
+              })
               .map((account, index) => {
                 const mappedAccount = mapMT5AccountToTpAccount(account);
                 return (
@@ -295,7 +298,13 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
         {/* Demo Accounts */}
         <TabsContent value="demo">
           {(() => {
-            const demoAccounts = accounts.filter((account) => account.accountType === "Demo" && !account.archived);
+            const demoAccounts = accounts.filter((account) => {
+              const type = (account.accountType || "").toLowerCase();
+              const group = (account.group || "").toLowerCase();
+              const isDemoType = type === "demo";
+              const isDemoGroup = group.includes("\\demo\\") || group.includes("demo\\startup") || group.includes("demo\\pro");
+              return (isDemoType || isDemoGroup) && !account.archived;
+            });
             if (demoAccounts.length > 0) {
               return demoAccounts.map((account, index) => {
                 const mappedAccount = mapMT5AccountToTpAccount(account);
