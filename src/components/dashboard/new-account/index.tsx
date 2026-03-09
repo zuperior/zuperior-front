@@ -8,7 +8,7 @@ import {
   DialogHeader,
 } from "../../ui/dialog";
 import { useAppDispatch } from "@/store/hooks";
-import { createMt5Account, fetchMt5Groups } from "@/store/slices/mt5AccountSlice";
+import { createMt5Account } from "@/store/slices/mt5AccountSlice";
 import { toast } from "sonner";
 import { StepChooseAccountType, DEMO_STATIC_GROUPS, Group } from "./StepChooseAccountType";
 import { StepPrepareAccount } from "./StepPrepareAccount";
@@ -43,6 +43,13 @@ interface NewAccountResponse {
   isEnabled?: boolean;
   createdAt?: string;
 }
+
+const DEMO_GROUP_ALLOWLIST = new Set(
+  DEMO_STATIC_GROUPS.map((item) => item.group.toLowerCase())
+);
+
+const isStaticDemoGroup = (group?: string) =>
+  !!group && DEMO_GROUP_ALLOWLIST.has(group.toLowerCase());
 
 export function NewAccountDialog({
   open,
@@ -237,15 +244,18 @@ export function NewAccountDialog({
   const handleSubmit = async () => {
     if (!validateStep2()) return;
 
+    let selectedPlan = accountPlan;
+
     // Validate account plan (group) was selected
     // If not selected, try to auto-select the first available group
-    if (!accountPlan || !accountPlan.group) {
+    if (!selectedPlan || !selectedPlan.group) {
       console.warn("⚠️ No group selected, attempting to auto-select...");
       try {
         // For Demo accounts, use static demo groups only
         if (accountType.toLowerCase() === "demo") {
           if (DEMO_STATIC_GROUPS.length > 0) {
-            setAccountPlan(DEMO_STATIC_GROUPS[0]);
+            selectedPlan = DEMO_STATIC_GROUPS[0];
+            setAccountPlan(selectedPlan);
             console.log(
               "✅ Auto-selected first static demo group for Demo during submit:",
               DEMO_STATIC_GROUPS[0].dedicated_name || DEMO_STATIC_GROUPS[0].group
@@ -259,7 +269,8 @@ export function NewAccountDialog({
         } else {
           const response = await groupManagementService.getActiveGroups(accountType);
           if (response.success && response.data && response.data.length > 0) {
-            setAccountPlan(response.data[0]);
+            selectedPlan = response.data[0];
+            setAccountPlan(selectedPlan);
             console.log(
               "✅ Auto-selected first group for",
               accountType,
@@ -285,15 +296,21 @@ export function NewAccountDialog({
     try {
       setLoadingStep2(true);
 
-      if (!accountPlan) {
+      if (!selectedPlan) {
         toast.error("Please select an account plan");
         setLoadingStep2(false);
         return;
       }
 
+      // Keep demo flow strictly on hardcoded demo groups.
+      if (accountType.toLowerCase() === "demo" && !isStaticDemoGroup(selectedPlan.group)) {
+        selectedPlan = DEMO_STATIC_GROUPS[0];
+        setAccountPlan(selectedPlan);
+      }
+
       // Use group from selected account plan
-      const group = accountPlan.group;
-      const isDemo = accountType.toLowerCase() === "demo";
+      const group = selectedPlan.group;
+      const isDemoSelection = isStaticDemoGroup(group);
 
       // Generate passwords for MT5 (master and investor)
       const masterPassword = password.trim();
@@ -310,8 +327,8 @@ export function NewAccountDialog({
         country: "",
         city: "",
         phone: "",
-        comment: `Created from CRM - ${accountType} ${accountPlan.dedicated_name || accountPlan.group} account`,
-        accountPlan: accountPlan.dedicated_name || accountPlan.group.split('\\').pop() || "Account" // Include accountPlan name for reference
+        comment: `Created from CRM - ${isDemoSelection ? "Demo" : accountType} ${selectedPlan.dedicated_name || selectedPlan.group} account`,
+        accountPlan: selectedPlan.dedicated_name || selectedPlan.group.split('\\').pop() || "Account" // Include accountPlan name for reference
       };
 
       const result = await dispatch(createMt5Account(payload)).unwrap();
@@ -353,7 +370,7 @@ export function NewAccountDialog({
         fetchAllData(true).catch(e => console.warn("Background data refresh failed:", e));
 
         // Optional: Add balance to demo account if topUpAmount is provided (non-blocking background task)
-        if (isDemo && topUpAmount && parseFloat(topUpAmount) > 0) {
+        if (isDemoSelection && topUpAmount && parseFloat(topUpAmount) > 0) {
           fetch(`/api/mt5/deposit`, {
             method: 'POST',
             headers: {
@@ -390,8 +407,43 @@ export function NewAccountDialog({
 
   const handleAccountChange = (value: string) => {
     setAccountType(value);
-    // DO NOT reset account plan here! 
-    // The useEffect will handle finding the matching group for the new accountType
+
+    const target = value.toLowerCase();
+
+    // When switching to Demo, keep the currently selected demo plan if it is one
+    if (target === "demo") {
+      if (accountPlan && isStaticDemoGroup((accountPlan as Group).group)) {
+        // Already a static demo group – keep user's Startup/Pro choice
+        return;
+      }
+
+      const demoPlan = DEMO_STATIC_GROUPS[0] || null;
+      setAccountPlan(demoPlan);
+      return;
+    }
+
+    // When switching to Live, if current plan already belongs to Live, keep it.
+    if (
+      accountPlan &&
+      !isStaticDemoGroup((accountPlan as Group).group) &&
+      (accountPlan as Group).account_type?.toLowerCase() === "live"
+    ) {
+      return;
+    }
+
+    void (async () => {
+      try {
+        const response = await groupManagementService.getActiveGroups(value);
+        if (response.success && response.data && response.data.length > 0) {
+          setAccountPlan(response.data[0]);
+        } else {
+          setAccountPlan(null);
+        }
+      } catch (error) {
+        console.error("❌ Failed to rebind account plan on account type change:", error);
+        setAccountPlan(null);
+      }
+    })();
   };
 
   const nextStep = () => {

@@ -17,10 +17,15 @@ export interface Group {
 }
 
 // Static demo groups – used ONLY for Demo accounts
+export const DEMO_STATIC_GROUP_PATHS = [
+  "demo\\Startup\\dynamic-2000x-20PAbook",
+  "demo\\Pro\\dynamic-2000x-10PAbook",
+] as const;
+
 export const DEMO_STATIC_GROUPS: Group[] = [
   {
     id: 1,
-    group: "demo\\Startup\\dynamic-2000x-20PAbook",
+    group: DEMO_STATIC_GROUP_PATHS[0],
     dedicated_name: "Startup",
     account_type: "Demo",
     leverage: null,
@@ -31,7 +36,7 @@ export const DEMO_STATIC_GROUPS: Group[] = [
   },
   {
     id: 2,
-    group: "demo\\Pro\\dynamic-2000x-10PAbook",
+    group: DEMO_STATIC_GROUP_PATHS[1],
     dedicated_name: "Professional",
     account_type: "Demo",
     leverage: null,
