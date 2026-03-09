@@ -62,8 +62,7 @@ const buildResponsiveEmailHtml = (otp: string, name?: string) => `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="card">
       <tr>
         <td class="header">
-          <img src="cid:zuperior-logo" alt="Zuperior" style="height:28px;border:0;outline:none;display:block" />
-          <h1 class="title">Zuperior</h1>
+          <img src="cid:zuperior-logo" alt="Zuperior" style="height:36px;border:0;outline:none;display:block" />
         </td>
       </tr>
       <tr>
