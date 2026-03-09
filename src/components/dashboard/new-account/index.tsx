@@ -51,6 +51,30 @@ const DEMO_GROUP_ALLOWLIST = new Set(
 const isStaticDemoGroup = (group?: string) =>
   !!group && DEMO_GROUP_ALLOWLIST.has(group.toLowerCase());
 
+const getPlanTier = (plan: Group | null): "pro" | "startup" | null => {
+  if (!plan) return null;
+  const text = `${plan.dedicated_name || ""} ${plan.group || ""}`.toLowerCase();
+  if (text.includes("pro")) return "pro";
+  if (text.includes("startup") || text.includes("standard")) return "startup";
+  return null;
+};
+
+const pickDemoPlanByTier = (tier: "pro" | "startup" | null): Group | null => {
+  if (!tier) return null;
+  if (tier === "pro") {
+    return (
+      DEMO_STATIC_GROUPS.find((g) =>
+        `${g.dedicated_name || ""} ${g.group || ""}`.toLowerCase().includes("pro")
+      ) || DEMO_STATIC_GROUPS[1] || DEMO_STATIC_GROUPS[0] || null
+    );
+  }
+  return (
+    DEMO_STATIC_GROUPS.find((g) =>
+      `${g.dedicated_name || ""} ${g.group || ""}`.toLowerCase().includes("startup")
+    ) || DEMO_STATIC_GROUPS[0] || null
+  );
+};
+
 export function NewAccountDialog({
   open,
   onOpenChange,
@@ -59,9 +83,7 @@ export function NewAccountDialog({
   const [step, setStep] = useState(1);
   const [accountType, setAccountType] = useState("Live");
   const [accountPlan, setAccountPlan] = useState<Group | null>(null);
-  const [lastDemoPlan, setLastDemoPlan] = useState<Group | null>(
-    DEMO_STATIC_GROUPS[0] || null
-  );
+  const [lastDemoPlan, setLastDemoPlan] = useState<Group | null>(null);
   const [lastLivePlan, setLastLivePlan] = useState<Group | null>(null);
   // const [server, setServer] = useState("");
   const [leverage, setLeverage] = useState("");
@@ -141,7 +163,7 @@ export function NewAccountDialog({
       setStep(1);
       setAccountType("Live");
       setAccountPlan(null);
-      setLastDemoPlan(DEMO_STATIC_GROUPS[0] || null);
+      setLastDemoPlan(null);
       setLastLivePlan(null);
     }
   }, [open]);
@@ -434,7 +456,9 @@ export function NewAccountDialog({
         return;
       }
 
-      const demoPlan = lastDemoPlan || DEMO_STATIC_GROUPS[0] || null;
+      const currentTier = getPlanTier(accountPlan);
+      const tierMatchedDemoPlan = pickDemoPlanByTier(currentTier);
+      const demoPlan = tierMatchedDemoPlan || lastDemoPlan || DEMO_STATIC_GROUPS[0] || null;
       setAndTrackAccountPlan(demoPlan);
       return;
     }
@@ -458,7 +482,16 @@ export function NewAccountDialog({
       try {
         const response = await groupManagementService.getActiveGroups(value);
         if (response.success && response.data && response.data.length > 0) {
-          setAndTrackAccountPlan(response.data[0]);
+          const currentTier = getPlanTier(accountPlan);
+          const matchedLivePlan = currentTier
+            ? response.data.find((g) => {
+                const text = `${g.dedicated_name || ""} ${g.group || ""}`.toLowerCase();
+                return currentTier === "pro"
+                  ? text.includes("pro")
+                  : text.includes("startup") || text.includes("standard");
+              })
+            : null;
+          setAndTrackAccountPlan(matchedLivePlan || response.data[0]);
         } else {
           setAndTrackAccountPlan(null);
         }
