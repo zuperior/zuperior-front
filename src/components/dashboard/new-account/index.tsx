@@ -59,6 +59,10 @@ export function NewAccountDialog({
   const [step, setStep] = useState(1);
   const [accountType, setAccountType] = useState("Live");
   const [accountPlan, setAccountPlan] = useState<Group | null>(null);
+  const [lastDemoPlan, setLastDemoPlan] = useState<Group | null>(
+    DEMO_STATIC_GROUPS[0] || null
+  );
+  const [lastLivePlan, setLastLivePlan] = useState<Group | null>(null);
   // const [server, setServer] = useState("");
   const [leverage, setLeverage] = useState("");
   const [currency, setCurrency] = useState("USD");
@@ -85,6 +89,16 @@ export function NewAccountDialog({
   );
 
   const { fetchAllData } = useFetchUserData();
+
+  const setAndTrackAccountPlan = (plan: Group | null) => {
+    setAccountPlan(plan);
+    if (!plan?.group) return;
+    if (isStaticDemoGroup(plan.group)) {
+      setLastDemoPlan(plan);
+    } else {
+      setLastLivePlan(plan);
+    }
+  };
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!scrollRef.current) return;
@@ -127,6 +141,8 @@ export function NewAccountDialog({
       setStep(1);
       setAccountType("Live");
       setAccountPlan(null);
+      setLastDemoPlan(DEMO_STATIC_GROUPS[0] || null);
+      setLastLivePlan(null);
     }
   }, [open]);
 
@@ -142,10 +158,10 @@ export function NewAccountDialog({
             // For Demo accounts, use static demo groups only
             if (accountType.toLowerCase() === "demo") {
               if (DEMO_STATIC_GROUPS.length > 0) {
-                setAccountPlan(DEMO_STATIC_GROUPS[0]);
+                setAndTrackAccountPlan(lastDemoPlan || DEMO_STATIC_GROUPS[0]);
                 console.log(
                   "✅ Auto-selected first static demo group for Demo:",
-                  DEMO_STATIC_GROUPS[0].dedicated_name || DEMO_STATIC_GROUPS[0].group
+                  (lastDemoPlan || DEMO_STATIC_GROUPS[0]).dedicated_name || (lastDemoPlan || DEMO_STATIC_GROUPS[0]).group
                 );
               } else {
                 console.warn("⚠️ No static demo groups configured");
@@ -155,12 +171,12 @@ export function NewAccountDialog({
 
             const response = await groupManagementService.getActiveGroups(accountType);
             if (response.success && response.data && response.data.length > 0) {
-              setAccountPlan(response.data[0]);
+              setAndTrackAccountPlan(lastLivePlan || response.data[0]);
               console.log(
                 "✅ Auto-selected first group for",
                 accountType,
                 ":",
-                response.data[0].dedicated_name || response.data[0].group
+                (lastLivePlan || response.data[0]).dedicated_name || (lastLivePlan || response.data[0]).group
               );
             } else {
               console.warn("⚠️ No groups available for account type:", accountType);
@@ -172,7 +188,7 @@ export function NewAccountDialog({
         autoSelectGroup();
       }
     }
-  }, [step, accountType]);
+  }, [step, accountType, lastDemoPlan, lastLivePlan]);
 
   const handleScrollLeft = () => {
     scrollRef.current?.scrollBy({ left: -250, behavior: "smooth" });
@@ -255,7 +271,7 @@ export function NewAccountDialog({
         if (accountType.toLowerCase() === "demo") {
           if (DEMO_STATIC_GROUPS.length > 0) {
             selectedPlan = DEMO_STATIC_GROUPS[0];
-            setAccountPlan(selectedPlan);
+            setAndTrackAccountPlan(selectedPlan);
             console.log(
               "✅ Auto-selected first static demo group for Demo during submit:",
               DEMO_STATIC_GROUPS[0].dedicated_name || DEMO_STATIC_GROUPS[0].group
@@ -270,7 +286,7 @@ export function NewAccountDialog({
           const response = await groupManagementService.getActiveGroups(accountType);
           if (response.success && response.data && response.data.length > 0) {
             selectedPlan = response.data[0];
-            setAccountPlan(selectedPlan);
+            setAndTrackAccountPlan(selectedPlan);
             console.log(
               "✅ Auto-selected first group for",
               accountType,
@@ -304,8 +320,8 @@ export function NewAccountDialog({
 
       // Keep demo flow strictly on hardcoded demo groups.
       if (accountType.toLowerCase() === "demo" && !isStaticDemoGroup(selectedPlan.group)) {
-        selectedPlan = DEMO_STATIC_GROUPS[0];
-        setAccountPlan(selectedPlan);
+        selectedPlan = lastDemoPlan || DEMO_STATIC_GROUPS[0];
+        setAndTrackAccountPlan(selectedPlan);
       }
 
       // Use group from selected account plan
@@ -414,11 +430,12 @@ export function NewAccountDialog({
     if (target === "demo") {
       if (accountPlan && isStaticDemoGroup((accountPlan as Group).group)) {
         // Already a static demo group – keep user's Startup/Pro choice
+        setLastDemoPlan(accountPlan);
         return;
       }
 
-      const demoPlan = DEMO_STATIC_GROUPS[0] || null;
-      setAccountPlan(demoPlan);
+      const demoPlan = lastDemoPlan || DEMO_STATIC_GROUPS[0] || null;
+      setAndTrackAccountPlan(demoPlan);
       return;
     }
 
@@ -428,6 +445,12 @@ export function NewAccountDialog({
       !isStaticDemoGroup((accountPlan as Group).group) &&
       (accountPlan as Group).account_type?.toLowerCase() === "live"
     ) {
+      setLastLivePlan(accountPlan);
+      return;
+    }
+
+    if (lastLivePlan) {
+      setAndTrackAccountPlan(lastLivePlan);
       return;
     }
 
@@ -435,13 +458,13 @@ export function NewAccountDialog({
       try {
         const response = await groupManagementService.getActiveGroups(value);
         if (response.success && response.data && response.data.length > 0) {
-          setAccountPlan(response.data[0]);
+          setAndTrackAccountPlan(response.data[0]);
         } else {
-          setAccountPlan(null);
+          setAndTrackAccountPlan(null);
         }
       } catch (error) {
         console.error("❌ Failed to rebind account plan on account type change:", error);
-        setAccountPlan(null);
+        setAndTrackAccountPlan(null);
       }
     })();
   };
@@ -507,7 +530,7 @@ export function NewAccountDialog({
         {step === 1 && (
           <StepChooseAccountType
             accountPlan={accountPlan}
-            setAccountPlan={setAccountPlan}
+            setAccountPlan={setAndTrackAccountPlan}
             accountType={accountType}
             setAccountType={setAccountType}
             nextStep={nextStep}
@@ -536,7 +559,7 @@ export function NewAccountDialog({
             accountType={accountType}
             handleAccountChange={handleAccountChange}
             accountPlan={accountPlan}
-            setAccountPlan={setAccountPlan}
+            setAccountPlan={setAndTrackAccountPlan}
             leverage={leverage}
             setLeverage={setLeverage}
             currency={currency}
