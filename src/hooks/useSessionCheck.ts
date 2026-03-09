@@ -49,7 +49,7 @@ export function useSessionCheck() {
     const serverBaseUrl = backendApiUrl.replace('/api', ''); // Remove /api for socket.io
 
     // Centralized logout helper
-    const handleLogout = (reason: 'deleted' | 'expired' = 'expired') => {
+    const handleLogout = (reason: 'deleted' | 'banned' | 'inactive' | 'expired' = 'expired') => {
       // Clear ALL localStorage items
       try {
         localStorage.clear();
@@ -98,7 +98,11 @@ export function useSessionCheck() {
       // Show toast
       const message = reason === 'deleted'
         ? 'Your account was deleted. For your security, you have been logged out.'
-        : 'Your session has expired. Please log in again.';
+        : reason === 'banned'
+          ? 'Your account has been banned. You have been logged out.'
+          : reason === 'inactive'
+            ? 'Your account is not active. You have been logged out.'
+            : 'Your session has expired. Please log in again.';
       toast.error(message, { duration: 5001 });
 
       // Redirect to login
@@ -225,14 +229,32 @@ export function useSessionCheck() {
         }
 
         if (res.status === 401 || res.status === 403) {
-          handleLogout('expired');
+          let reason: 'deleted' | 'banned' | 'inactive' | 'expired' = 'expired';
+
+          try {
+            const payload = await res.clone().json();
+            const code = String(payload?.code || '').toUpperCase();
+            const message = String(payload?.message || '').toLowerCase();
+
+            if (code === 'ACCOUNT_DELETED' || message.includes('deleted')) {
+              reason = 'deleted';
+            } else if (code === 'ACCOUNT_BANNED' || message.includes('banned')) {
+              reason = 'banned';
+            } else if (code === 'ACCOUNT_INACTIVE' || message.includes('not active') || message.includes('inactive')) {
+              reason = 'inactive';
+            }
+          } catch {
+            // Ignore JSON parse errors and fallback to 'expired'
+          }
+
+          handleLogout(reason);
           return;
         }
 
-        timer = setTimeout(poll, 30000); // Poll every 30 seconds
+        timer = setTimeout(poll, 5000); // Poll every 5 seconds
       } catch (e) {
         // On other errors, retry after delay
-        timer = setTimeout(poll, 30000);
+        timer = setTimeout(poll, 5000);
       }
     };
 
