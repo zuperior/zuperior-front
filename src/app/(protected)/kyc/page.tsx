@@ -1,10 +1,18 @@
 "use client";
 import { TextAnimate } from "@/components/ui/text-animate";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { fetchKycStatus } from "@/store/slices/kycSlice";
 import { Lock } from "lucide-react";
 import Link from "next/link";
-import React, { memo, useMemo, useEffect } from "react";
+import React, { memo, useMemo, useEffect, useRef, useState } from "react";
 
 const CheckIcon = memo(() => (
   <svg
@@ -26,16 +34,20 @@ CheckIcon.displayName = "CheckIcon";
 
 const Page = () => {
   const dispatch = useAppDispatch();
+  const [showInstructionsDialog, setShowInstructionsDialog] = useState(false);
+  const hasShownInstructions = useRef(false);
 
   // Use selector to subscribe to KYC state changes
   const addressVerified = useAppSelector((state) => state.kyc.isAddressVerified);
   const identityVerified = useAppSelector((state) => state.kyc.isDocumentVerified);
   const verificationStatus = useAppSelector((state) => state.kyc.verificationStatus);
+  const isFullyVerified =
+    verificationStatus === "verified" || (addressVerified && identityVerified);
 
   // Refresh KYC status when page loads and periodically
   useEffect(() => {
     console.log('🔄 Refreshing KYC status on page load...');
-    dispatch(fetchKycStatus()).catch((error) => {
+    dispatch(fetchKycStatus(false)).catch((error) => {
       console.error("Failed to refresh KYC status:", error);
     });
 
@@ -44,7 +56,7 @@ const Page = () => {
       // Only auto-refresh if not fully verified
       if (verificationStatus !== "verified") {
         console.log('🔄 Auto-refreshing KYC status...');
-        dispatch(fetchKycStatus()).catch((error) => {
+        dispatch(fetchKycStatus(false)).catch((error) => {
           console.error("Failed to refresh KYC status:", error);
         });
       }
@@ -59,6 +71,19 @@ const Page = () => {
     identityVerified,
     verificationStatus
   });
+
+  useEffect(() => {
+    if (isFullyVerified) {
+      setShowInstructionsDialog(false);
+      return;
+    }
+
+    // Show the instructions once when this page is opened for non-verified users.
+    if (!hasShownInstructions.current) {
+      setShowInstructionsDialog(true);
+      hasShownInstructions.current = true;
+    }
+  }, [isFullyVerified]);
 
   const cardMaskStyle = useMemo<React.CSSProperties>(
     () => ({
@@ -76,8 +101,55 @@ const Page = () => {
     []
   );
   return (
-    <div className="flex flex-col items-center md:justify-center px-6 h-full">
-      <div className="max-w-3xl w-full h-auto text-center">
+    <>
+      <Dialog open={showInstructionsDialog} onOpenChange={setShowInstructionsDialog}>
+        <DialogContent className="max-w-2xl rounded-[18px] border border-black/10 bg-white p-6 dark:border-white/10 dark:bg-[#070206] dark:text-white/80">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold text-black dark:text-white/80">
+              Before You Upload Your KYC Document
+            </DialogTitle>
+            <DialogDescription asChild>
+              <div className="mt-2 space-y-3 text-sm leading-6 text-black/80 dark:text-white/75">
+                <p>Please make sure of the following before uploading your document:</p>
+                <ul className="list-disc space-y-2 pl-5">
+                  <li>
+                    Your full name and address must be clearly visible on the same
+                    document.
+                  </li>
+                  <li>
+                    If your document has details on separate pages (for example,
+                    Passport), please combine the first page and the address page into
+                    a single PDF file and upload it.
+                  </li>
+                  <li>
+                    The address mentioned in your form must exactly match the address
+                    shown on your document.
+                  </li>
+                  <li>Upload a clear, high-quality image.</li>
+                  <li>Ensure all four corners of the document are visible.</li>
+                  <li>Avoid any flash, glare, blur, or cut edges.</li>
+                </ul>
+                <p>
+                  Following these steps carefully will help avoid rejection and speed
+                  up your verification process.
+                </p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex justify-end">
+            <Button
+              variant="primary"
+              onClick={() => setShowInstructionsDialog(false)}
+            >
+              I Understand
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <div className="flex flex-col items-center md:justify-center px-6 h-full">
+        <div className="max-w-3xl w-full h-auto text-center">
         <TextAnimate
           as={"h1"}
           className="text-[22px] md:text-[28px] font-bold dark:text-white/75 text-black/75"
@@ -89,7 +161,7 @@ const Page = () => {
           and Identity Proof.
         </TextAnimate>
 
-        <div className="mt-10 grid gap-6 sm:grid-cols-2">
+          <div className="mt-10 grid gap-6 sm:grid-cols-2">
           {/* Identity Proof */}
           {identityVerified ? (
             <div className="relative h-auto min-h-[186px] rounded-[15px] bg-white dark:bg-green-400/5 p-6 border border-green-500/40 dark:hover:bg-green-400/10 overflow-hidden transition-transform">
@@ -168,9 +240,10 @@ const Page = () => {
               </div>
             </Link>
           )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
