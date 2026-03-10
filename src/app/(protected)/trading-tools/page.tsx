@@ -1,3 +1,6 @@
+
+
+
 "use client";
 
 import type React from "react";
@@ -104,7 +107,7 @@ export default function TradingToolsPage() {
       <main className="flex-1 overflow-y-auto px-4 ">
         <TextAnimate
           as="h1"
-          className=" text-[28px] md:text-[34px] font-bold dark:text-white/75"
+          className=" text-[20px] md:text-[34px] font-bold dark:text-white/75"
         >
           Zuperior Smart Tools and Calculators
         </TextAnimate>
@@ -125,7 +128,7 @@ export default function TradingToolsPage() {
           </div> */}
 
           <TabsContent value="calculators" className="mt-4">
-            <div className="grid gap-12 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid md:gap-6 gap-4 lg:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {data.map(({ id, image, heading, link }) => (
                 <IBCard
                   key={id}
@@ -151,22 +154,46 @@ function IBCard({
   heading: string;
   link: string;
 }) {
+
+  const cardMaskStyle: React.CSSProperties = {
+    WebkitMaskImage:
+      "linear-gradient(130deg, rgba(255,255,255,0) 10%, rgba(255,255,255,0.25) 100%)",
+    maskImage:
+      "linear-gradient(130deg, rgba(255,255,255,0) 10%, rgba(255,255,255,0.25) 100%)",
+    borderRadius: "15px",
+    opacity: 0.85,
+    inset: 0,
+    overflow: "visible",
+    position: "absolute",
+    zIndex: 0,
+  };
+
   return (
-    <div className="rounded-xl p-6 bg-[linear-gradient(120deg,#6242a5_0%,rgb(98,66,165)_32.947987049549546%,rgba(120,74,164,0.82826)_42.942944088497676%,rgba(163,91,162,0.4)_67.86787015897734%,rgba(163,91,162,0.4)_100%,rgb(0,0,0)_100%)] dark:bg-[radial-gradient(ellipse_27%_80%_at_0%_0%,rgba(163,92,162,0.5),rgba(0,0,0,1))]">
+    <div className="relative rounded-[15px] p-6 overflow-hidden
+    bg-[linear-gradient(120deg,#6242a5_0%,rgb(98,66,165)_32.94%,rgba(120,74,164,0.82)_42.94%,rgba(163,91,162,0.4)_67.86%,rgba(163,91,162,0.4)_100%,rgb(0,0,0)_100%)]
+    dark:bg-[radial-gradient(ellipse_27%_80%_at_0%_0%,rgba(163,92,162,0.5),rgba(0,0,0,1))]">
+
+      <div
+        style={cardMaskStyle}
+        className="border border-black dark:border-white/75 pointer-events-none"
+      />
+
       <Link
         href={link}
         target="_blank"
         rel="noopener noreferrer"
-        className="group relative cursor-pointer overflow-hidden block"
+        className="group relative cursor-pointer overflow-hidden block z-10"
       >
         <div className="flex flex-col h-full">
           <div className="flex items-center mb-4">
             <Image src={image} alt={heading} width={60} height={60} className="mr-2 object-contain" />
           </div>
+
           <div className="flex justify-between items-center w-full">
             <p className="text-lg font-medium text-start dark:text-white/75 text-black">
               {heading}
             </p>
+
             <div className="dark:bg-[#01040D] bg-white/10 border border-gray-600 p-2 rounded-full">
               <ArrowRight className="dark:text-white/75 text-black h-4 w-4 transition-transform duration-300 group-hover:-rotate-45" />
             </div>
