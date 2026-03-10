@@ -192,7 +192,7 @@ export default function WithdrawalDepositPage() {
               once
               by="word"
               as="h1"
-              className="text-[34px] font-bold text-black dark:text-white/85">
+              className="text-[26px] md:text-[34px] font-bold text-black dark:text-white/85">
               Withdraw Funds
             </TextAnimate>
 
