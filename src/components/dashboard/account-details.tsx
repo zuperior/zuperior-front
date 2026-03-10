@@ -287,17 +287,26 @@ const handleTradeNowClick = useCallback(async () => {
         {/* Column 3: Actions (right aligned, fixed width) */}
         <div className="flex items-center justify-end gap-1.5 shrink-0">
           {/* Always visible (both mobile + desktop) */}
-          <Button
-            imageSrc={Candle}
-            text="Trade Now"
-            onClick={handleTradeNowClick} // Replace with this new handler
+          {!archived && 
+            <Button
+              imageSrc={Candle}
+              text="Trade Now"
+              onClick={handleTradeNowClick} // Replace with this new handler
 
-          />
+            />
+          }
+          {archived && 
+            <Button
+              imageSrc={arrowTopLeft}
+              text="Restore Account"
+              onClick={handleUnarchive}
+            />
+          }
 
           {/* Show these on xl */}
           <div className="hidden xl:flex items-center gap-2.5">
             <AnimatePresence>
-              { !isDemoAccount && (
+              {!archived && !isDemoAccount && (
                 <motion.div
                   key="deposit"
                   variants={buttonAnimation}
@@ -313,7 +322,7 @@ const handleTradeNowClick = useCallback(async () => {
                   />
                 </motion.div>
               )}
-              { !isDemoAccount && (
+              {!archived && !isDemoAccount && (
                 <motion.div
                   key="withdrawal"
                   variants={buttonAnimation}
@@ -347,6 +356,7 @@ const handleTradeNowClick = useCallback(async () => {
               )}
             </AnimatePresence>
 
+            {!archived &&
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Image
@@ -398,7 +408,7 @@ const handleTradeNowClick = useCallback(async () => {
                   </>
                 )}
 
-                {archived && (
+                {/* {archived && (
                   <>
                     <div className="w-full h-px bg-black/5 dark:bg-white/5" />
                     <DropdownMenuItem
@@ -407,9 +417,10 @@ const handleTradeNowClick = useCallback(async () => {
                       Unarchive account
                     </DropdownMenuItem>
                   </>
-                )}
+                )} */}
               </DropdownMenuContent>
             </DropdownMenu>
+            }
           </div>
 
           {/* Toggle chevron (only desktop) */}
@@ -525,7 +536,7 @@ const handleTradeNowClick = useCallback(async () => {
               {/* DropDown for mobile */}
               <div className="xl:hidden flex items-center gap-2.5 pt-2">
                 <AnimatePresence>
-                  {expanded && !isDemoAccount && (
+                  {expanded && !isDemoAccount && !archived && (
                     <motion.div
                       key="deposit"
                       variants={buttonAnimation}
@@ -541,7 +552,7 @@ const handleTradeNowClick = useCallback(async () => {
                       />
                     </motion.div>
                   )}
-                  {expanded && !isDemoAccount && (
+                  {expanded && !isDemoAccount && !archived && (
                     <motion.div
                       key="withdrawal"
                       variants={buttonAnimation}
@@ -573,7 +584,7 @@ const handleTradeNowClick = useCallback(async () => {
                       />
                     </motion.div>
                   )}
-                  {expanded && !isDemoAccount && (
+                  {expanded && !isDemoAccount && !archived && (
                     <motion.div
                       key="transfer"
                       variants={buttonAnimation}
