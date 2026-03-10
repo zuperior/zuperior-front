@@ -1098,17 +1098,17 @@ function PaymentMethodCard({
       </div>
 
       <div className="space-y-2 text-sm">
-        <div className="flex flex-col sm:flex-row sm:gap-1 text-gray-500 dark:text-gray-400">
+        <div className="flex flex-row flex-wrap gap-1 text-gray-500 dark:text-gray-400">
           <span>Processing time</span>
-          <span className="font-medium text-gray-900 dark:text-gray-200 sm:ml-1">{processingTime}</span>
+          <span className="font-medium text-gray-900 dark:text-gray-200">{processingTime}</span>
         </div>
-        <div className="flex flex-col sm:flex-row sm:gap-1 text-gray-500 dark:text-gray-400">
+        <div className="flex flex-row flex-wrap gap-1 text-gray-500 dark:text-gray-400">
           <span>Fee</span>
-          <span className="font-medium text-gray-900 dark:text-gray-200 sm:ml-1">{fee}</span>
+          <span className="font-medium text-gray-900 dark:text-gray-200">{fee}</span>
         </div>
-        <div className="flex flex-col sm:flex-row sm:gap-1 text-gray-500 dark:text-gray-400">
+        <div className="flex flex-row flex-wrap gap-1 text-gray-500 dark:text-gray-400">
           <span>Limits</span>
-          <span className="font-medium text-gray-900 dark:text-gray-200 sm:ml-1">{limits}</span>
+          <span className="font-medium text-gray-900 dark:text-gray-200">{limits}</span>
         </div>
       </div>
     </div>
