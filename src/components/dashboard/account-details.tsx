@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import Candle from "@/assets/icons/candle.png";
@@ -72,6 +72,7 @@ const AccountDetails = ({
   const [topUpDialogOpen, setTopUpDialogOpen] = useState(false);
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [unarchiveDialogOpen, setUnarchiveDialogOpen] = useState(false);
+  const [tradeNowLoading, setTradeNowLoading] = useState(false);
 
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
@@ -180,58 +181,66 @@ const AccountDetails = ({
 
 
 
-// Handle Trade Now click - open terminal directly without dialog
-const handleTradeNowClick = useCallback(async () => {
-  const token = localStorage.getItem('userToken');
-  const clientId = localStorage.getItem('clientId');
-  const mtLogin = String(accountDetails?.acc || "");
+  // Handle Trade Now click - open terminal directly without dialog
+  const handleTradeNowClick = useCallback(async () => {
+    setTradeNowLoading(true);
 
-  if (!token || !clientId) {
-    console.error('No authentication credentials found');
-    toast.error('Please log in again');
-    return;
-  }
+    try {
+      const token = localStorage.getItem('userToken');
+      const clientId = localStorage.getItem('clientId');
+      const mtLogin = String(accountDetails?.acc || "");
 
-  if (!mtLogin) {
-    console.error('No MT5 login found');
-    toast.error('Account information not available');
-    return;
-  }
+      if (!token || !clientId) {
+        console.error('No authentication credentials found');
+        toast.error('Please log in again');
+        setTradeNowLoading(false);
+        return;
+      }
 
-  // Set this account as default before opening terminal
-  try {
-    const response = await fetch('/api/mt5/set-default-account', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ accountId: mtLogin }),
-    });
+      if (!mtLogin) {
+        console.error('No MT5 login found');
+        toast.error('Account information not available');
+        setTradeNowLoading(false);
+        return;
+      }
 
-    const data = await response.json();
-    if (data.success) {
-      console.log('✅ Default MT5 account set successfully');
+      // Set this account as default before opening terminal
       try {
-        // Persist locally so terminal launcher and UI can read immediately
-        localStorage.setItem('defaultMt5Account', String(mtLogin));
-        sessionStorage.setItem('defaultMt5Account', String(mtLogin));
-      } catch (_e) {}
-    } else {
-      console.warn('⚠️ Failed to set default account:', data.message);
-    }
-  } catch (error) {
-    console.error('❌ Error setting default account:', error);
-    // Don't block opening terminal if this fails
-  }
+        const response = await fetch('/api/mt5/set-default-account', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ accountId: mtLogin }),
+        });
 
-  // Get terminal URL from environment variable
-  const terminalBaseUrl = process.env.NEXT_PUBLIC_TERMINAL_URL || 'https://trade.zuperior.com';
-  const terminalUrl = `${terminalBaseUrl}/terminal?token=${encodeURIComponent(token)}&clientId=${encodeURIComponent(clientId)}&autoLogin=true&accountId=${encodeURIComponent(mtLogin)}`;
-  
-  // Open in new tab
-  window.open(terminalUrl, '_blank', 'noopener,noreferrer');
-}, [accountDetails?.acc]);
+        const data = await response.json();
+        if (data.success) {
+          console.log('✅ Default MT5 account set successfully');
+          try {
+            // Persist locally so terminal launcher and UI can read immediately
+            localStorage.setItem('defaultMt5Account', String(mtLogin));
+            sessionStorage.setItem('defaultMt5Account', String(mtLogin));
+          } catch (_e) { }
+        } else {
+          console.warn('⚠️ Failed to set default account:', data.message);
+        }
+      } catch (error) {
+        console.error('❌ Error setting default account:', error);
+        // Don't block opening terminal if this fails
+      }
+
+      // Get terminal URL from environment variable
+      const terminalBaseUrl = process.env.NEXT_PUBLIC_TERMINAL_URL || 'https://trade.zuperior.com';
+      const terminalUrl = `${terminalBaseUrl}/terminal?token=${encodeURIComponent(token)}&clientId=${encodeURIComponent(clientId)}&autoLogin=true&accountId=${encodeURIComponent(mtLogin)}`;
+
+      // Open in new tab
+      window.open(terminalUrl, '_blank', 'noopener,noreferrer');
+    } finally {
+      setTradeNowLoading(false);
+    }
+  }, [accountDetails?.acc]);
 
   return (
     <div ref={rootRef} className="rounded-[15px] p-[15px] pl-2 bg-[#fbfafd] dark:bg-gradient-to-r dark:from-[#110F17] dark:to-[#1E1429] mb-1.5 relative flex flex-col gap-5">
@@ -287,15 +296,16 @@ const handleTradeNowClick = useCallback(async () => {
         {/* Column 3: Actions (right aligned, fixed width) */}
         <div className="flex items-center justify-end gap-1.5 shrink-0">
           {/* Always visible (both mobile + desktop) */}
-          {!archived && 
+          {!archived &&
             <Button
               imageSrc={Candle}
               text="Trade Now"
-              onClick={handleTradeNowClick} // Replace with this new handler
-
+              onClick={handleTradeNowClick}
+              loading={tradeNowLoading}
+              disabled={tradeNowLoading}
             />
           }
-          {archived && 
+          {archived &&
             <Button
               imageSrc={arrowTopLeft}
               text="Restore Account"
@@ -357,58 +367,58 @@ const handleTradeNowClick = useCallback(async () => {
             </AnimatePresence>
 
             {!archived &&
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Image
-                  className="h-6 w-6 cursor-pointer"
-                  src={theme === "dark" ? linearDots : linearDotsDark}
-                  alt="Menu"
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="font-medium border-x border-b border-t-0 rounded-b-[10px] rounded-t-none bg-white dark:bg-black border-[#9F8BCF]/25 px-[25px] py-2.5 flex flex-col gap-[5px] text-sm text-black/50 dark:text-white/50 w-[200px] mt-4.5"
-                align="end"
-              >
-                <DropdownMenuItem onClick={() => setChangePasswordOpen(true)}>
-                  Change password
-                </DropdownMenuItem>
-                <div className="w-full h-px bg-black/5 dark:bg-white/5" />
-                <DropdownMenuItem onClick={() => setOpenDialog(true)}>
-                  Change leverage
-                </DropdownMenuItem>
-                <div className="w-full h-px bg-black/5 dark:bg-white/5" />
-                <DropdownMenuItem
-                  onClick={() => setRenameAccountDialogOpen(true)}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Image
+                    className="h-6 w-6 cursor-pointer"
+                    src={theme === "dark" ? linearDots : linearDotsDark}
+                    alt="Menu"
+                  />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="font-medium border-x border-b border-t-0 rounded-b-[10px] rounded-t-none bg-white dark:bg-black border-[#9F8BCF]/25 px-[25px] py-2.5 flex flex-col gap-[5px] text-sm text-black/50 dark:text-white/50 w-[200px] mt-4.5"
+                  align="end"
                 >
-                  Rename account
-                </DropdownMenuItem>
-                <div className="w-full h-px bg-black/5 dark:bg-white/5" />
-                <DropdownMenuItem
-                  onClick={() => setAccountInfoDialogOpen(true)}
-                >
-                  Account Information
-                </DropdownMenuItem>
-               {!isDemoAccount && 
-                  <>
-                    <div className="w-full h-px bg-black/5 dark:bg-white/5" />
-                    <DropdownMenuItem onClick={() => setTransferDialogOpen(true)} >
-                      Transfer funds
-                    </DropdownMenuItem>
-                  </>
-                }
+                  <DropdownMenuItem onClick={() => setChangePasswordOpen(true)}>
+                    Change password
+                  </DropdownMenuItem>
+                  <div className="w-full h-px bg-black/5 dark:bg-white/5" />
+                  <DropdownMenuItem onClick={() => setOpenDialog(true)}>
+                    Change leverage
+                  </DropdownMenuItem>
+                  <div className="w-full h-px bg-black/5 dark:bg-white/5" />
+                  <DropdownMenuItem
+                    onClick={() => setRenameAccountDialogOpen(true)}
+                  >
+                    Rename account
+                  </DropdownMenuItem>
+                  <div className="w-full h-px bg-black/5 dark:bg-white/5" />
+                  <DropdownMenuItem
+                    onClick={() => setAccountInfoDialogOpen(true)}
+                  >
+                    Account Information
+                  </DropdownMenuItem>
+                  {!isDemoAccount &&
+                    <>
+                      <div className="w-full h-px bg-black/5 dark:bg-white/5" />
+                      <DropdownMenuItem onClick={() => setTransferDialogOpen(true)} >
+                        Transfer funds
+                      </DropdownMenuItem>
+                    </>
+                  }
 
-                {!archived && (
-                  <>
-                    <div className="w-full h-px bg-black/5 dark:bg-white/5" />
-                    <DropdownMenuItem
-                      onClick={() => setArchiveDialogOpen(true)}
-                    >
-                      Archive account
-                    </DropdownMenuItem>
-                  </>
-                )}
+                  {!archived && (
+                    <>
+                      <div className="w-full h-px bg-black/5 dark:bg-white/5" />
+                      <DropdownMenuItem
+                        onClick={() => setArchiveDialogOpen(true)}
+                      >
+                        Archive account
+                      </DropdownMenuItem>
+                    </>
+                  )}
 
-                {/* {archived && (
+                  {/* {archived && (
                   <>
                     <div className="w-full h-px bg-black/5 dark:bg-white/5" />
                     <DropdownMenuItem
@@ -418,8 +428,8 @@ const handleTradeNowClick = useCallback(async () => {
                     </DropdownMenuItem>
                   </>
                 )} */}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenuContent>
+              </DropdownMenu>
             }
           </div>
 
@@ -678,30 +688,41 @@ const Button = ({
   imageSrc,
   onClick,
   text,
+  loading = false,
+  disabled = false,
 }: {
   ghost?: boolean;
   imageSrc?: string | StaticImageData;
   onClick?: () => void;
   text: string;
+  loading?: boolean;
+  disabled?: boolean;
 }) => {
   return (
     <button
-      className={`flex rounded-[10px]  items-center md:gap-1 py-2 px-2 ${ghost
+      className={`flex ${loading ? 'justify-center' : ''} rounded-[10px] items-center md:gap-1 py-2 px-2 ${ghost
         ? "border-[1.5px] border-[#9F8BCF]/25 text-black dark:text-white/75"
-        : "bg-gradient-to-tr to-[#9F8BCF] from-[#6242A5] text-white/75"
-        } font-semibold text-sm leading-[14px] cursor-pointer`}
+        : "bg-linear-to-tr to-[#9F8BCF] from-[#6242A5] text-white/75"
+        } font-semibold text-sm leading-[14px]  ${disabled ? 'opacity-60 cursor-not-allowed min-w-[109px]' : 'cursor-pointer'}`}
       onClick={onClick}
+      disabled={disabled}
     >
-      {imageSrc && (
-        <Image
-          src={imageSrc}
-          alt="text"
-          height={24}
-          width={24}
-          className="w-5 h-5 md:w-5 md:h-5"
-        />
+      {loading ? (
+        <Loader2 size={20} className="animate-spin" />
+      ) : (
+        <>
+          {imageSrc && (
+            <Image
+              src={imageSrc}
+              alt="text"
+              height={24}
+              width={24}
+              className="w-5 h-5 md:w-5 md:h-5"
+            />
+          )}
+          <span className="text-xs md:text-sm leading-[14px]">{text}</span>
+        </>
       )}
-      <span className="text-xs md:text-sm leading-[14px]">{text}</span>
     </button>
   );
 };
