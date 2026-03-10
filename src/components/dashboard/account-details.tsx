@@ -492,7 +492,7 @@ const AccountDetails = ({
                   ))}
               </div>
               {/* Black Box */}
-              <div className="dark:bg-[#01040D] bg-[#f3f3f3] flex flex-col md:flex-row xl:w-auto p-6.25 rounded-[15px] gap-4 md:gap-16.75 items-center font-semibold w-full">
+              <div className="dark:bg-[#01040D] bg-[#f3f3f3] flex flex-col md:flex-row xl:w-auto p-6.25 rounded-[15px] gap-4 md:gap-16.75 items-start font-semibold w-full">
                 <div className="flex flex-col gap-1.25 w-full md:w-[211px]">
                   <div className="flex justify-between w-full items-center">
                     <p className="text-xs opacity-75">Actual Leverage</p>
@@ -509,12 +509,14 @@ const AccountDetails = ({
                 </div>
 
                 <div className="flex flex-col gap-1.25 w-full md:w-[211px]">
+                  {!isDemoAccount && !archived && 
                   <div className="flex justify-between w-full items-center">
                     <p className="text-xs opacity-75">
                       Available for Withdrawal
                     </p>
                     <div className="text-sm w-24 text-right" style={numericStyle}>{availableForWithdrawalFormatted}</div>
                   </div>
+                  }
                   <div className="flex justify-between w-full items-center">
                     <p className="text-xs opacity-75">Credit</p>
                     <div className="text-sm w-24 text-right" style={numericStyle}>{credit}</div>
