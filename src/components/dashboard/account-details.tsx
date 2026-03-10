@@ -329,7 +329,7 @@ const handleTradeNowClick = useCallback(async () => {
                   />
                 </motion.div>
               )}
-              {expanded && isDemoAccount && (
+              {isDemoAccount && (
                 <motion.div
                   key="topUp"
                   variants={buttonAnimation}
@@ -378,10 +378,14 @@ const handleTradeNowClick = useCallback(async () => {
                 >
                   Account Information
                 </DropdownMenuItem>
-                <div className="w-full h-px bg-black/5 dark:bg-white/5" />
-                <DropdownMenuItem onClick={() => setTransferDialogOpen(true)}>
-                  Transfer funds
-                </DropdownMenuItem>
+               {!isDemoAccount && 
+                  <>
+                    <div className="w-full h-px bg-black/5 dark:bg-white/5" />
+                    <DropdownMenuItem onClick={() => setTransferDialogOpen(true)} >
+                      Transfer funds
+                    </DropdownMenuItem>
+                  </>
+                }
 
                 {!archived && (
                   <>
