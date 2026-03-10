@@ -28,7 +28,7 @@ const AuthForm = () => {
   const { loading: globalLoading, setLoading: setGlobalLoading } = useLoading();
 
   // State
-  const [isCreateAccount, setIsCreateAccount] = useState(false);
+  const [isCreateAccount, setIsCreateAccount] = useState(true);
   const [forgotMode, setForgotMode] = useState(false);
   const [forgotPasswordStep, setForgotPasswordStep] = useState<"email" | "otp" | "newPassword">("email");
   const [step, setStep] = useState(1);
