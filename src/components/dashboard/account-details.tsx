@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import Candle from "@/assets/icons/candle.png";
 import linearDots from "@/assets/icons/linear-dots.png";
@@ -180,7 +180,58 @@ const AccountDetails = ({
 
 
 
+// Handle Trade Now click - open terminal directly without dialog
+const handleTradeNowClick = useCallback(async () => {
+  const token = localStorage.getItem('userToken');
+  const clientId = localStorage.getItem('clientId');
+  const mtLogin = String(accountDetails?.acc || "");
 
+  if (!token || !clientId) {
+    console.error('No authentication credentials found');
+    toast.error('Please log in again');
+    return;
+  }
+
+  if (!mtLogin) {
+    console.error('No MT5 login found');
+    toast.error('Account information not available');
+    return;
+  }
+
+  // Set this account as default before opening terminal
+  try {
+    const response = await fetch('/api/mt5/set-default-account', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ accountId: mtLogin }),
+    });
+
+    const data = await response.json();
+    if (data.success) {
+      console.log('✅ Default MT5 account set successfully');
+      try {
+        // Persist locally so terminal launcher and UI can read immediately
+        localStorage.setItem('defaultMt5Account', String(mtLogin));
+        sessionStorage.setItem('defaultMt5Account', String(mtLogin));
+      } catch (_e) {}
+    } else {
+      console.warn('⚠️ Failed to set default account:', data.message);
+    }
+  } catch (error) {
+    console.error('❌ Error setting default account:', error);
+    // Don't block opening terminal if this fails
+  }
+
+  // Get terminal URL from environment variable
+  const terminalBaseUrl = process.env.NEXT_PUBLIC_TERMINAL_URL || 'https://trade.zuperior.com';
+  const terminalUrl = `${terminalBaseUrl}/terminal?token=${encodeURIComponent(token)}&clientId=${encodeURIComponent(clientId)}&autoLogin=true&accountId=${encodeURIComponent(mtLogin)}`;
+  
+  // Open in new tab
+  window.open(terminalUrl, '_blank', 'noopener,noreferrer');
+}, [accountDetails?.acc]);
 
   return (
     <div ref={rootRef} className="rounded-[15px] p-[15px] pl-2 bg-[#fbfafd] dark:bg-gradient-to-r dark:from-[#110F17] dark:to-[#1E1429] mb-1.5 relative flex flex-col gap-5">
@@ -239,7 +290,8 @@ const AccountDetails = ({
           <Button
             imageSrc={Candle}
             text="Trade Now"
-            onClick={() => setTradeNowDialog(true)}
+            onClick={handleTradeNowClick} // Replace with this new handler
+
           />
 
           {/* Show these on xl */}

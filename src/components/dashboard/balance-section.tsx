@@ -21,7 +21,7 @@ export function BalanceSection({ balance }: BalanceSectionProps) {
           animate={{ opacity: 1, y: 0 }} // slide into place
           transition={{ ease: "easeInOut" }}
           className="text-xl sm:text-2xl font-bold text-black/85 dark:text-white/85 tracking-tighter">
-          Balance
+          {/* Balancesssss */}
         </motion.h2>
       </AnimatePresence>
 

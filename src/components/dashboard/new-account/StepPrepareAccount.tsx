@@ -69,7 +69,7 @@ export const StepPrepareAccount: React.FC<StepPrepareAccountProps> = ({
     <DialogTitle className=" text-[20px] md:text-[28px] mt-3 text-center font-bold text-black dark:text-[#D9D9D9]">
       Prepare your account
     </DialogTitle>
-    <Tabs defaultValue={accountType} onValueChange={handleAccountChange}>
+    <Tabs value={accountType} onValueChange={handleAccountChange}>
       <div className="flex justify-center items-center  border-[#2c262c] mb-4">
         <TabsList className="dark:bg-[#040104] border border-[#1d191d] px-2 py-5.5 rounded-[15px] mt-4 gap-5 w-full">
           <TabsTrigger
