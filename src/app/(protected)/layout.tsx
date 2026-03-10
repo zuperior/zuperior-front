@@ -74,9 +74,8 @@ export default function ProtectedLayout({
         <div className="flex-1 flex flex-col overflow-hidden dark:bg-[#01040D]">
           <Navbar onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)} />
           <main className="flex-1 overflow-y-auto pb-0">
-            <div className="lg:px-8 md:px-4 px-1 py-6">{children}</div>
+            <div className="lg:px-8 md:px-4 px-1 md:py-6 pt-6 pb-20">{children}</div>
           </main>
-
         </div>
       </div>
     </div>
