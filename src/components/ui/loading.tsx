@@ -123,8 +123,54 @@ interface CardLoaderProps {
 
 export function CardLoader({ className, message = "Loading..." }: CardLoaderProps) {
   return (
-    <div className={cn("flex flex-col items-center justify-center gap-3 py-12", className)}>
-      <LoadingSpinner size="md" className="text-primary" />
+    <div className={cn("flex flex-col items-center justify-center gap-4 py-12", className)}>
+
+      <div className="relative w-16 h-16 flex items-center justify-center perspective-midrange">
+
+        <motion.div
+          className="absolute w-16 h-16 rounded-full border border-purple-500/40"
+          animate={{ rotateY: 360 }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+        />
+
+        <motion.div
+          className="absolute w-12 h-12 rounded-full border border-purple-400/60"
+          animate={{ rotateX: 360 }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+        />
+
+        <motion.div
+          className="absolute w-full h-full"
+          animate={{ rotate: 360 }}
+          transition={{
+            duration: 1.6,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+        >
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-purple-400 rounded-full shadow-[0_0_14px_#a855f7]" />
+        </motion.div>
+
+        <motion.div
+          className="w-3 h-3 bg-purple-500 rounded-full shadow-[0_0_20px_#a855f7]"
+          animate={{ scale: [1, 1.5, 1] }}
+          transition={{
+            duration: 1.2,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+
+      </div>
+
       <p className="text-sm font-medium text-muted-foreground">{message}</p>
     </div>
   );

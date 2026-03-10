@@ -12,21 +12,21 @@ export default function TradingToolsPage() {
     {
       id: 3,
       image: "/trading_tools/Zuperior ai tech analysis.png",
-      heading: "Zuper Ai Technical Analysis",
+      heading: "Zuperior Ai Technical Analysis",
       link: "/tools/ai-technical-analysis",
       category: "Tech Analysis",
     },
     {
       id: 4,
       image: "/trading_tools/Zuperior price range volatility.png",
-      heading: "Zuper Price Range Volatility",
+      heading: "Zuperior Price Range Volatility",
       link: "/tools/price-range-volatility",
       category: "Tech Analysis",
     },
     {
       id: 5,
       image: "/trading_tools/Zuperior News Senitment Analysis.png",
-      heading: "Zuper News Sentiment Analysis",
+      heading: "Zuperior News Sentiment Analysis",
       link: "/tools/news-sentiment-analysis",
       category: "Tech Analysis",
     },
@@ -61,7 +61,7 @@ export default function TradingToolsPage() {
     {
       id: 11,
       image: "/trading_tools/economic calender.png",
-      heading: "Zuper Economic Calendar",
+      heading: "Zuperior Economic Calendar",
       link: "/tools/calendar",
       category: "Tech Analysis",
     },
@@ -106,7 +106,7 @@ export default function TradingToolsPage() {
           as="h1"
           className=" text-[28px] md:text-[34px] font-bold dark:text-white/75"
         >
-          Zuper Smart Tools and Calculators
+          Zuperior Smart Tools and Calculators
         </TextAnimate>
 
         <Tabs defaultValue="calculators">

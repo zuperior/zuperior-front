@@ -21,15 +21,15 @@ export function BalanceSection({ balance }: BalanceSectionProps) {
           animate={{ opacity: 1, y: 0 }} // slide into place
           transition={{ ease: "easeInOut" }}
           className="text-xl sm:text-2xl font-bold text-black/85 dark:text-white/85 tracking-tighter">
-          Balance
+          {/* Balancesssss */}
         </motion.h2>
       </AnimatePresence>
 
       <div className="flex w-full flex-col md:flex-row gap-2.5 h-auto md:h-[196px]">
-        <div className="w-full md:basis-[28%] shrink-0">
+        <div className="w-full md:basis-[28%] shrink-0 grow">
           <WalletBalance balance={balance} />
         </div>
-        <div className="w-full md:basis-[72%] min-h-[160px] md:min-h-0 shrink-0">
+        <div className="w-full md:basis-[72%] min-h-[160px] md:min-h-0 shrink-0 max-w-[800px]">
           <ForexAdBanner />
         </div>
       </div>

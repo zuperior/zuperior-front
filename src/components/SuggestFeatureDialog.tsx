@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -43,43 +43,42 @@ export function SuggestFeatureDialog({ open, onOpenChange }: SuggestFeatureDialo
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px] dark:bg-[#01040D] dark:border-[#9F8BCF]/25">
+            <DialogContent className="border-2 border-transparent p-6 dark:text-white/75 rounded-[18px] w-full bg-white [background:linear-gradient(#fff,#fff)_padding-box,conic-gradient(from_var(--border-angle),#ddd,#f6e6fc,theme(colors.purple.400/48%))_border-box] dark:[background:linear-gradient(#070206,#030103)_padding-box,conic-gradient(from_var(--border-angle),#030103,#030103,theme(colors.purple.400/48%))_border-box] animate-border gap-8">
                 <DialogHeader>
-                    <DialogTitle>Suggest a Feature</DialogTitle>
-                    <DialogDescription>
-                        We value your feedback! Let us know what features you'd like to see in the future.
-                    </DialogDescription>
+                    <DialogTitle className="text-xl font-semibold text-center">Suggest a Feature</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4 py-4">
-                    <div className="space-y-2">
+                <div className="flex flex-col gap-4 w-full">
+                    <p className="text-sm text-muted-foreground text-center -mt-4">
+                        We value your feedback! Let us know what features you&apos;d like to see in the future.
+                    </p>
+                    <div className="space-y-1 flex flex-col items-start">
                         <Label htmlFor="title">Title</Label>
                         <Input
                             id="title"
                             placeholder="Feature title"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            className="dark:bg-white/5 dark:border-white/10"
                         />
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1 flex flex-col items-start">
                         <Label htmlFor="description">Description</Label>
                         <Textarea
                             id="description"
                             placeholder="Describe the feature..."
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            className="min-h-[100px] dark:bg-white/5 dark:border-white/10"
+                            className="min-h-[100px]"
                         />
                     </div>
-                    <DialogFooter>
+                    <div className="mt-6 flex justify-end gap-3">
                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={isSubmitting} className="bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white">
+                        <Button type="submit" onClick={handleSubmit} disabled={isSubmitting} className="bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white">
                             {isSubmitting ? "Submitting..." : "Submit Suggestion"}
                         </Button>
-                    </DialogFooter>
-                </form>
+                    </div>
+                </div>
             </DialogContent>
         </Dialog>
     );
