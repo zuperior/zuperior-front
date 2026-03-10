@@ -77,7 +77,7 @@ export const getMenuItems = ({ theme }: { theme: string }): MenuItem[] => {
       subItems: [],
     },
     {
-      name: "Payment Methods",
+      name: "Withdrawal Methods",
       icon: paymentMethodsImage,
       active: paymentMethodsActive,
       link: "/payment-methods",
@@ -133,7 +133,7 @@ export const getMenuItems = ({ theme }: { theme: string }): MenuItem[] => {
         // { name: "Partner Portal", link: "/partner/portal" },
       ],
     },
-     
+
     {
       name: "Support Hub",
       icon: supportImage,
