@@ -47,8 +47,8 @@ function ProfileComponent({ profile, loading, onProfileRefresh }: ProfileCompone
     const emailValue: ReactNode = profile?.email ? (
       <div key="email" className="flex  items-center gap-2  lg:flex-row flex-col">
         <span className="">{profile.email}</span>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center opacity-80">
+        <div className="flex items-center ml-auto gap-2">
+          <div className="flex items-center   opacity-80">
             <Image
               className="h-4 w-4"
               src={tick}

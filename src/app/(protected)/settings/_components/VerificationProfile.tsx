@@ -62,7 +62,7 @@ export default function VerificationProfile({
     <>
       {/* Account Section */}
       <div className="md:mb-4 mb-3 lg:mb-6">
-        <h2 className="lg:text-xl md:text-lg text-lg mt-4 font-semibold dark:text-white/75 md:mb-4 mb-2 lg:mb-6">
+        <h2 className="lg:text-xl md:text-lg text-lg md:mt-4 mt-2 font-semibold dark:text-white/75 md:mb-4 mb-3 lg:mb-6">
           Account
         </h2>
 
@@ -77,12 +77,12 @@ export default function VerificationProfile({
                     : "text-gray-400"
                 } mr-2`}
               />
-              <span className="text-sm dark:text-white/75">Status</span>
+              <span className="md:text-sm text-xs dark:text-white/75">Status</span>
             </div>
-            <div className="text-lg font-semibold dark:text-white/75 mb-1">
+            <div className="md:text-lg text-sm font-semibold dark:text-white/75 mb-1">
               {getStatusText()}
             </div>
-            <div className="text-sm dark:text-white/75">
+            <div className="md:text-sm text-xs dark:text-white/75">
               {getCompletedSteps()}
             </div>
           </div>
@@ -93,9 +93,9 @@ export default function VerificationProfile({
               <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center mr-2">
                 <span className="text-white text-xs">$</span>
               </div>
-              <span className="text-sm dark:text-white/75">Deposit limit</span>
+              <span className="tmd:text-sm text-xs dark:text-white/75">Deposit limit</span>
             </div>
-            <div className="text-lg font-semibold dark:text-white/75 mb-1">
+            <div className="md:text-lg text-sm font-semibold dark:text-white/75 mb-1">
               {getDepositLimit()}
             </div>
             {/* Removed remaining limit text per request */}
@@ -105,7 +105,7 @@ export default function VerificationProfile({
 
       {/* Verification Steps */}
       <div>
-        <h3 className="lg:text-xl md:text-lg text-lg font-semibold dark:text-white/75 md:mb-4 mb-3 lg:mb-6">
+        <h3 className="lg:text-xl md:text-lg text-lg font-semibold dark:text-white/75 md:mb-4 mb-4 lg:mb-6">
           Verification steps
         </h3>
 
@@ -117,18 +117,18 @@ export default function VerificationProfile({
               onClick={() => toggleStep(1)}>
               <div className="flex items-center">
                 <div
-                  className={`w-8 h-8 ${resolvedStatus === "partial" ||
+                  className={`md:w-8 md:h-8  w-6 h-6 ${resolvedStatus === "partial" ||
                     resolvedStatus === "verified"
                     ? "bg-green-500"
                     : "bg-gray-400"
-                    } rounded-full flex items-center justify-center mr-4`}>
-                  <span className="text-white font-semibold text-sm">1</span>
+                    } rounded-full flex items-center justify-center mr-2 md:mr-4`}>
+                  <span className="text-white font-semibold text-xs md:text-sm">1</span>
                 </div>
                 <div>
-                  <div className="font-medium dark:text-white/75">
+                  <div className="font-medium md:text-lg text-sm dark:text-white/75">
                     Identity verification
                   </div>
-                  <div className="text-sm dark:text-white/75">
+                  <div className="text-xs md:text-sm dark:text-white/75">
                     {fullName}
                   </div>
                 </div>
@@ -137,7 +137,7 @@ export default function VerificationProfile({
                 {resolvedStatus === "partial" ||
                   resolvedStatus === "verified" ? (
                   <>
-                    <span className="dark:text-white/75 text-sm font-medium mr-2">
+                    <span className="dark:text-white/75 text-xs md:text-sm font-medium mr-2">
                       Confirmed
                     </span>
                     {expandedStep === 1 ? (
@@ -147,7 +147,7 @@ export default function VerificationProfile({
                     )}
                   </>
                 ) : (
-                  <span className="dark:text-white/75 text-sm font-medium mr-2">
+                  <span className="dark:text-white/75 text-xs md:text-sm font-medium mr-2">
                     Pending
                   </span>
                 )}
@@ -164,21 +164,21 @@ export default function VerificationProfile({
                   transition={{ duration: 0.3, ease: "easeInOut" }}
                   className="overflow-hidden">
                   <div className="lg:px-4 md:px-3 px-2 pb-4 md:ml-10 ml-1 lg:ml-12 border-t border-gray-100 pt-4">
-                    <div className="text-sm dark:text-white/75 mb-2">
+                    <div className="text-xs md:text-sm dark:text-white/75 mb-2">
                       Identity document verification
                     </div>
-                    <div className="text-sm dark:text-white/75 mb-4">
+                    <div className="text-xs md:text-sm   dark:text-white/75 mb-2 md:mb-4">
                       Upload government-issued ID to unlock higher deposit
                       limits ($10,000)
                     </div>
                     {resolvedStatus === "unverified" && (
-                      <div className="text-sm text-yellow-500">
+                      <div className="text-xs md:text-sm text-yellow-500">
                         Complete your identity verification now
                       </div>
                     )}
                     {resolvedStatus === "unverified" && (
                       <Link href="/kyc" passHref>
-                        <Button className="ml-auto  bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:opacity-90 font-semibold md:px-5 px-3 lg:px-6 py-2 rounded-[8px] shadow-md transition-all duration-200 ease-in-out mt-2 flex items-center gap-2">
+                        <Button className="ml-auto  bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:opacity-90 font-semibold md:px-5 px-3 lg:px-6 py-2 rounded-[8px] shadow-md transition-all duration-200 ease-in-out mt-3 flex items-center gap-2">
                           Go to KYC
                           <ArrowRight size={16} className="text-white" />
                         </Button>
@@ -197,22 +197,22 @@ export default function VerificationProfile({
               onClick={() => toggleStep(2)}>
               <div className="flex items-center">
                 <div
-                  className={`w-8 h-8 ${resolvedStatus === "verified"
+                  className={`md:w-8 md:h-8  w-6 h-6 ${resolvedStatus === "verified"
                     ? "bg-green-500"
                     : "bg-gray-400"
-                    } rounded-full flex items-center justify-center mr-4`}>
-                  <span className="dark:text-white/75 font-semibold text-sm">
+                    } rounded-full flex items-center justify-center mr-2 md:mr-4`}>
+                  <span className="dark:text-white/75 font-semibold text-xs md:text-sm">
                     2
                   </span>
                 </div>
-                <div className="font-medium dark:text-white/75">
+                <div className="text-sm md:text-lg font-medium dark:text-white/75">
                   Verify residential address
                 </div>
               </div>
               <div className="flex items-center">
                 {resolvedStatus === "verified" ? (
                   <>
-                    <span className="dark:text-white/75 text-sm font-medium mr-2">
+                    <span className="dark:text-white/75 text-xs md:text-sm font-medium mr-2">
                       Confirmed
                     </span>
                     {expandedStep === 2 ? (
@@ -222,7 +222,7 @@ export default function VerificationProfile({
                     )}
                   </>
                 ) : (
-                  <span className="dark:text-white/75 text-sm font-medium mr-2">
+                  <span className="dark:text-white/75 text-xs md:text-sm font-medium mr-2">
                     Pending
                   </span>
                 )}
@@ -239,24 +239,24 @@ export default function VerificationProfile({
                   transition={{ duration: 0.4, ease: "easeInOut" }}
                   className="overflow-hidden">
                   <div className="lg:px-4 md:px-3 px-2 pb-4 md:ml-10 ml-1 lg:ml-12 border-t border-gray-100 pt-4">
-                    <div className="text-sm dark:text-white/75 mb-2">
+                    <div className="md:text-sm text-xs dark:text-white/75 mb-1 md:mb-2">
                       Provide proof of your place of residence
                     </div>
-                    <div className="text-sm dark:text-white/75 mb-4"></div>
+                    <div className="text-xs md:text-sm dark:text-white/75 mb-2 md:mb-4"></div>
 
-                    <div className="text-sm dark:text-white/75 mb-4">
+                    <div className="text-xs md:text-sm dark:text-white/75 mb-2 md:mb-4">
                       Complete this step to unlock unlimited deposit limits
                     </div>
 
                     {(resolvedStatus === "partial" ||
                       resolvedStatus === "unverified") && (
-                        <div className="text-sm text-yellow-500">
+                        <div className="text-xs md:text-sm text-yellow-500">
                           Complete your address verification now
                         </div>
                       )}
                     {resolvedStatus !== "verified" && (
                       <Link href="/kyc" passHref>
-                        <Button className="ml-auto bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:opacity-90 font-semibold lg:px-6 md:px-4 px-3 py-2 rounded-[8px] shadow-md transition-all duration-200 ease-in-out mt-2 flex items-center gap-2">
+                        <Button className="ml-auto bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:opacity-90 font-semibold lg:px-6 md:px-4 px-3 py-2 rounded-[8px] shadow-md transition-all duration-200 ease-in-out mt-3 flex items-center gap-2">
                           Go to KYC
                           <ArrowRight size={16} className="text-white" />
                         </Button>
