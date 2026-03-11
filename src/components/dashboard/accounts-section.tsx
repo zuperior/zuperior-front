@@ -207,7 +207,7 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
         }}
         className="mb-[16px] rounded-[15px] border border-dashed border-white/10 md:p-[15px] pt-2.5 dark:bg-transparent bg-white"
       >
-        {showOverlay && (
+        {/* {showOverlay && (
           <div className="absolute inset-0 z-20 flex items-center justify-center rounded-[15px] bg-black/40 backdrop-blur-sm">
             <div className="flex flex-col items-center justify-center space-y-4">
               <video
@@ -224,7 +224,7 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
               </span>
             </div>
           </div>
-        )}
+        )} */}
         <div className="flex justify-center items-center">
           <ToggleGroup
             type="single"
