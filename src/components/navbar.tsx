@@ -210,10 +210,10 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
               {/* Mobile: Show only icon, Desktop: Show balance + icon */}
               <span className="inline">{formattedTotalBalance}</span>
               {walletIcon && (
-                <Image 
-                  className="h-5 w-5" 
-                  src={walletIcon} 
-                  alt="Wallet" 
+                <Image
+                  className="h-5 w-5"
+                  src={walletIcon}
+                  alt="Wallet"
                 />
               )}
             </Button>
@@ -231,8 +231,8 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
                 <div className="w-full px-2 py-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-[8px]">
                   <div className="flex items-start justify-between mb-2 w-full">
                     <Link href="/wallet" className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold">{formattedBalance}</div>
-                      <div className="text-[11px] text-white/60">Wallet Balance</div>
+                      <div className="text-sm font-semibold text-black dark:text-white">{formattedBalance}</div>
+                      <div className="text-[11px] text-black/60 dark:text-white/60">Wallet Balance</div>
                     </Link>
                     <div className="flex flex-col gap-1.5 ml-2 flex-shrink-0 items-end">
                       <button
@@ -258,8 +258,8 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
                       </button>
                     </div>
                   </div>
-                  <div className="mt-1 flex items-center gap-2 text-[11px] text-white/50">
-                    <span className="truncate">{walletNumber || '—'}</span>
+                  <div className="mt-1 flex items-center gap-2 text-[11px] text-black/50 dark:text-white/50">
+                    <span className="truncate text-black dark:text-white/75">{walletNumber || '—'}</span>
                     {walletNumber && (
                       <button
                         type="button"
@@ -281,8 +281,8 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
                 <div className="w-full px-2 py-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-[8px]">
                   <div className="flex items-start justify-between w-full">
                     <Link href="/" className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold">{formattedMt5Total}</div>
-                      <div className="text-[11px] text-white/60">MT5 accounts</div>
+                      <div className="text-sm font-semibold text-black dark:text-white">{formattedMt5Total}</div>
+                      <div className="text-[11px] text-black/60 dark:text-white/60">MT5 accounts</div>
                     </Link>
                     <div className="flex flex-col gap-1.5 ml-2 flex-shrink-0 items-end">
                       <button
@@ -365,10 +365,10 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
                 <Link
                   href="/wallet"
                   className="flex items-center gap-2 text-black dark:text-white/50 dark:hover:text-white transition w-full">
-                  <Image 
-                    className="h-5 w-5" 
-                    src={walletIcon || wallet} 
-                    alt="Wallet" 
+                  <Image
+                    className="h-5 w-5"
+                    src={walletIcon || wallet}
+                    alt="Wallet"
                   />
                   <span>Wallet</span>
                 </Link>
