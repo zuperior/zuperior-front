@@ -61,14 +61,14 @@ export default function VerificationProfile({
   return (
     <>
       {/* Account Section */}
-      <div className="mb-6">
-        <h2 className="text-xl mt-4 font-semibold dark:text-white/75 mb-6">
+      <div className="md:mb-4 mb-3 lg:mb-6">
+        <h2 className="lg:text-xl md:text-lg text-lg mt-4 font-semibold dark:text-white/75 md:mb-4 mb-2 lg:mb-6">
           Account
         </h2>
 
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 md:gap-4 gap-2 lg:gap-6">
           {/* Status Card */}
-          <div className="bg-white dark:bg-gradient-to-r from-[#FFFFFF] dark:from-[#110F17] to-[#f4e7f6] dark:to-[#1E1429] border-2 dark:border-[#1D1825] border-gray-300 rounded-lg p-6">
+          <div className="bg-white dark:bg-gradient-to-r from-[#FFFFFF] dark:from-[#110F17] to-[#f4e7f6] dark:to-[#1E1429] border-2 dark:border-[#1D1825] border-gray-300 rounded-lg md:p-5 p-3 lg:p-6">
             <div className="flex items-center mb-2">
               <CheckCircle
                 className={`w-5 h-5 ${
@@ -88,7 +88,7 @@ export default function VerificationProfile({
           </div>
 
           {/* Deposit Limit Card */}
-          <div className="bg-white dark:bg-gradient-to-r from-[#FFFFFF] dark:from-[#110F17] to-[#f4e7f6] dark:to-[#1E1429] border-2 dark:border-[#1D1825] border-gray-300 rounded-lg p-6">
+          <div className="bg-white dark:bg-gradient-to-r from-[#FFFFFF] dark:from-[#110F17] to-[#f4e7f6] dark:to-[#1E1429] border-2 dark:border-[#1D1825] border-gray-300 rounded-lg md:p-5 p-3 lg:p-6">
             <div className="flex items-center mb-2">
               <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center mr-2">
                 <span className="text-white text-xs">$</span>
@@ -105,7 +105,7 @@ export default function VerificationProfile({
 
       {/* Verification Steps */}
       <div>
-        <h3 className="text-lg font-semibold dark:text-white/75 mb-6">
+        <h3 className="lg:text-xl md:text-lg text-lg font-semibold dark:text-white/75 md:mb-4 mb-3 lg:mb-6">
           Verification steps
         </h3>
 
@@ -113,7 +113,7 @@ export default function VerificationProfile({
           {/* Identity Verification - Step 1 */}
           <div className="bg-white dark:bg-gradient-to-r from-[#FFFFFF] dark:from-[#110F17] to-[#f4e7f6] dark:to-[#1E1429] border-2 dark:border-[#1D1825] border-gray-300 rounded-lg">
             <div
-              className="flex items-center justify-between p-4 cursor-pointer"
+              className="flex items-center justify-between lg:p-4 md:p-3 p-2 cursor-pointer"
               onClick={() => toggleStep(1)}>
               <div className="flex items-center">
                 <div
@@ -163,7 +163,7 @@ export default function VerificationProfile({
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.3, ease: "easeInOut" }}
                   className="overflow-hidden">
-                  <div className="px-4 pb-4 ml-12 border-t border-gray-100 pt-4">
+                  <div className="lg:px-4 md:px-3 px-2 pb-4 md:ml-10 ml-1 lg:ml-12 border-t border-gray-100 pt-4">
                     <div className="text-sm dark:text-white/75 mb-2">
                       Identity document verification
                     </div>
@@ -178,7 +178,7 @@ export default function VerificationProfile({
                     )}
                     {resolvedStatus === "unverified" && (
                       <Link href="/kyc" passHref>
-                        <Button className="ml-auto bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:opacity-90 font-semibold px-6 py-2 rounded-[8px] shadow-md transition-all duration-200 ease-in-out mt-2 flex items-center gap-2">
+                        <Button className="lg:ml-auto md:ml-auto mx-auto  bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:opacity-90 font-semibold md:px-5 px-3 lg:px-6 py-2 rounded-[8px] shadow-md transition-all duration-200 ease-in-out mt-2 flex items-center gap-2">
                           Go to KYC
                           <ArrowRight size={16} className="text-white" />
                         </Button>
@@ -193,7 +193,7 @@ export default function VerificationProfile({
           {/* Verify Residential Address - Step 2 */}
           <div className="bg-white dark:bg-gradient-to-r from-[#FFFFFF] dark:from-[#110F17] to-[#f4e7f6] dark:to-[#1E1429] border-2 dark:border-[#1D1825] border-gray-300 rounded-lg">
             <div
-              className="flex items-center justify-between p-4 cursor-pointer"
+              className="flex items-center justify-between lg:p-4 md:p-3 p-2 cursor-pointer"
               onClick={() => toggleStep(2)}>
               <div className="flex items-center">
                 <div
@@ -238,7 +238,7 @@ export default function VerificationProfile({
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.4, ease: "easeInOut" }}
                   className="overflow-hidden">
-                  <div className="px-4 pb-4 ml-12 border-t border-gray-100 pt-4">
+                  <div className="lg:px-4 md:px-3 px-2 pb-4 md:ml-10 ml-1 lg:ml-12 border-t border-gray-100 pt-4">
                     <div className="text-sm dark:text-white/75 mb-2">
                       Provide proof of your place of residence
                     </div>
@@ -256,7 +256,7 @@ export default function VerificationProfile({
                       )}
                     {resolvedStatus !== "verified" && (
                       <Link href="/kyc" passHref>
-                        <Button className="ml-auto bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:opacity-90 font-semibold px-6 py-2 rounded-[8px] shadow-md transition-all duration-200 ease-in-out mt-2 flex items-center gap-2">
+                        <Button className="lg:ml-auto md:ml-auto mx-auto  bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:opacity-90 font-semibold lg:px-6 md:px-4 px-3 py-2 rounded-[8px] shadow-md transition-all duration-200 ease-in-out mt-2 flex items-center gap-2">
                           Go to KYC
                           <ArrowRight size={16} className="text-white" />
                         </Button>
