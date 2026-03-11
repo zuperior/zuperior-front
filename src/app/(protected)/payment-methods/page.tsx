@@ -230,7 +230,7 @@ export default function PaymentMethodsPage() {
                       </FormItem>
                     )}
                   />
-                  <div className="flex justify-end">
+                  <div className="flex justify-center md:justify-end">
                     <Button
                       type="submit"
                       disabled={loading}
@@ -247,7 +247,7 @@ export default function PaymentMethodsPage() {
           {/* Saved Wallets Table */}
           <div className="rounded-[15px] bg-white dark:bg-gradient-to-r dark:from-[#15101d] dark:to-[#181422] border border-gray-200 dark:border-none p-3">
             <div className="mb-4">
-              <h2 className="text-xl font-bold text-black dark:text-white">Saved Crypto Wallets</h2>
+              <h2 className="text-xl font-bold text-black dark:text-white text-center xl:text-left">Saved Crypto Wallets</h2>
             </div>
 
             {paymentMethods.filter(pm => (pm.methodType ?? 'crypto') === 'crypto').length === 0 ? (
@@ -404,7 +404,7 @@ export default function PaymentMethodsPage() {
                       )}
                     />
                   </div>
-                  <div className="flex justify-end">
+                  <div className="flex justify-center md:justify-end">
                     <Button type="submit" disabled={loading} className="bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white px-6 py-2 rounded-md">
                       {loading ? "Submitting..." : "Submit for Review"}
                     </Button>
@@ -417,7 +417,7 @@ export default function PaymentMethodsPage() {
           {/* Saved Bank Details Table */}
           <div className="rounded-[15px] bg-white dark:bg-gradient-to-r dark:from-[#15101d] dark:to-[#181422] border border-gray-200 dark:border-none p-3">
             <div className="mb-4">
-              <h2 className="text-xl font-bold text-black dark:text-white">Saved Bank Details</h2>
+              <h2 className="text-xl font-bold text-black dark:text-white text-center xl:text-left">Saved Bank Details</h2>
             </div>
 
             {paymentMethods.filter(pm => (pm.methodType ?? 'crypto') === 'bank').length === 0 ? (

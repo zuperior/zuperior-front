@@ -250,7 +250,7 @@ export default function WalletPage() {
       <WalletMoveDialog open={openOut} onOpenChange={(v) => { setOpenOut(v); if (!v) { load(); loadTx(); } }} direction="WALLET_TO_MT5" />
 
       <div className="rounded-[15px] bg-white dark:bg-gradient-to-r dark:from-[#15101d] dark:to-[#181422] border border-black/10 dark:border-none p-3">
-        <h3 className="text-lg font-medium mb-3">Wallet Transactions</h3>
+        <h3 className="text-lg font-medium mb-3 text-center md:text-left">Wallet Transactions</h3>
         <TransactionsTable
           loadingTx={loadingTx}
           selectedAccountId={'WALLET'}
