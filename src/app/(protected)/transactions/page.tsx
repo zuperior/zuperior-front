@@ -328,8 +328,8 @@ export default function TransactionsPage() {
               setActiveTab={setActiveTab}
               cardMaskStyle={cardMaskStyle}
             />
-            <div className="pt-[15px] overflow-x-hidden text-black dark:text-white flex flex-col gap-[15px]">
-              <div className="rounded-[15px] dark:bg-gradient-to-r dark:from-[#15101d] from-[#181422] to-[#181422] dark:to-[#181422] border border-black/10 dark:border-none p-3">
+            <div className="pt-3.75 overflow-x-hidden text-black dark:text-white flex flex-col gap-3.75">
+              <div className="rounded-[15px] dark:bg-linear-to-r dark:from-[#15101d] from-[#181422] to-[#181422] dark:to-[#181422] border border-black/10 dark:border-none p-3">
                 <TransactionsToolbar
                   accounts={accounts}
                   selectedAccountId={selectedAccountId}

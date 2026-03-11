@@ -21,7 +21,7 @@ interface AccountsSectionProps {
 }
 
 // Custom event to notify tab switching after unarchive
-const UNARCHIVE_EVENT = 'account-unarchived';
+const UNARCHIVE_EVENT = "account-unarchived";
 
 // Type for unarchive event detail
 interface UnarchiveEventDetail {
@@ -29,18 +29,23 @@ interface UnarchiveEventDetail {
 }
 
 // Helper function to map MT5Account to TpAccountSnapshot (for AccountDetails component)
-const mapMT5AccountToTpAccount = (mt5Account: MT5Account): TpAccountSnapshot => {
+const mapMT5AccountToTpAccount = (
+  mt5Account: MT5Account,
+): TpAccountSnapshot => {
   // IMPORTANT: Always use the latest balance from Redux state (from fetchAllAccountsWithBalance)
   // Force number conversion to ensure we get the latest value, not cached
-  const balance = mt5Account.balance !== undefined && mt5Account.balance !== null
-    ? Number(mt5Account.balance)
-    : 0;
-  const equity = mt5Account.equity !== undefined && mt5Account.equity !== null
-    ? Number(mt5Account.equity)
-    : 0;
-  const profit = mt5Account.profit !== undefined && mt5Account.profit !== null
-    ? Number(mt5Account.profit)
-    : 0;
+  const balance =
+    mt5Account.balance !== undefined && mt5Account.balance !== null
+      ? Number(mt5Account.balance)
+      : 0;
+  const equity =
+    mt5Account.equity !== undefined && mt5Account.equity !== null
+      ? Number(mt5Account.equity)
+      : 0;
+  const profit =
+    mt5Account.profit !== undefined && mt5Account.profit !== null
+      ? Number(mt5Account.profit)
+      : 0;
 
   return {
     tradingplatformaccountsid: parseInt(mt5Account.accountId),
@@ -61,16 +66,19 @@ const mapMT5AccountToTpAccount = (mt5Account: MT5Account): TpAccountSnapshot => 
     provides_balance_history: true,
     tp_account_scf: {
       tradingplatformaccountsid: parseInt(mt5Account.accountId),
-      cf_1479: mt5Account.nameOnAccount || ""
-    }
+      cf_1479: mt5Account.nameOnAccount || "",
+    },
   };
 };
 
 export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
   const { theme } = useTheme();
 
-  const { accounts, ownerClientId, isFetchingAccounts } = useSelector((state: RootState) => state.mt5);
-  const currentClientId = typeof window !== 'undefined' ? localStorage.getItem('clientId') : null;
+  const { accounts, ownerClientId, isFetchingAccounts } = useSelector(
+    (state: RootState) => state.mt5,
+  );
+  const currentClientId =
+    typeof window !== "undefined" ? localStorage.getItem("clientId") : null;
 
   const hasBasicAccountInfo =
     accounts &&
@@ -78,13 +86,13 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
     (!ownerClientId || !currentClientId || ownerClientId === currentClientId);
 
   const [activeTab, setActiveTab] = useState<"live" | "demo" | "archived">(
-    "live"
+    "live",
   );
 
   // ✅ Webhook Integration: Replace polling with real-time WebSocket updates
   const activeAccountIds = accounts
-    .filter(acc => !acc.archived)
-    .map(acc => acc.accountId)
+    .filter((acc) => !acc.archived)
+    .map((acc) => acc.accountId)
     .filter(Boolean);
 
   useMT5WebSocket(activeAccountIds);
@@ -97,11 +105,11 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
   //       if (profilesFetchedRef.current.has(account.accountId) || !account.password) {
   //         return;
   //       }
-  //       
+  //
   //       profilesFetchedRef.current.add(account.accountId);
-  //       dispatch(fetchAccountProfile({ 
-  //         accountId: account.accountId, 
-  //         password: account.password 
+  //       dispatch(fetchAccountProfile({
+  //         accountId: account.accountId,
+  //         password: account.password
   //       }) as any);
   //     });
   //   }
@@ -123,9 +131,9 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
   //   // Poll immediately, then every 400ms
   //   const poll = () => {
   //     accountsWithPasswords.forEach((account) => {
-  //       dispatch(fetchAccountBalanceAndProfit({ 
-  //         accountId: account.accountId, 
-  //         password: account.password! 
+  //       dispatch(fetchAccountBalanceAndProfit({
+  //         accountId: account.accountId,
+  //         password: account.password!
   //       }) as any);
   //     });
   //   };
@@ -140,7 +148,6 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
   //     }
   //   };
   // }, [accounts, dispatch]);
-
 
   const cardMaskStyle: React.CSSProperties = {
     WebkitMaskImage:
@@ -159,11 +166,12 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
     pointerEvents: "none",
   };
 
-  const showOverlay = isFetchingAccounts && (!accounts || accounts.length === 0);
+  const showOverlay =
+    isFetchingAccounts && (!accounts || accounts.length === 0);
 
   return (
-    <div className="px-2.5 md:px-0 relative">
-      <div className="mb-2.5 flex items-end justify-between w-full">
+    <div className="relative">
+      <div className="mb-2.5 flex md:flex-row flex-col-reverse gap-4 justify-between w-full">
         <AnimatePresence mode="wait">
           <motion.h2
             key={theme}
@@ -175,16 +183,18 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
             Accounts
           </motion.h2>
         </AnimatePresence>
-        <div className="flex gap-3 items-center flex-wrap justify-end">
+        <div className="flex md:gap-2.5 gap-1.5 items-stretch md:justify-end justify-between">
           <KillSwitchToggle />
           <Button
             onClick={onOpenNewAccount}
-            className="relative z-10 flex items-center gap-2.5 bg-linear-to-r from-[#331032] to-black text-white py-2.5 px-4 rounded-[15px] h-fit"
+            className="relative z-10 flex items-center gap-2.5 bg-linear-to-r from-[#331032] to-black text-white py-2.5 px-4 rounded-[15px] md-text-sm text-xs h-auto"
           >
-            <FloatingDots dotCount={25}/>
-            Open New Account <div className="bg-[#a35ca2] rounded-full size-8 flex items-center justify-center z-10"><Plus className="w-3 h-3" /></div>
+            <FloatingDots dotCount={25} />
+            Open New Account{" "}
+            <div className="bg-[#a35ca2] rounded-full md:size-8 size-6 flex items-center justify-center shrink-0 z-10">
+              <Plus className="md:w-3 md:h-3 w-2 h-2" />
+            </div>
           </Button>
-          {/* Refresh button removed as requested */}
         </div>
       </div>
       <Tabs
@@ -195,9 +205,9 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
             setActiveTab(value);
           }
         }}
-        className="mb-[16px] rounded-[15px] border border-dashed border-white/10 p-[15px] pt-2.5 dark:bg-transparent bg-white"
+        className="mb-[16px] rounded-[15px] border border-dashed border-white/10 md:p-[15px] pt-2.5 dark:bg-transparent bg-white"
       >
-        {showOverlay && (
+        {/* {showOverlay && (
           <div className="absolute inset-0 z-20 flex items-center justify-center rounded-[15px] bg-black/40 backdrop-blur-sm">
             <div className="flex flex-col items-center justify-center space-y-4">
               <video
@@ -209,10 +219,12 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
               >
                 <source src="/logo.mp4" type="video/mp4" />
               </video>
-              <span className="text-sm font-semibold text-white/80">Loading MT5 accounts please hold on...</span>
+              <span className="text-sm font-semibold text-white/80">
+                Loading MT5 accounts please hold on...
+              </span>
             </div>
           </div>
-        )}
+        )} */}
         <div className="flex justify-center items-center">
           <ToggleGroup
             type="single"
@@ -261,11 +273,29 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
         <TabsContent value="live">
           {isFetchingAccounts && (!accounts || accounts.length === 0) ? (
             <div className="flex items-center justify-center py-10">
-              <svg className="animate-spin h-6 w-6 text-white/70" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+              <svg
+                className="animate-spin h-6 w-6 text-white/70"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                ></path>
               </svg>
-              <span className="ml-3 text-sm text-white/70">Fetching accounts…</span>
+              <span className="ml-3 text-sm text-white/70">
+                Fetching accounts…
+              </span>
             </div>
           ) : hasBasicAccountInfo ? (
             accounts
@@ -302,7 +332,10 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
               const type = (account.accountType || "").toLowerCase();
               const group = (account.group || "").toLowerCase();
               const isDemoType = type === "demo";
-              const isDemoGroup = group.includes("\\demo\\") || group.includes("demo\\startup") || group.includes("demo\\pro");
+              const isDemoGroup =
+                group.includes("\\demo\\") ||
+                group.includes("demo\\startup") ||
+                group.includes("demo\\pro");
               return (isDemoType || isDemoGroup) && !account.archived;
             });
             if (demoAccounts.length > 0) {
@@ -333,7 +366,9 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
         {/* Archived Accounts */}
         <TabsContent value="archived">
           {(() => {
-            const archivedAccounts = accounts.filter((account) => !!account.archived);
+            const archivedAccounts = accounts.filter(
+              (account) => !!account.archived,
+            );
 
             if (archivedAccounts.length > 0) {
               return archivedAccounts.map((account, index) => {

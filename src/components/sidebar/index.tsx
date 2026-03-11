@@ -24,7 +24,7 @@ export function Sidebar({ mobileOpen = false, setMobileOpen = () => { } }: { mob
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobileView(window.innerWidth < 1024);
+      setIsMobileView(window.innerWidth < 1280);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -40,14 +40,14 @@ export function Sidebar({ mobileOpen = false, setMobileOpen = () => { } }: { mob
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed lg:relative top-0 left-0 h-dvh flex flex-col justify-between border-r border-transparent lg:border-gray-200 lg:dark:border-[#1a2032] bg-white dark:bg-[#01040D] text-black dark:text-white transition-all duration-300 ease-in-out z-50",
+          "fixed xl:relative top-0 left-0 h-dvh flex flex-col justify-between border-r border-transparent xl:border-gray-200 lg:dark:border-[#1a2032] bg-white dark:bg-[#01040D] text-black dark:text-white transition-all duration-300 ease-in-out z-50",
           // On mobile/tablet: w-0 when closed, completely hidden
           // On desktop (lg): collapsed ? w-22.5 : w-[280px]
-          "lg:w-auto",
-          mobileOpen ? "w-[280px] lg:w-auto pt-16 lg:pt-0" : "w-0 overflow-hidden border-0 lg:w-auto lg:border-r",
-          collapsed && "lg:w-22.5",
-          !collapsed && "lg:w-[280px]",
-          mobileOpen ? "translate-x-0 lg:translate-x-0" : "-translate-x-full lg:translate-x-0"
+          "xl:w-auto",
+          mobileOpen ? "w-[280px] xl:w-auto pt-16 xl:pt-0" : "w-0 overflow-hidden border-0 xl:w-auto xl:border-r",
+          collapsed && "xl:w-22.5",
+          !collapsed && "xl:w-[280px]",
+          mobileOpen ? "translate-x-0 xl:translate-x-0" : "-translate-x-full xl:translate-x-0"
         )}
       >
         {/* Show logo on mobile, full header on desktop */}
@@ -60,7 +60,7 @@ export function Sidebar({ mobileOpen = false, setMobileOpen = () => { } }: { mob
           {mobileOpen && (
             <motion.button
               key="cross"
-              className="absolute top-7 -right-15 lg:hidden p-1.5 rounded-full bg-gray-800 dark:bg-gray-800 text-white z-50"
+              className="absolute top-7 -right-15 xl:hidden p-1.5 rounded-full bg-gray-800 dark:bg-gray-800 text-white z-50"
               onClick={() => setMobileOpen(false)}
               initial={{ opacity: 0, x: 20, rotate: 90, scale: 0.8 }}
               animate={{ opacity: 1, x: 0, rotate: 0, scale: 1 }}
@@ -83,7 +83,7 @@ export function Sidebar({ mobileOpen = false, setMobileOpen = () => { } }: { mob
           <nav
             className={cn(
               "flex flex-col gap-2.5 hide-scrollbar overflow-y-auto h-full pb-10 pt-4 md:pt-10",
-              "px-3 lg:px-4.5"
+              "px-3 xl:px-4.5"
             )}
           >
             {/* On mobile: always show icons only, on desktop: use collapsed state */}
@@ -98,7 +98,7 @@ export function Sidebar({ mobileOpen = false, setMobileOpen = () => { } }: { mob
       {/* Toggle only visible on desktop - positioned outside sidebar to appear above border */}
       <div
         className={cn(
-          "lg:block hidden",
+          "xl:block hidden",
           isMobileView && "hidden"
         )}
         style={{
@@ -115,7 +115,7 @@ export function Sidebar({ mobileOpen = false, setMobileOpen = () => { } }: { mob
       {/* Dark overlay for mobile/tablet when sidebar is open */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-30 xl:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}

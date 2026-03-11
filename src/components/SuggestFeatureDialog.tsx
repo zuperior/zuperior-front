@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { featureSuggestionService } from "@/services/api.service";
 
 interface SuggestFeatureDialogProps {
     open: boolean;
@@ -21,18 +20,33 @@ export function SuggestFeatureDialog({ open, onOpenChange }: SuggestFeatureDialo
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
         if (!title.trim() || !description.trim()) {
             toast.error("Please fill in all fields");
             return;
         }
 
         setIsSubmitting(true);
+
         try {
-            await featureSuggestionService.create({ title, description });
+            await fetch(
+                "https://script.google.com/macros/s/AKfycbxeN_7fhDaurjqQ5C7V4fi2dGRJuiO2JNO55an3GMBTi7oDWEuzGMCG-I5F7CnTr115/exec",
+                {
+                    method: "POST",
+                    mode: "no-cors",
+                    body: new URLSearchParams({
+                        title: title,
+                        description: description,
+                    }),
+                }
+            );
+
             toast.success("Feature suggestion submitted successfully!");
+
             setTitle("");
             setDescription("");
             onOpenChange(false);
+
         } catch (error) {
             console.error("Error submitting feature suggestion:", error);
             toast.error("Failed to submit suggestion. Please try again.");
@@ -44,13 +58,18 @@ export function SuggestFeatureDialog({ open, onOpenChange }: SuggestFeatureDialo
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="border-2 border-transparent p-6 dark:text-white/75 rounded-[18px] w-full bg-white [background:linear-gradient(#fff,#fff)_padding-box,conic-gradient(from_var(--border-angle),#ddd,#f6e6fc,theme(colors.purple.400/48%))_border-box] dark:[background:linear-gradient(#070206,#030103)_padding-box,conic-gradient(from_var(--border-angle),#030103,#030103,theme(colors.purple.400/48%))_border-box] animate-border gap-8">
+
                 <DialogHeader>
-                    <DialogTitle className="text-xl font-semibold text-center">Suggest a Feature</DialogTitle>
+                    <DialogTitle className="text-xl font-semibold text-center">
+                        Suggest a Feature
+                    </DialogTitle>
                 </DialogHeader>
+
                 <div className="flex flex-col gap-4 w-full">
                     <p className="text-sm text-muted-foreground text-center -mt-4">
-                        We value your feedback! Let us know what features you&apos;d like to see in the future.
+                        We value your feedback! Let us know what features you'd like to see in the future.
                     </p>
+
                     <div className="space-y-1 flex flex-col items-start">
                         <Label htmlFor="title">Title</Label>
                         <Input
@@ -60,6 +79,7 @@ export function SuggestFeatureDialog({ open, onOpenChange }: SuggestFeatureDialo
                             onChange={(e) => setTitle(e.target.value)}
                         />
                     </div>
+
                     <div className="space-y-1 flex flex-col items-start">
                         <Label htmlFor="description">Description</Label>
                         <Textarea
@@ -70,15 +90,28 @@ export function SuggestFeatureDialog({ open, onOpenChange }: SuggestFeatureDialo
                             className="min-h-[100px]"
                         />
                     </div>
+
                     <div className="mt-6 flex justify-end gap-3">
-                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => onOpenChange(false)}
+                            disabled={isSubmitting}
+                        >
                             Cancel
                         </Button>
-                        <Button type="submit" onClick={handleSubmit} disabled={isSubmitting} className="bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white">
+
+                        <Button
+                            type="submit"
+                            onClick={handleSubmit}
+                            disabled={isSubmitting}
+                            className="bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white"
+                        >
                             {isSubmitting ? "Submitting..." : "Submit Suggestion"}
                         </Button>
                     </div>
                 </div>
+
             </DialogContent>
         </Dialog>
     );

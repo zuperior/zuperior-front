@@ -162,24 +162,24 @@ export default function DepositPage() {
   useEffect(() => {
     // Fetch enabled payment methods from API
     let isMounted = true;
-    
+
     (async () => {
       try {
         setIsLoadingPaymentMethods(true);
         console.log('[Deposit Page] Fetching payment methods from /api/deposit-payment-methods...');
-        
+
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-        
-        const r = await fetch('/api/deposit-payment-methods', { 
+
+        const r = await fetch('/api/deposit-payment-methods', {
           cache: 'no-store',
           signal: controller.signal
         });
-        
+
         clearTimeout(timeoutId);
-        
+
         if (!isMounted) return;
-        
+
         const j = await r.json();
         console.log('[Deposit Page] Payment methods API response:', j);
         console.log('[Deposit Page] Response details:', {
@@ -188,12 +188,12 @@ export default function DepositPage() {
           methods: j.methods?.map((m: any) => ({ key: m.method_key, type: m.method_type, enabled: true })) || [],
           error: j.error
         });
-        
+
         if (j.ok && Array.isArray(j.methods)) {
-          console.log(`[Deposit Page] Setting ${j.methods.length} enabled payment methods:`, 
+          console.log(`[Deposit Page] Setting ${j.methods.length} enabled payment methods:`,
             j.methods.map((m: any) => m.method_key).join(', '));
           setEnabledPaymentMethods(j.methods);
-          
+
           // Store display names for Unipayment methods
           const displayNames: Record<string, string> = {};
           j.methods.forEach((m: any) => {
@@ -217,7 +217,7 @@ export default function DepositPage() {
             console.warn('[Deposit Page] Using methods despite error flag');
             setEnabledPaymentMethods(j.methods);
           } else {
-          setEnabledPaymentMethods([]);
+            setEnabledPaymentMethods([]);
           }
         }
       } catch (err: any) {
@@ -231,7 +231,7 @@ export default function DepositPage() {
         setEnabledPaymentMethods([]);
       } finally {
         if (isMounted) {
-        setIsLoadingPaymentMethods(false);
+          setIsLoadingPaymentMethods(false);
           console.log('[Deposit Page] Loading payment methods completed');
         }
       }
@@ -252,9 +252,9 @@ export default function DepositPage() {
         const isAvailable = Boolean(j?.success);
         console.log('[Deposit Page] Bank transfer gateway check:', { response: j, isAvailable });
         setBankTransferAvailable(isAvailable);
-      } catch (err) { 
+      } catch (err) {
         console.error('[Deposit Page] Bank transfer gateway check failed:', err);
-        setBankTransferAvailable(false); 
+        setBankTransferAvailable(false);
       }
     })();
 
@@ -307,25 +307,25 @@ export default function DepositPage() {
     if (!iconPath || iconPath.trim() === '') {
       return fallback;
     }
-    
+
     const trimmedPath = iconPath.trim();
-    
+
     // If it's already a full URL, return as is
     if (trimmedPath.startsWith('http://') || trimmedPath.startsWith('https://')) {
       return trimmedPath;
     }
-    
+
     // If it starts with /payment_method_images/, it's from admin backend, not server
     if (trimmedPath.startsWith('/payment_method_images/')) {
       // Payment method images are ALWAYS served from admin backend
       // Use explicit admin backend URL from environment variable
-      const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || 
-                              process.env.NEXT_PUBLIC_ADMIN_API_URL || 
-                              'http://localhost:5003';
+      const adminBackendUrl = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL ||
+        process.env.NEXT_PUBLIC_ADMIN_API_URL ||
+        'http://localhost:5003';
       console.log('[resolveImagePath] Payment method image:', { trimmedPath, adminBackendUrl, fullUrl: `${adminBackendUrl}${trimmedPath}` });
       return `${adminBackendUrl}${trimmedPath}`;
     }
-    
+
     // If it's a relative path starting with /, check if it's a backend path or frontend public path
     if (trimmedPath.startsWith('/')) {
       // Check if it's a known backend path
@@ -337,7 +337,7 @@ export default function DepositPage() {
       // Otherwise, assume it's a frontend public path (Next.js serves from /public folder)
       return trimmedPath;
     }
-    
+
     // Relative path without leading slash - treat as backend path (server, not admin)
     const serverBackendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL?.replace('/api', '') || 'http://localhost:5001';
     return `${serverBackendUrl}/${trimmedPath}`;
@@ -346,10 +346,10 @@ export default function DepositPage() {
   // Filter items - show only enabled payment methods
   const filteredItems = useMemo(() => {
     const items: any[] = [];
-    
+
     console.log('[Deposit Page] Filtering items. Enabled methods:', enabledPaymentMethods);
     console.log('[Deposit Page] Enabled method keys:', enabledPaymentMethods.map((m: any) => m.method_key));
-    
+
     // Helper to check if a method is enabled
     // Note: The API already returns only enabled methods, so we just check if the method_key exists
     const isMethodEnabled = (methodKey: string) => {
@@ -361,7 +361,7 @@ export default function DepositPage() {
     // Add Unipayment methods only if enabled
     if (isMethodEnabled('unipayment_crypto')) {
       const method = enabledPaymentMethods.find(m => m.method_key === 'unipayment_crypto');
-      const icon = method?.icon_path 
+      const icon = method?.icon_path
         ? resolveImagePath(method.icon_path, '/payment_method_images/crypto.png')
         : resolveImagePath('/payment_method_images/crypto.png', '/payment_method_images/crypto.png');
       const displayName = method?.display_name || 'Crypto';
@@ -370,7 +370,7 @@ export default function DepositPage() {
     }
     if (isMethodEnabled('unipayment_card')) {
       const method = enabledPaymentMethods.find(m => m.method_key === 'unipayment_card');
-      const icon = method?.icon_path 
+      const icon = method?.icon_path
         ? resolveImagePath(method.icon_path, '/payment_method_images/pm_card.png')
         : resolveImagePath('/payment_method_images/pm_card.png', '/payment_method_images/pm_card.png');
       const displayName = method?.display_name || 'Credit/Debit Cards';
@@ -379,7 +379,7 @@ export default function DepositPage() {
     }
     if (isMethodEnabled('unipayment_google_apple_pay')) {
       const method = enabledPaymentMethods.find(m => m.method_key === 'unipayment_google_apple_pay');
-      const icon = method?.icon_path 
+      const icon = method?.icon_path
         ? resolveImagePath(method.icon_path, '/payment_method_images/pm_googleapple.png')
         : resolveImagePath('/payment_method_images/pm_googleapple.png', '/payment_method_images/pm_googleapple.png');
       const displayName = method?.display_name || 'Google/Apple Pay';
@@ -388,7 +388,7 @@ export default function DepositPage() {
     }
     if (isMethodEnabled('unipayment_upi')) {
       const method = enabledPaymentMethods.find(m => m.method_key === 'unipayment_upi');
-      const icon = method?.icon_path 
+      const icon = method?.icon_path
         ? resolveImagePath(method.icon_path, '/payment_method_images/pm_upi.png')
         : resolveImagePath('/payment_method_images/pm_upi.png', '/payment_method_images/pm_upi.png');
       const displayName = method?.display_name || 'UPI';
@@ -401,7 +401,7 @@ export default function DepositPage() {
       const alreadyAdded = items.some(item => item.type === 'digipay247' && item.data?.id === 'DIGIPAY247_UPI');
       if (!alreadyAdded) {
         const method = enabledPaymentMethods.find(m => m.method_key === 'digipay247_upi');
-        const icon = method?.icon_path 
+        const icon = method?.icon_path
           ? resolveImagePath(method.icon_path, '/payment_method_images/pm_upi.png')
           : resolveImagePath('/payment_method_images/pm_upi.png', '/payment_method_images/pm_upi.png');
         const displayName = method?.display_name || 'SecurePayee UPI';
@@ -411,21 +411,21 @@ export default function DepositPage() {
         console.log('[Deposit Page] DigiPay247 UPI already added, skipping duplicate');
       }
     }
-    
+
     // Add bank transfer if enabled in deposit_payment_methods
     // Note: We show it if enabled, even if manual gateway isn't configured yet
     // The BankDepositDialog will handle the case where no gateway is available
     // Support both 'bank_transfer' and legacy 'wire_transfer' for backward compatibility
     const bankTransferMethodEnabled = isMethodEnabled('bank_transfer') || isMethodEnabled('wire_transfer');
-    console.log('[Deposit Page] Bank transfer check:', { 
-      bankTransferMethodEnabled, 
-      bankTransferAvailable, 
+    console.log('[Deposit Page] Bank transfer check:', {
+      bankTransferMethodEnabled,
+      bankTransferAvailable,
       willShow: bankTransferMethodEnabled, // Show if enabled, regardless of gateway availability
       enabledMethods: enabledPaymentMethods.map(m => m.method_key)
     });
     if (bankTransferMethodEnabled) {
       // Get bank transfer icon from payment methods if available
-      const bankTransferMethod = enabledPaymentMethods.find(m => 
+      const bankTransferMethod = enabledPaymentMethods.find(m =>
         m.method_key === 'bank_transfer' || m.method_key === 'wire_transfer'
       );
       console.log('[Deposit Page] Bank transfer method found:', {
@@ -434,19 +434,19 @@ export default function DepositPage() {
         display_name: bankTransferMethod?.display_name
       });
       // Always resolve to an image URL, never use 'bank' string
-      const bankIcon = bankTransferMethod?.icon_path 
+      const bankIcon = bankTransferMethod?.icon_path
         ? resolveImagePath(bankTransferMethod.icon_path, '/payment_method_images/bank.png')
         : resolveImagePath('/payment_method_images/bank.png', '/payment_method_images/bank.png'); // Fallback to default bank.png
       const displayName = bankTransferMethod?.display_name || 'Bank Transfer';
       console.log('[Deposit Page] Bank transfer icon resolved:', bankIcon, 'display_name:', displayName);
       items.push({ type: 'bank_transfer', data: { id: 'BANK_TRANSFER', name: displayName, icon: bankIcon }, paymentMethod: bankTransferMethod });
     }
-    
+
     // Add Cregis crypto options only if enabled
     cryptocurrencies.forEach((crypto) => {
       if (crypto.id === 'USDT-TRC20' && isMethodEnabled('cregis_usdt_trc20')) {
         const method = enabledPaymentMethods.find(m => m.method_key === 'cregis_usdt_trc20');
-        const icon = method?.icon_path 
+        const icon = method?.icon_path
           ? resolveImagePath(method.icon_path, '/payment_method_images/trc20.png')
           : resolveImagePath('/payment_method_images/trc20.png', '/payment_method_images/trc20.png');
         const displayName = method?.display_name || crypto.name;
@@ -455,7 +455,7 @@ export default function DepositPage() {
       }
       if (crypto.id === 'USDT-BEP20' && isMethodEnabled('cregis_usdt_bep20')) {
         const method = enabledPaymentMethods.find(m => m.method_key === 'cregis_usdt_bep20');
-        const icon = method?.icon_path 
+        const icon = method?.icon_path
           ? resolveImagePath(method.icon_path, '/payment_method_images/bep20.png')
           : resolveImagePath('/payment_method_images/bep20.png', '/payment_method_images/bep20.png');
         const displayName = method?.display_name || crypto.name;
@@ -463,20 +463,20 @@ export default function DepositPage() {
         items.push({ type: "crypto", data: { ...crypto, name: displayName, icon }, paymentMethod: method });
       }
     });
-    
+
     // Add manual gateway methods and generic 'manual' method
     enabledPaymentMethods.forEach((method) => {
       // Check if it's a manual gateway method OR the generic 'manual' method
       const isManualGateway = method.method_key?.startsWith('manual_gateway_');
       const isManualType = method.method_type === 'manual';
       const isManualKey = method.method_key === 'manual';
-      
+
       if (isManualGateway || isManualType || isManualKey) {
         const metadata = method.metadata || {};
         const gatewayType = metadata.type || method.method_type;
         const displayName = method.display_name || metadata.name || 'Manual Deposit';
         const rawIconPath = method.icon_path || metadata.icon_url;
-        
+
         console.log('[Deposit Page] Processing manual method:', {
           method_key: method.method_key,
           method_type: method.method_type,
@@ -486,32 +486,32 @@ export default function DepositPage() {
           isManualType,
           isManualKey
         });
-        
+
         // Skip only the main bank_transfer/wire_transfer method keys (not manual gateways with bank_transfer type)
         // Manual gateways with bank_transfer type should still be shown as separate options
         if ((method.method_key === 'bank_transfer' || method.method_key === 'wire_transfer') && !isManualGateway) {
           console.log('[Deposit Page] Skipping main bank_transfer method (already handled above):', method.method_key);
           return;
         }
-        
+
         // For bank_transfer type manual gateways, add as manual bank transfer option
         if (gatewayType === 'bank_transfer' || gatewayType === 'wire') {
           // Get bank transfer icon from payment methods if available, or use 'bank' for Building2 icon
-          const bankTransferMethod = enabledPaymentMethods.find(m => 
+          const bankTransferMethod = enabledPaymentMethods.find(m =>
             m.method_key === 'bank_transfer' || m.method_key === 'wire_transfer'
           );
           // Always resolve to an image URL, never use 'bank' string
-          const bankIcon = rawIconPath 
+          const bankIcon = rawIconPath
             ? resolveImagePath(rawIconPath, '/payment_method_images/bank.png')
-            : (bankTransferMethod?.icon_path 
-                ? resolveImagePath(bankTransferMethod.icon_path, '/payment_method_images/bank.png')
-                : resolveImagePath('/payment_method_images/bank.png', '/payment_method_images/bank.png'));
-          items.push({ 
-            type: 'manual_bank_transfer', 
+            : (bankTransferMethod?.icon_path
+              ? resolveImagePath(bankTransferMethod.icon_path, '/payment_method_images/bank.png')
+              : resolveImagePath('/payment_method_images/bank.png', '/payment_method_images/bank.png'));
+          items.push({
+            type: 'manual_bank_transfer',
             method_key: method.method_key,
-            data: { 
-              id: method.method_key, 
-              name: displayName, 
+            data: {
+              id: method.method_key,
+              name: displayName,
               icon: bankIcon,
               gateway: manualGateways[method.method_key]
             },
@@ -521,15 +521,15 @@ export default function DepositPage() {
         }
         // For UPI type, add as UPI option
         else if (gatewayType === 'upi') {
-          const iconPath = rawIconPath 
+          const iconPath = rawIconPath
             ? resolveImagePath(rawIconPath, '/payment_method_images/pm_upi.png')
             : resolveImagePath('/payment_method_images/pm_upi.png', '/pm_upi.png');
-          items.push({ 
-            type: 'manual_upi', 
+          items.push({
+            type: 'manual_upi',
             method_key: method.method_key,
-            data: { 
-              id: method.method_key, 
-              name: displayName, 
+            data: {
+              id: method.method_key,
+              name: displayName,
               icon: iconPath,
               gateway: manualGateways[method.method_key]
             },
@@ -539,15 +539,15 @@ export default function DepositPage() {
         }
         // For crypto type, add as crypto option
         else if (gatewayType === 'crypto') {
-          const iconPath = rawIconPath 
+          const iconPath = rawIconPath
             ? resolveImagePath(rawIconPath, '/payment_method_images/crypto.png')
             : resolveImagePath('/payment_method_images/crypto.png', '/crypto.png');
-          items.push({ 
-            type: 'manual_crypto', 
+          items.push({
+            type: 'manual_crypto',
             method_key: method.method_key,
-            data: { 
-              id: method.method_key, 
-              name: displayName, 
+            data: {
+              id: method.method_key,
+              name: displayName,
               icon: iconPath,
               gateway: manualGateways[method.method_key]
             },
@@ -557,15 +557,15 @@ export default function DepositPage() {
         }
         // For other types (including generic 'manual'), add as generic manual deposit
         else {
-          const iconPath = rawIconPath 
+          const iconPath = rawIconPath
             ? resolveImagePath(rawIconPath, '/payment_method_images/manual.png')
             : resolveImagePath('/payment_method_images/manual.png', '/manual.png');
-          items.push({ 
-            type: 'manual', 
+          items.push({
+            type: 'manual',
             method_key: method.method_key,
-            data: { 
-              id: method.method_key, 
-              name: displayName, 
+            data: {
+              id: method.method_key,
+              name: displayName,
               icon: iconPath,
               gateway: manualGateways[method.method_key]
             },
@@ -582,7 +582,7 @@ export default function DepositPage() {
         });
       }
     });
-    
+
     // Check for any enabled methods that weren't processed above
     const processedMethodKeys = new Set(items.map(item => {
       if (item.type === 'unipayment') return `unipayment_${item.method}`;
@@ -592,14 +592,14 @@ export default function DepositPage() {
       if (item.type === 'digipay247') return 'digipay247_upi';
       return item.method_key || item.data?.id;
     }));
-    
+
     const unprocessedMethods = enabledPaymentMethods.filter(m => {
       const key = m.method_key;
       // Skip if already processed
       if (processedMethodKeys.has(key)) return false;
       // Skip if it's a method we explicitly handle above
       if (['unipayment_crypto', 'unipayment_card', 'unipayment_google_apple_pay', 'unipayment_upi',
-           'bank_transfer', 'wire_transfer', 'cregis_usdt_trc20', 'cregis_usdt_bep20', 'digipay247_upi'].includes(key)) {
+        'bank_transfer', 'wire_transfer', 'cregis_usdt_trc20', 'cregis_usdt_bep20', 'digipay247_upi'].includes(key)) {
         return false;
       }
       // Skip if it's a manual gateway (should have been processed above)
@@ -608,18 +608,18 @@ export default function DepositPage() {
       }
       return true;
     });
-    
+
     if (unprocessedMethods.length > 0) {
       console.warn('[Deposit Page] Found unprocessed enabled methods:', unprocessedMethods.map(m => ({
         method_key: m.method_key,
         method_type: m.method_type,
         display_name: m.display_name
       })));
-      
+
       // Add unprocessed methods as generic manual deposits
       unprocessedMethods.forEach((method) => {
         const displayName = method.display_name || method.method_key || 'Deposit';
-        const iconPath = method.icon_path 
+        const iconPath = method.icon_path
           ? resolveImagePath(method.icon_path, '/payment_method_images/manual.png')
           : resolveImagePath('/payment_method_images/manual.png', '/payment_method_images/manual.png');
         items.push({
@@ -636,7 +636,7 @@ export default function DepositPage() {
         console.log('[Deposit Page] Added unprocessed method as generic manual:', method.method_key);
       });
     }
-    
+
     console.log('[Deposit Page] Final filtered items count:', items.length);
     // Remove duplicates - keep only the first occurrence of each unique item
     const uniqueItems = items.filter((item, index, self) => {
@@ -647,14 +647,14 @@ export default function DepositPage() {
       // For other items, check by type and method
       return index === self.findIndex(i => i.type === item.type && i.method === item.method && i.data?.id === item.data?.id);
     });
-    
-    console.log('[Deposit Page] Final filtered items (after deduplication):', uniqueItems.map(i => ({ 
-      type: i.type, 
-      method: i.method, 
+
+    console.log('[Deposit Page] Final filtered items (after deduplication):', uniqueItems.map(i => ({
+      type: i.type,
+      method: i.method,
       method_key: i.method_key,
-      name: i.data?.name 
+      name: i.data?.name
     })));
-    
+
     return uniqueItems;
   }, [cryptocurrencies, bankTransferAvailable, enabledPaymentMethods, manualGateways]);
 
@@ -687,8 +687,8 @@ export default function DepositPage() {
   const getPaymentMethodMetadata = (id: string, type: string, paymentMethod?: any) => {
     // First priority: Check if paymentMethod has min_limit and max_limit from database
     let limitsFromDb: string | null = null;
-    if (paymentMethod && ((paymentMethod.min_limit !== null && paymentMethod.min_limit !== undefined) || 
-        (paymentMethod.max_limit !== null && paymentMethod.max_limit !== undefined))) {
+    if (paymentMethod && ((paymentMethod.min_limit !== null && paymentMethod.min_limit !== undefined) ||
+      (paymentMethod.max_limit !== null && paymentMethod.max_limit !== undefined))) {
       limitsFromDb = formatLimits(paymentMethod.min_limit, paymentMethod.max_limit);
     }
 
@@ -696,7 +696,7 @@ export default function DepositPage() {
     let metadataFromJson: any = {};
     if (paymentMethod?.metadata) {
       let metadata = paymentMethod.metadata;
-      
+
       // Handle string metadata (should be parsed, but just in case)
       if (typeof metadata === 'string') {
         try {
@@ -705,10 +705,10 @@ export default function DepositPage() {
           metadata = {};
         }
       }
-      
+
       metadataFromJson = metadata;
     }
-    
+
     // Build result object, prioritizing database limits over metadata limits
     const result: any = {};
     if (metadataFromJson.processingTime !== undefined) {
@@ -726,7 +726,7 @@ export default function DepositPage() {
     if (metadataFromJson.recommended !== undefined) {
       result.recommended = metadataFromJson.recommended;
     }
-    
+
     // If we have at least one metadata field, use it and fill in defaults for missing ones
     if (Object.keys(result).length > 0 || limitsFromDb) {
       return {
@@ -737,11 +737,11 @@ export default function DepositPage() {
         recommended: result.recommended === true || result.recommended === 'true' || result.recommended === 1
       };
     }
-    
+
     // Fallback to hardcoded values based on ID and type (only if no database limits)
     const normalizedId = (id || '').toUpperCase();
     const normalizedType = (type || '').toLowerCase();
-    
+
     if (normalizedId.includes('USDT') || normalizedId.includes('TRC20') || normalizedId.includes('ERC20') || normalizedId.includes('BEP20')) {
       return {
         processingTime: "Instant - 15 minutes",
@@ -750,7 +750,7 @@ export default function DepositPage() {
         recommended: false
       };
     }
-    
+
     if (normalizedId === 'BTC' || normalizedId === 'BITCOIN') {
       return {
         processingTime: "Instant - 1 hour",
@@ -759,7 +759,7 @@ export default function DepositPage() {
         recommended: false
       };
     }
-    
+
     if (normalizedId === 'ETH' || normalizedId === 'ETHEREUM') {
       return {
         processingTime: "Instant - 15 minutes",
@@ -777,7 +777,7 @@ export default function DepositPage() {
         recommended: false
       };
     }
-    
+
     if (normalizedType === 'bank_transfer' || normalizedId.includes('BANK')) {
       return {
         processingTime: "1 - 3 business days",
@@ -795,7 +795,7 @@ export default function DepositPage() {
         recommended: false
       };
     }
-    
+
     // Default for others
     return {
       processingTime: "Instant",
@@ -816,7 +816,7 @@ export default function DepositPage() {
             once
             by="word"
             as="h1"
-            className="text-[34px] leading-[30px] font-bold text-black dark:text-white/85"
+            className="text-[26px] md:text-[34px] leading-[30px] font-bold text-black dark:text-white/85"
           >
             Deposit Funds
           </TextAnimate>
@@ -843,82 +843,82 @@ export default function DepositPage() {
         ) : (
           <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredItems.map((item) => {
-            if (item.type === 'bank_transfer') {
-              const metadata = getPaymentMethodMetadata(item.data.id, item.type, item.paymentMethod);
+              if (item.type === 'bank_transfer') {
+                const metadata = getPaymentMethodMetadata(item.data.id, item.type, item.paymentMethod);
+                return (
+                  <MemoizedPaymentMethodCard
+                    key="BANK_TRANSFER"
+                    onOpenNewAccount={() => setBankDialogOpen(true)}
+                    icon={item.data.icon}
+                    name={item.data.name}
+                    {...metadata}
+                  />
+                );
+              }
+              if (item.type === 'unipayment') {
+                const method = item.method;
+                const handlers: Record<string, () => void> = {
+                  'crypto': () => setUnipaymentCryptoOpen(true),
+                  'card': () => setUnipaymentCardOpen(true),
+                  'google_apple_pay': () => setUnipaymentGoogleAppleOpen(true),
+                  'upi': () => setUnipaymentUpiOpen(true),
+                };
+                const metadata = getPaymentMethodMetadata(item.data.id, item.type, item.paymentMethod);
+                return (
+                  <MemoizedPaymentMethodCard
+                    key={item.data.id}
+                    onOpenNewAccount={handlers[method] || (() => { })}
+                    icon={item.data.icon}
+                    name={item.data.name}
+                    {...metadata}
+                  />
+                );
+              }
+              if (item.type === 'digipay247') {
+                const metadata = getPaymentMethodMetadata(item.data.id, item.type, item.paymentMethod);
+                const handleClick = () => {
+                  console.log('[Deposit Page] DigiPay247 card clicked, opening dialog');
+                  console.log('[Deposit Page] Current digipay247UpiOpen state:', digipay247UpiOpen);
+                  setDigipay247UpiOpen(true);
+                  console.log('[Deposit Page] Set digipay247UpiOpen to true');
+                };
+                return (
+                  <MemoizedPaymentMethodCard
+                    key={item.data.id}
+                    onOpenNewAccount={handleClick}
+                    icon={item.data.icon}
+                    name={item.data.name}
+                    {...metadata}
+                  />
+                );
+              }
+              // Handle manual gateway methods
+              if (item.type === 'manual' || item.type === 'manual_upi' || item.type === 'manual_crypto' || item.type === 'manual_bank_transfer') {
+                const metadata = getPaymentMethodMetadata(item.data.id, item.type, item.paymentMethod);
+                return (
+                  <MemoizedPaymentMethodCard
+                    key={item.data.id}
+                    onOpenNewAccount={() => {
+                      setManualDepositDialogs(prev => ({ ...prev, [item.data.id]: true }));
+                    }}
+                    icon={item.data.icon}
+                    name={item.data.name}
+                    {...metadata}
+                  />
+                );
+              }
+              const crypto = item.data as Cryptocurrency;
+              const metadata = getPaymentMethodMetadata(crypto.id, 'crypto', item.paymentMethod);
               return (
                 <MemoizedPaymentMethodCard
-                  key="BANK_TRANSFER"
-                  onOpenNewAccount={() => setBankDialogOpen(true)}
-                  icon={item.data.icon}
-                  name={item.data.name}
+                  key={crypto.id}
+                  onOpenNewAccount={() => handleCryptoSelect(crypto)}
+                  icon={crypto.icon}
+                  name={crypto.name}
                   {...metadata}
                 />
               );
-            }
-            if (item.type === 'unipayment') {
-              const method = item.method;
-              const handlers: Record<string, () => void> = {
-                'crypto': () => setUnipaymentCryptoOpen(true),
-                'card': () => setUnipaymentCardOpen(true),
-                'google_apple_pay': () => setUnipaymentGoogleAppleOpen(true),
-                'upi': () => setUnipaymentUpiOpen(true),
-              };
-              const metadata = getPaymentMethodMetadata(item.data.id, item.type, item.paymentMethod);
-              return (
-                <MemoizedPaymentMethodCard
-                  key={item.data.id}
-                  onOpenNewAccount={handlers[method] || (() => {})}
-                  icon={item.data.icon}
-                  name={item.data.name}
-                  {...metadata}
-                />
-              );
-            }
-            if (item.type === 'digipay247') {
-              const metadata = getPaymentMethodMetadata(item.data.id, item.type, item.paymentMethod);
-              const handleClick = () => {
-                console.log('[Deposit Page] DigiPay247 card clicked, opening dialog');
-                console.log('[Deposit Page] Current digipay247UpiOpen state:', digipay247UpiOpen);
-                setDigipay247UpiOpen(true);
-                console.log('[Deposit Page] Set digipay247UpiOpen to true');
-              };
-              return (
-                <MemoizedPaymentMethodCard
-                  key={item.data.id}
-                  onOpenNewAccount={handleClick}
-                  icon={item.data.icon}
-                  name={item.data.name}
-                  {...metadata}
-                />
-              );
-            }
-            // Handle manual gateway methods
-            if (item.type === 'manual' || item.type === 'manual_upi' || item.type === 'manual_crypto' || item.type === 'manual_bank_transfer') {
-              const metadata = getPaymentMethodMetadata(item.data.id, item.type, item.paymentMethod);
-              return (
-                <MemoizedPaymentMethodCard
-                  key={item.data.id}
-                  onOpenNewAccount={() => {
-                    setManualDepositDialogs(prev => ({ ...prev, [item.data.id]: true }));
-                  }}
-                  icon={item.data.icon}
-                  name={item.data.name}
-                  {...metadata}
-                />
-              );
-            }
-            const crypto = item.data as Cryptocurrency;
-            const metadata = getPaymentMethodMetadata(crypto.id, 'crypto', item.paymentMethod);
-            return (
-              <MemoizedPaymentMethodCard
-                key={crypto.id}
-                onOpenNewAccount={() => handleCryptoSelect(crypto)}
-                icon={crypto.icon}
-                name={crypto.name}
-                {...metadata}
-              />
-            );
-          })}
+            })}
           </div>
         )}
 
@@ -930,18 +930,18 @@ export default function DepositPage() {
           lifetimeDeposit={lifetimeDeposit}
         />
         {/* Bank Transfer Dialog */}
-        <BankDepositDialog 
-          open={bankDialogOpen} 
-          onOpenChange={setBankDialogOpen} 
+        <BankDepositDialog
+          open={bankDialogOpen}
+          onOpenChange={setBankDialogOpen}
           lifetimeDeposit={lifetimeDeposit}
           displayName={(() => {
-            const bankMethod = enabledPaymentMethods.find(m => 
+            const bankMethod = enabledPaymentMethods.find(m =>
               m.method_key === 'bank_transfer' || m.method_key === 'wire_transfer'
             );
             return bankMethod?.display_name || 'Bank Transfer';
           })()}
         />
-        
+
         {/* Unipayment Dialogs */}
         {/* DigiPay247 Dialog */}
         <DigiPay247Dialog
@@ -953,7 +953,7 @@ export default function DepositPage() {
             return digipay247Method?.display_name || 'SecurePayee UPI';
           })()}
         />
-        
+
         <UnipaymentDialog
           open={unipaymentCryptoOpen}
           onOpenChange={setUnipaymentCryptoOpen}
@@ -983,7 +983,7 @@ export default function DepositPage() {
           lifetimeDeposit={lifetimeDeposit}
           displayName={unipaymentDisplayNames.upi}
         />
-        
+
         {/* Manual Gateway Dialogs */}
         {enabledPaymentMethods
           .filter(m => {
@@ -991,15 +991,15 @@ export default function DepositPage() {
             const isManualType = m.method_type === 'manual';
             const isManualKey = m.method_key === 'manual';
             // Include manual gateways, but skip the main bank_transfer/wire_transfer method keys
-            return (isManualGateway || isManualType || isManualKey) && 
-                   m.method_key !== 'bank_transfer' && 
-                   m.method_key !== 'wire_transfer';
+            return (isManualGateway || isManualType || isManualKey) &&
+              m.method_key !== 'bank_transfer' &&
+              m.method_key !== 'wire_transfer';
           })
           .map((method) => {
             // Determine gateway type from method metadata or method_type
             const metadata = method.metadata || {};
             const gatewayType = metadata.type || method.method_type || 'bank_transfer';
-            
+
             return (
               <BankDepositDialog
                 key={method.method_key}
@@ -1050,7 +1050,7 @@ function PaymentMethodCard({
     const target = e.target as HTMLImageElement;
     console.error(`[PaymentMethodCard] Failed to load image: ${imageSrc}`);
     console.error(`[PaymentMethodCard] Image URL was: ${imageSrc}`);
-    
+
     // Don't try fallback - just show placeholder icon
     // This prevents all methods from showing the same fallback image
     setImageError(true);
@@ -1098,17 +1098,17 @@ function PaymentMethodCard({
       </div>
 
       <div className="space-y-2 text-sm">
-        <div className="flex flex-col sm:flex-row sm:gap-1 text-gray-500 dark:text-gray-400">
+        <div className="flex flex-row flex-wrap gap-1 text-gray-500 dark:text-gray-400">
           <span>Processing time</span>
-          <span className="font-medium text-gray-900 dark:text-gray-200 sm:ml-1">{processingTime}</span>
+          <span className="font-medium text-gray-900 dark:text-gray-200">{processingTime}</span>
         </div>
-        <div className="flex flex-col sm:flex-row sm:gap-1 text-gray-500 dark:text-gray-400">
+        <div className="flex flex-row flex-wrap gap-1 text-gray-500 dark:text-gray-400">
           <span>Fee</span>
-          <span className="font-medium text-gray-900 dark:text-gray-200 sm:ml-1">{fee}</span>
+          <span className="font-medium text-gray-900 dark:text-gray-200">{fee}</span>
         </div>
-        <div className="flex flex-col sm:flex-row sm:gap-1 text-gray-500 dark:text-gray-400">
+        <div className="flex flex-row flex-wrap gap-1 text-gray-500 dark:text-gray-400">
           <span>Limits</span>
-          <span className="font-medium text-gray-900 dark:text-gray-200 sm:ml-1">{limits}</span>
+          <span className="font-medium text-gray-900 dark:text-gray-200">{limits}</span>
         </div>
       </div>
     </div>

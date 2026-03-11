@@ -45,10 +45,10 @@ function ProfileComponent({ profile, loading, onProfileRefresh }: ProfileCompone
     const phone = formatPhoneNumber(profile?.phone || "");
 
     const emailValue: ReactNode = profile?.email ? (
-      <div key="email" className="flex items-center gap-2 flex-wrap">
-        <span>{profile.email}</span>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center opacity-80">
+      <div key="email" className="flex  items-center gap-2  lg:flex-row flex-col">
+        <span className="">{profile.email}</span>
+        <div className="flex items-center ml-auto gap-2">
+          <div className="flex items-center   opacity-80">
             <Image
               className="h-4 w-4"
               src={tick}
@@ -117,7 +117,7 @@ function ProfileComponent({ profile, loading, onProfileRefresh }: ProfileCompone
   return (
     <div className="dark:bg-[#01040D] dark:text-[#FFFFFF] text-[#000000]">
       <div className="flex rounded-xl mb-4 items-center justify-between bg-white dark:bg-gradient-to-r from-[#FFFFFF] dark:from-[#110F17] to-[#f4e7f6] dark:to-[#1E1429] border-2 dark:border-[#1D1825] border-gray-300">
-        <div className="py-6 px-8 flex items-center w-full">
+        <div className="lg:py-6 md:py-4 py-3 md:px-6 px-3.5 lg:px-8 flex items-center w-full">
           <div className="h-16 w-16 rounded-full border-2 border-purple-400/60 dark:border-purple-400/60 p-0.5 mr-4">
             <Image
               className="h-full w-full rounded-full"
@@ -135,7 +135,7 @@ function ProfileComponent({ profile, loading, onProfileRefresh }: ProfileCompone
               <div>
                 <div className="flex items-center gap-2">
                   {displayName && (
-                    <TextAnimate className="text-2xl font-semibold">
+                    <TextAnimate className="lg:text-2xl md:text-xl text-lg font-semibold">
                       {displayName}
                     </TextAnimate>
                   )}
@@ -146,7 +146,7 @@ function ProfileComponent({ profile, loading, onProfileRefresh }: ProfileCompone
         </div>
       </div>
 
-      <section className="space-y-3 w-full mb-4">
+      <section className="md:space-y-2 space-y-1 lg:space-y-3 w-full mb-4">
         {userDetails.map(([label, value], index) => {
           const resolved = resolveValue(value);
           return (

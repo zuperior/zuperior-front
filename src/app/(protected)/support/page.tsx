@@ -24,7 +24,7 @@ import { toast } from "sonner";
 export default function SupportHub() {
   // Get user data directly from Redux store
   const userData = useSelector((state: RootState) => state.user.data);
-  
+
   // Use full user name from Redux state (check both name and accountname for compatibility)
   const userName = (userData as any)?.name || userData?.accountname || "User";
 
@@ -115,15 +115,15 @@ export default function SupportHub() {
     // If not ready, wait for API with retries
     let retries = 0;
     const maxRetries = 10; // 5 seconds total (10 * 500ms)
-    
+
     const checkInterval = setInterval(() => {
       retries++;
-      
+
       if (tryOpenChat()) {
         clearInterval(checkInterval);
         return;
       }
-      
+
       if (retries >= maxRetries) {
         clearInterval(checkInterval);
         console.error("Tawk.to chat is not loaded yet. Please wait a moment and try again.");
@@ -142,12 +142,11 @@ export default function SupportHub() {
       >
         Support hub
       </TextAnimate>
-      
+
 
       {/* Help Section */}
       <section className="relative rounded-lg border-2 border-gray-300 dark:border-[#1D1825] dark:bg-gradient-to-r from-[#FFFFFF] to-[#f4e7f6] p-5 sm:p-7 dark:from-[#110F17] dark:to-[#1E1429] ">
-        {/* Support Image */}
-        <div className="absolute top-0 right-0 -mt-4 -mr-4 md:-mt-8 md:-mr-[15px] pointer-events-none opacity-20 dark:opacity-30">
+        <div className="hidden md:block absolute top-0 right-0 md:-mt-8 md:-mr-[15px] pointer-events-none opacity-20 dark:opacity-30">
           <Image
             src="24_support.png"
             alt="Support"
@@ -157,7 +156,7 @@ export default function SupportHub() {
             unoptimized
           />
         </div>
-        
+
         {/* Header */}
         <div className="relative z-10">
           <h3 className="mb-4 text-xl sm:text-2xl font-semibold dark:text-white/75">

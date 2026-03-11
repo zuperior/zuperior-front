@@ -33,18 +33,18 @@ export default function SecurityTab({ email }: SecurityTabProps) {
   const handleLogoutAllDevices = async () => {
     try {
       setIsLoggingOutAll(true);
-      
+
       // Clear all client-side storage FIRST (before API call)
       authService.clearAuthData();
-      
+
       // Call server to logout from all devices (don't await - fire and forget)
       userService.logoutAllDevices().catch(err => {
         console.warn("Logout API call failed (non-blocking):", err);
       });
-      
+
       // Show toast briefly, then redirect immediately
       toast.success("Logged out from all devices successfully");
-      
+
       // Force immediate redirect - don't wait for API call
       if (typeof window !== 'undefined') {
         // Clear any remaining cookies manually (for non-httpOnly cookies)
@@ -59,7 +59,7 @@ export default function SecurityTab({ email }: SecurityTabProps) {
         } catch (e) {
           console.warn("Error clearing cookies:", e);
         }
-        
+
         // Use replace instead of href to prevent back button issues
         window.location.replace('/login');
       }
@@ -78,22 +78,22 @@ export default function SecurityTab({ email }: SecurityTabProps) {
     <div className="space-y-10 mt-4 text-white">
       {/* Authorization Section */}
       <section>
-        <h2 className="text-[34px] font-semibold mb-1 dark:text-white/75 text-black">Authorization</h2>
-        <p className="text-sm  dark:text-white/75 text-black mb-4">
+        <h2 className="text-lg sm:text-2xl md:text-[34px] font-semibold mb-1 dark:text-white/75 text-black">Authorization</h2>
+        <p className="text-xs sm:text-sm  dark:text-white/75 text-black mb-4">
           Change your password whenever you think it might have been
           compromised.
         </p>
         <div className="border dark:border-white/10 border-black/10 rounded-xl overflow-hidden dark:bg-[#191a22]">
-          <div className="flex items-center justify-between p-5 border-b dark:border-white/10 border-black/10">
-            <div>
-              <div className="text-sm font-medium dark:text-white/75 text-black">Login</div>
-              <div className="font-semibold dark:text-white/75 text-black mt-1">{maskedEmail}</div>
+          <div className="flex flex-col gap-3 p-4 sm:p-5 border-b dark:border-white/10 border-black/10">
+            <div className="min-w-0">
+              <div className="text-xs sm:text-sm font-medium dark:text-white/75 text-black">Login</div>
+              <div className="font-semibold dark:text-white/75 text-black mt-1 break-all text-sm sm:text-base">{maskedEmail}</div>
             </div>
           </div>
-          <div className="flex items-center justify-between p-5">
-            <div>
-              <div className="text-sm font-medium dark:text-white/75 text-black">Password</div>
-              <div className="tracking-widest text-[34px] font-semibold dark:text-white/75 text-black mt-1">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 sm:p-5">
+            <div className="min-w-0 flex-1">
+              <div className="text-xs sm:text-sm font-medium dark:text-white/75 text-black">Password</div>
+              <div className="tracking-widest text-2xl sm:text-[34px] font-semibold dark:text-white/75 text-black mt-1">
                 ••••••••
               </div>
             </div>
@@ -101,7 +101,10 @@ export default function SecurityTab({ email }: SecurityTabProps) {
               variant="secondary"
               className="min-w-[110px] bg-gradient-to-tr to-[#9F8BCF] from-[#6242A5] 
                          dark:bg-gradient-to-tr dark:from-[#232438] dark:to-[#141414] 
-                        dark:text-white text-white border-none"
+                        dark:text-white text-white border-none w-full sm:w-auto
+                        hover:from-[#7452b5] hover:to-[#b5a0d8] dark:hover:from-[#2d3345] dark:hover:to-[#1a1a1f]
+                        hover:brightness-110 hover:scale-105
+                        transition-all duration-300 ease-out active:scale-95"
               onClick={() => setChangePasswordOpen(true)}
             >
               Change
@@ -122,12 +125,12 @@ export default function SecurityTab({ email }: SecurityTabProps) {
 
       {/* Currently Logged in Devices Section */}
       <section>
-        <h2 className="text-[34px] font-semibold mb-1 dark:text-white/75 text-black">Currently Logged in Devices</h2>
-        <p className="text-sm dark:text-white/75 text-black mb-4">
+        <h2 className="text-lg sm:text-2xl md:text-[34px] font-semibold mb-1 dark:text-white/75 text-black">Currently Logged in Devices</h2>
+        <p className="text-xs sm:text-sm dark:text-white/75 text-black mb-4">
           View all devices that are currently logged into your account.
         </p>
         <div className="border dark:border-white/10 border-black/10 rounded-xl overflow-hidden dark:bg-[#191a22]">
-          <div className="p-5">
+          <div className="p-4 sm:p-5">
             <ActiveDevices />
           </div>
         </div>
@@ -135,12 +138,12 @@ export default function SecurityTab({ email }: SecurityTabProps) {
 
       {/* Login Activity Section */}
       <section>
-        <h2 className="text-[34px] font-semibold mb-1 dark:text-white/75 text-black">Login Activity</h2>
-        <p className="text-sm dark:text-white/75 text-black mb-4">
+        <h2 className="text-lg sm:text-2xl md:text-[34px] font-semibold mb-1 dark:text-white/75 text-black">Login Activity</h2>
+        <p className="text-xs sm:text-sm dark:text-white/75 text-black mb-4">
           View your recent login activity and the devices used to access your account.
         </p>
         <div className="border dark:border-white/10 border-black/10 rounded-xl overflow-hidden dark:bg-[#191a22]">
-          <div className="p-5">
+          <div className="p-4 sm:p-5">
             <LoginActivity />
           </div>
         </div>
@@ -148,12 +151,12 @@ export default function SecurityTab({ email }: SecurityTabProps) {
 
       {/* Logout from All Devices Section */}
       <section>
-        <h2 className="text-[34px] font-semibold mb-1 dark:text-white/75 text-black">Account Security</h2>
+        <h2 className="text-xl sm:text-2xl md:text-[34px] font-semibold mb-1 dark:text-white/75 text-black">Account Security</h2>
         <p className="text-sm dark:text-white/75 text-black mb-4">
           Log out from all devices to secure your account. This will clear all sessions and cache.
         </p>
         <div className="border dark:border-white/10 border-black/10 rounded-xl overflow-hidden dark:bg-[#191a22]">
-          <div className="flex items-center justify-between p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-5 gap-4">
             <div>
               <div className="font-medium dark:text-white/75 text-black mb-2">
                 Log out from all devices
@@ -164,7 +167,7 @@ export default function SecurityTab({ email }: SecurityTabProps) {
             </div>
             <Button
               variant="destructive"
-              className="bg-red-600/20 text-red-400 border-red-600/30 min-w-[180px] hover:bg-red-600/30"
+              className="bg-red-600/20 text-red-400 border-red-600/30 sm:min-w-[180px] hover:bg-red-600/30 w-full sm:w-auto"
               onClick={() => setLogoutAllDialogOpen(true)}
             >
               <LogOut className="h-4 w-4 mr-2" />
@@ -209,8 +212,8 @@ export default function SecurityTab({ email }: SecurityTabProps) {
               onClick={handleLogoutAllDevices}
               disabled={isLoggingOutAll}
               className="min-w-[180px]"
-              style={{ 
-                backgroundColor: isLoggingOutAll ? '#4a0e0f' : '#82181a', 
+              style={{
+                backgroundColor: isLoggingOutAll ? '#4a0e0f' : '#82181a',
                 color: 'white',
                 opacity: isLoggingOutAll ? 0.6 : 1
               }}

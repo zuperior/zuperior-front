@@ -141,7 +141,7 @@ export function SidebarMenu({ items, collapsed, onLinkClick }: SidebarMenuProps)
                 <Button
                   onClick={() => handleItemClick(item)}
                   className={cn(
-                    "relative cursor-pointer flex h-12 z-50 w-full justify-between  shadow-none text-start items-center px-4 rounded-r-[10px] rounded-l-none bg-inherit hover:bg-inherit"
+                    "relative cursor-pointer flex h-12 z-50 w-full justify-between shadow-none text-start items-center px-4 rounded-r-[10px] rounded-l-none bg-inherit hover:bg-inherit"
                   )}
                 >
                   <div className="flex items-center justify-between w-full -ml-1">

@@ -123,22 +123,22 @@ export function TwoFactorSettings({ email }: TwoFactorSettingsProps) {
   return (
     <>
       <section>
-        <h2 className="text-[34px] font-semibold mb-1 dark:text-white/75 text-black">
+        <h2 className="text-lg sm:text-2xl md:text-[34px] font-semibold mb-1 dark:text-white/75 text-black">
           Two-Factor Authentication
         </h2>
-        <p className="text-sm dark:text-white/75 text-black mb-4">
+        <p className="text-xs sm:text-sm dark:text-white/75 text-black mb-4">
           Add an extra layer of security to your account. When enabled, you'll need to enter a verification code sent to your email each time you log in.
         </p>
         <div className="border dark:border-white/10 border-black/10 rounded-xl overflow-hidden dark:bg-[#191a22]">
-          <div className="flex items-center justify-between p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between p-4 sm:p-5">
             <div className="flex items-center gap-3">
               {enabled ? (
-                <ShieldCheck className="h-6 w-6 text-green-500" />
+                <ShieldCheck className="h-6 w-6 text-green-500 flex-shrink-0" />
               ) : (
-                <ShieldOff className="h-6 w-6 text-gray-400" />
+                <ShieldOff className="h-6 w-6 text-gray-400 flex-shrink-0" />
               )}
-              <div>
-                <div className="text-sm font-medium dark:text-white/75 text-black">
+              <div className="min-w-0">
+                <div className="text-xs sm:text-sm font-medium dark:text-white/75 text-black">
                   Email-based 2FA
                 </div>
                 <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -148,8 +148,8 @@ export function TwoFactorSettings({ email }: TwoFactorSettingsProps) {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-sm dark:text-white/50 text-black/50">
+            <div className="flex items-center gap-3 justify-between sm:justify-end flex-shrink-0">
+              <span className="text-xs sm:text-sm dark:text-white/50 text-black/50">
                 {enabled ? "Enabled" : "Disabled"}
               </span>
               <Switch
@@ -161,7 +161,7 @@ export function TwoFactorSettings({ email }: TwoFactorSettingsProps) {
             </div>
           </div>
           {enabled && (
-            <div className="px-5 pb-5">
+            <div className="px-4 sm:px-5 pb-4 sm:pb-5">
               <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50 p-3 rounded-lg">
                 <strong>Note:</strong> When logging in, you'll receive a 6-digit code via email that you must enter to complete authentication.
               </div>
@@ -203,8 +203,8 @@ export function TwoFactorSettings({ email }: TwoFactorSettingsProps) {
               onClick={handleDisable}
               disabled={toggling}
               className="min-w-[150px]"
-              style={{ 
-                backgroundColor: toggling ? '#4a0e0f' : '#82181a', 
+              style={{
+                backgroundColor: toggling ? '#4a0e0f' : '#82181a',
                 color: 'white',
                 opacity: toggling ? 0.6 : 1
               }}

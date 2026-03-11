@@ -335,9 +335,9 @@ export const TransactionsTable: React.FC<Props> = ({
             return (
               <div
                 key={tx.id ?? tx.depositID ?? `${i}-${tx.login}-${tx.open_time}`}
-                className="flex justify-between items-center border-b border-white/10 py-3 last:border-none"
+                className="flex justify-between items-start border-b border-white/10 py-5 last:border-none gap-4"
               >
-                <div>
+                <div className="space-y-2">
                   <div className="font-medium">
                     {renderPaymentMethod(tx.comment)}
                   </div>
@@ -348,7 +348,7 @@ export const TransactionsTable: React.FC<Props> = ({
                     {formatDate(tx.open_time ?? "")}
                   </p>
                 </div>
-                <div className="text-right">
+                <div className="text-right space-y-2">
                   <p className="font-semibold text-lg">
                     {(() => {
                       const usdDisplay = `$${Math.abs(val).toFixed(2)}`;
@@ -360,8 +360,8 @@ export const TransactionsTable: React.FC<Props> = ({
                       return usdDisplay;
                     })()}
                   </p>
-                  <div className="flex flex-col gap-1">
-                    <p className="flex items-center gap-1 text-green-400 text-sm">
+                  <div className="flex flex-col gap-2">
+                    <p className="flex items-center gap-1 text-green-400 text-sm justify-end">
                       {getArrowIcon(tx.type)} {tx.type}
                     </p>
                     {tx.comment && (

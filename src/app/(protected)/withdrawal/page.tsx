@@ -185,21 +185,21 @@ export default function WithdrawalDepositPage() {
         <div className="w-full">
           {/* Title */}
 
-          <div className="flex relative items-center justify-between">
+          <div className="flex flex-col md:flex-row md:relative md:items-center md:justify-between">
             <TextAnimate
               duration={0.2}
               animation="slideUp"
               once
               by="word"
               as="h1"
-              className="text-[34px] font-bold text-black dark:text-white/85">
+              className="text-[26px] md:text-[34px] font-bold text-black dark:text-white/85">
               Withdraw Funds
             </TextAnimate>
 
-            <div className="relative mt-6 md:mt-0 md:absolute md:right-0">
+            <div className="mt-1 md:mt-0 md:absolute md:right-0">
               <Link
                 href={isUnverified ? "#" : "/transactions"}
-                className={`flex items-center justify-center gap-2 rounded-[10px] py-3 px-3 text-[16px] leading-[14px] w-auto border-2 border-gray-300 dark:border-[#1D1825] bg-white text-black dark:bg-gradient-to-r from-[#FFFFFF] dark:from-[#110F17] to-[#f4e7f6] dark:to-[#1E1429] dark:text-white/75
+                className={`inline-flex items-center justify-center gap-1.5 rounded-[10px] py-2 px-2.5 text-[13px] md:text-[16px] md:py-3 md:px-3 leading-[14px] w-auto border-2 border-gray-300 dark:border-[#1D1825] bg-white text-black dark:bg-gradient-to-r from-[#FFFFFF] dark:from-[#110F17] to-[#f4e7f6] dark:to-[#1E1429] dark:text-white/75
                 ${isUnverified
                     ? "opacity-50 cursor-not-allowed"
                     : "hover:brightness-95 cursor-pointer"
@@ -437,17 +437,17 @@ function PaymentTile({
       </div>
 
       <div className="space-y-2 text-sm">
-        <div className="flex flex-col sm:flex-row sm:gap-1 text-gray-500 dark:text-gray-400">
+        <div className="flex flex-row flex-wrap gap-1 text-gray-500 dark:text-gray-400">
           <span>Processing time</span>
-          <span className="font-medium text-gray-900 dark:text-gray-200 sm:ml-1">{processingTime}</span>
+          <span className="font-medium text-gray-900 dark:text-gray-200">{processingTime}</span>
         </div>
-        <div className="flex flex-col sm:flex-row sm:gap-1 text-gray-500 dark:text-gray-400">
+        <div className="flex flex-row flex-wrap gap-1 text-gray-500 dark:text-gray-400">
           <span>Fee</span>
-          <span className="font-medium text-gray-900 dark:text-gray-200 sm:ml-1">{fee}</span>
+          <span className="font-medium text-gray-900 dark:text-gray-200">{fee}</span>
         </div>
-        <div className="flex flex-col sm:flex-row sm:gap-1 text-gray-500 dark:text-gray-400">
+        <div className="flex flex-row flex-wrap gap-1 text-gray-500 dark:text-gray-400">
           <span>Limits</span>
-          <span className="font-medium text-gray-900 dark:text-gray-200 sm:ml-1">{limits}</span>
+          <span className="font-medium text-gray-900 dark:text-gray-200">{limits}</span>
         </div>
         {unverified && (
           <div className="pt-2 text-red-500 dark:text-red-400 text-xs font-medium">
@@ -488,7 +488,7 @@ function TransferAmountCard({
         </div>
       )}
 
-      <div className="flex items-start gap-4">
+      <div className="flex items-center gap-4">
         <Image
           className="h-12 w-12 md:h-16 md:w-16 shrink-0"
           src={icon}
