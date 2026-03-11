@@ -38,7 +38,7 @@ import MoonDark from "@/assets/icons/moonDark.png";
 // import Bell from "@/assets/icons/bell.png";
 // import BellDark from "@/assets/icons/bellDark.png";
 import { getMenuItems } from "@/lib/sidebar-config";
-import { wallet, depositsBlack } from "@/lib/sidebar-assets";
+import { wallet, walletBlack } from "@/lib/sidebar-assets";
 import Profile from "@/assets/icons/profile.png";
 import ProfileDark from "@/assets/icons/userDark.png";
 import { CircleUser, Headset, LogOut, Settings, Lightbulb, Menu, ChevronDown } from "lucide-react";
@@ -53,8 +53,8 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
   const currentTheme = resolvedTheme || theme || "dark";
   const menuItems = getMenuItems({ theme: currentTheme === "light" ? "light" : "dark" });
   const paymentMethodsMenuItem = menuItems.find(item => item.name === "Payment Methods");
-  // Light mode: use wallet icon directly, Dark mode: use payment method icon from sidebar
-  const walletIcon = currentTheme === "light" ? wallet : paymentMethodsMenuItem?.icon;
+  // Light mode: use walletBlack, Dark mode: use wallet
+  const walletIcon = currentTheme === "light" ? walletBlack : wallet;
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
@@ -209,11 +209,14 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
             <Button className="flex rounded-[10px] items-center gap-[6px] py-2 px-2 md:px-4 text-white dark:bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-xs leading-[14px] cursor-pointer [background:radial-gradient(ellipse_27%_80%_at_0%_0%,rgba(163,92,162,0.5),rgba(0,0,0,1))] hover:bg-transparent">
               {/* Mobile: Show only icon, Desktop: Show balance + icon */}
               <span className="inline">{formattedTotalBalance}</span>
-              {walletIcon && (
+              {wallet && (
                 <Image
                   className="h-5 w-5"
-                  src={walletIcon}
+                  src={wallet}
                   alt="Wallet"
+                  width={20}
+                  height={20}
+                  unoptimized
                 />
               )}
             </Button>
@@ -367,8 +370,10 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
                   className="flex items-center gap-2 text-black dark:text-white/50 dark:hover:text-white transition w-full">
                   <Image
                     className="h-5 w-5"
-                    src={walletIcon || wallet}
+                    src={walletIcon}
                     alt="Wallet"
+                    width={20}
+                    height={20}
                   />
                   <span>Wallet</span>
                 </Link>

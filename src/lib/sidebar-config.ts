@@ -34,8 +34,8 @@ export const getMenuItems = ({ theme }: { theme: string }): MenuItem[] => {
   // Wallet icon tweak: in light mode use Trading Tools icon instead
   const walletImage = theme === "dark" ? wallet : toolsBlack;
   // Payment Methods icon tweak: in light mode use Deposits icon instead
-  const paymentMethodsImage = theme === "dark" ? wallet : depositsBlack;
-  const paymentMethodsActive = theme === "dark" ? wallet : deposits;
+  const paymentMethodsImage = theme === "dark" ? deposits : depositsBlack;
+  const paymentMethodsActive = theme === "dark" ? deposits : deposits;
   // const accountsImage = theme === "dark" ? accounts : accountsBlack;
 
 
