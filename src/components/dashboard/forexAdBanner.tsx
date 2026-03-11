@@ -27,7 +27,7 @@ const ForexAdBanner: React.FC = () => {
   }, []);
 
   return (
-    <div className="relative w-full h-[160px] md:h-full rounded-[20px] overflow-hidden">
+    <div className="relative w-full aspect-76/17 min-h-36 lg:aspect-auto lg:h-full rounded-[20px] overflow-hidden">
       <motion.div
         className="flex h-full"
         animate={{ x: `-${currentSlide * 100}%` }}

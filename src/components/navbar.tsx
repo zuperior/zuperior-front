@@ -190,7 +190,7 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
       {/* Left Side - Mobile Menu Button */}
       <button
         onClick={onMenuClick}
-        className="lg:hidden p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+        className="xl:hidden p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
         aria-label="Toggle menu"
       >
         <Menu className="h-5 w-5 text-black dark:text-white" />

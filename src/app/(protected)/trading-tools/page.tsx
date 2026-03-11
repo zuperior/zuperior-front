@@ -97,7 +97,7 @@ export default function TradingToolsPage() {
         Zuperior Smart Tools and Calculators
       </TextAnimate>
 
-      <div className="grid md:gap-6 gap-4 lg:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(300px,1fr))]">
+      <div className="grid md:gap-6 gap-4 lg:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(300px,1fr))] 2xl:grid-cols-4">
         {data.map(({ id, image, heading, link }) => (
           <ToolCard key={id} image={image} heading={heading} link={link} />
         ))}

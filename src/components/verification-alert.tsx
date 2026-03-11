@@ -102,7 +102,7 @@ export default function VerificationAlert({
   const { title, message, cta } = messageData;
 
   return (
-    <div className="px-2.5 md:px-0">
+    <div>
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-0 bg-white dark:bg-gradient-to-l dark:to-[#110F17] dark:from-[#1E1429] text-black dark:text-white p-[15px] rounded-[15px] w-full relative">
 
         {/* Left content */}
@@ -117,17 +117,17 @@ export default function VerificationAlert({
             />
           </div>
           <div>
-            <h2 className="text-xs sm:text-sm font-bold text-black/75 dark:text-white/75 leading-4 -tracking-[0.02em]">
+            <h2 className="text-sm font-bold text-black/75 dark:text-white/75 leading-4 -tracking-[0.02em]">
               {title}
             </h2>
-            <p className="text-[11px] sm:text-xs font-semibold text-black/50 dark:text-white/50 mt-[5px]">
+            <p className="text-xs font-semibold text-black/50 dark:text-white/50 mt-[5px]">
               {message}
             </p>
           </div>
         </div>
 
         {/* Buttons */}
-        <div className="flex justify-center sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 z-20 relative">
+        <div className="flex sm:justify-center justify-end sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 z-20 relative">
           <button
             className="text-black/50 dark:text-white/50 cursor-pointer text-xs leading-[14px] font-semibold py-2 px-[15px] border border-[#9F8BCF]/25 rounded-[10px] bg-transparent w-[120px] sm:w-auto"
             onClick={() => setLearnMoreOpen(true)}
