@@ -159,12 +159,12 @@ export function KillSwitchToggle() {
     };
 
     return (
-        <div className="flex items-center gap-3 bg-secondary/30 hover:bg-secondary/50 transition-colors px-4 py-2 rounded-xl border border-border/50 shadow-sm">
+        <div className="flex items-center gap-2.5 bg-secondary/30 hover:bg-secondary/50 transition-colors px-4 py-2 rounded-xl border border-border/50 shadow-sm">
             <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <div className={`p-2 rounded-full transition-colors ${isActive ? 'bg-red-500/10 text-red-500' : 'bg-primary/10 text-primary'}`}>
-                            {isActive ? <ShieldAlert size={20} /> : <ShieldCheck size={20} />}
+                            {isActive ? <ShieldAlert className="md:size-5 size-3.5" /> : <ShieldCheck className="md:size-5 size-3.5" />}
                         </div>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="max-w-[250px] bg-popover text-popover-foreground border-border">

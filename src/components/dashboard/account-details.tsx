@@ -456,7 +456,7 @@ const AccountDetails = ({
           >
             <div className="flex flex-col md:flex-col xl:flex-row justify-between items-start">
               {/* Show these only on mobile Account Details*/}
-              <div className="flex md:hidden items-center gap-1 mb-3">
+              <div className="flex md:hidden items-center gap-1 justify-between w-full mb-3">
                 {[
                   accountType,
                   (accountDetails?.account_type_requested && String(accountDetails?.account_type_requested).toLowerCase() === 'standard')
@@ -492,7 +492,7 @@ const AccountDetails = ({
                   ))}
               </div>
               {/* Black Box */}
-              <div className="dark:bg-[#01040D] bg-[#f3f3f3] flex flex-col md:flex-row xl:w-auto p-6.25 rounded-[15px] gap-4 md:gap-16.75 items-start font-semibold w-full">
+              <div className="dark:bg-[#01040D] bg-[#f3f3f3] flex flex-col md:flex-row xl:w-auto p-6.25 rounded-[15px] gap-1.25 md:gap-16.75 items-start font-semibold w-full">
                 <div className="flex flex-col gap-1.25 w-full md:w-[211px]">
                   <div className="flex justify-between w-full items-center">
                     <p className="text-xs opacity-75">Actual Leverage</p>
@@ -546,7 +546,7 @@ const AccountDetails = ({
 
 
               {/* DropDown for mobile */}
-              <div className="xl:hidden flex items-center gap-2.5 pt-2">
+              <div className="xl:hidden flex items-center gap-2.5 justify-between w-full pt-2">
                 <AnimatePresence>
                   {expanded && !isDemoAccount && !archived && (
                     <motion.div
@@ -702,7 +702,7 @@ const Button = ({
 }) => {
   return (
     <button
-      className={`flex ${loading ? 'justify-center' : ''} rounded-[10px] items-center md:gap-1 py-2 px-2 ${ghost
+      className={`flex ${loading ? 'justify-center' : ''} rounded-[10px] items-center gap-1 py-2 px-2 ${ghost
         ? "border-[1.5px] border-[#9F8BCF]/25 text-black dark:text-white/75"
         : "bg-linear-to-tr to-[#9F8BCF] from-[#6242A5] text-white/75"
         } font-semibold text-sm leading-[14px]  ${disabled ? 'opacity-60 cursor-not-allowed min-w-[109px]' : 'cursor-pointer'}`}
