@@ -24,7 +24,7 @@ interface ActiveSessionsResponse {
 
 const getDeviceIcon = (device: string | null) => {
   if (!device) return <Monitor className="h-4 w-4" />;
-  
+
   const deviceLower = device.toLowerCase();
   if (deviceLower === 'mobile') {
     return <Smartphone className="h-4 w-4" />;
@@ -44,7 +44,7 @@ export default function ActiveDevices() {
       setLoading(true);
       setError(null);
       const response = (await userService.getActiveSessions()) as ActiveSessionsResponse;
-      
+
       if (response.success && response.data) {
         setSessions(response.data.sessions || []);
       } else {
@@ -94,31 +94,31 @@ export default function ActiveDevices() {
           className="border dark:border-[#1D1825] dark:bg-gradient-to-r from-[#1A1420] to-[#1E1429]"
         >
           <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex items-center gap-3 sm:flex-1">
                 <div className="rounded-full bg-gradient-to-r from-[#6242a5]/20 to-[#9f8bcf]/20 p-2 flex-shrink-0">
                   {getDeviceIcon(session.device)}
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium dark:text-white/75 text-gray-900">
                       {session.device || "Desktop"}
                     </span>
                     {index === 0 && (
                       <Badge
                         variant="secondary"
-                        className="text-xs bg-green-600/20 text-green-400 border-green-600/30"
+                        className="text-xs bg-green-600/20 text-green-400 border-green-600/30 whitespace-nowrap"
                       >
                         Current Device
                       </Badge>
                     )}
                   </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                  <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                     {session.browser || "Unknown Browser"}
                   </div>
                 </div>
               </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">
+              <div className="text-sm text-gray-500 dark:text-gray-400 pl-11 sm:pl-0 sm:text-right flex-shrink-0">
                 {format(new Date(session.createdAt), "MMM dd, yyyy HH:mm")}
               </div>
             </div>
