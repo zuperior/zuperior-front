@@ -166,7 +166,7 @@ export default function TradingPlatformsPage() {
   // Platform Card (reused)
   const PlatformCard = memo(({ item, index }: PlatformCardProps) => (
     <div className="flex flex-col gap-5">
-      <div className="relative w-full h-[280px] sm:h-[300px] md:h-[325px] rounded-[15px] shadow-md overflow-hidden flex items-center justify-center">
+      <div className="relative w-full aspect-[348/325] rounded-[15px] shadow-md overflow-hidden flex items-center justify-center">
         <div className="relative z-[2] w-full h-full p-px">
           {(index === 1 || index === 3) && <SpinningBorder />}
           <Image
@@ -176,7 +176,7 @@ export default function TradingPlatformsPage() {
             height={325}
             className="w-full h-full object-cover rounded-xl relative z-[2]"
             loading={index === 0 ? "eager" : "lazy"}
-            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             quality={85}
           />
         </div>
@@ -205,15 +205,15 @@ export default function TradingPlatformsPage() {
             </span>
           </div>
         ) : (
-          <div className="flex flex-col gap-2 w-full max-w-[100px]">
-            <div className="flex gap-2">
+          <div className="flex flex-col gap-2 w-full">
+            <div className="flex gap-2 flex-wrap">
               {item.links?.slice(0, 2).map((link, i) => (
                 <Link
                   key={`${item.name}-btn-${i}`}
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 rounded-[10px] text-center py-2 px-4 text-white dark:bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-xs leading-[14px] cursor-pointer [background:radial-gradient(ellipse_27%_80%_at_0%_0%,rgba(163,92,162,0.5),rgba(0,0,0,1))] hover:bg-transparent flex items-center justify-center gap-1"
+                  className="flex-1 min-w-[80px] rounded-[10px] text-center py-2 px-4 text-white dark:bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-xs leading-[14px] cursor-pointer [background:radial-gradient(ellipse_27%_80%_at_0%_0%,rgba(163,92,162,0.5),rgba(0,0,0,1))] hover:bg-transparent flex items-center justify-center gap-1"
                 >
                   {link.icon && Icons[link.icon as IconName]}
                   <span>{link.label}</span>
@@ -375,7 +375,7 @@ export default function TradingPlatformsPage() {
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsContent value="all" className="mt-0">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6">
                   {Description.map((item, index) => (
                     <PlatformCard key={item.name} item={item} index={index} />
                   ))}
@@ -383,7 +383,7 @@ export default function TradingPlatformsPage() {
               </TabsContent>
 
               <TabsContent value="metatraders" className="mt-0">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6">
                   {Description.filter((item) => item.category === "metatraders").map((item, index) => (
                     <PlatformCard key={item.name} item={item} index={index} />
                   ))}
@@ -391,7 +391,7 @@ export default function TradingPlatformsPage() {
               </TabsContent>
 
               <TabsContent value="zuperior" className="mt-0">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6">
                   {Description.filter((item) => item.category === "zuperior").map((item, index) => (
                     <PlatformCard key={item.name} item={item} index={index} />
                   ))}
