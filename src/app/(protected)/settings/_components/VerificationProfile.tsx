@@ -178,7 +178,7 @@ export default function VerificationProfile({
                     )}
                     {resolvedStatus === "unverified" && (
                       <Link href="/kyc" passHref>
-                        <Button className="lg:ml-auto md:ml-auto mx-auto  bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:opacity-90 font-semibold md:px-5 px-3 lg:px-6 py-2 rounded-[8px] shadow-md transition-all duration-200 ease-in-out mt-2 flex items-center gap-2">
+                        <Button className="ml-auto  bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:opacity-90 font-semibold md:px-5 px-3 lg:px-6 py-2 rounded-[8px] shadow-md transition-all duration-200 ease-in-out mt-2 flex items-center gap-2">
                           Go to KYC
                           <ArrowRight size={16} className="text-white" />
                         </Button>
@@ -256,7 +256,7 @@ export default function VerificationProfile({
                       )}
                     {resolvedStatus !== "verified" && (
                       <Link href="/kyc" passHref>
-                        <Button className="lg:ml-auto md:ml-auto mx-auto  bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:opacity-90 font-semibold lg:px-6 md:px-4 px-3 py-2 rounded-[8px] shadow-md transition-all duration-200 ease-in-out mt-2 flex items-center gap-2">
+                        <Button className="ml-auto bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:opacity-90 font-semibold lg:px-6 md:px-4 px-3 py-2 rounded-[8px] shadow-md transition-all duration-200 ease-in-out mt-2 flex items-center gap-2">
                           Go to KYC
                           <ArrowRight size={16} className="text-white" />
                         </Button>
