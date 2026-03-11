@@ -23,6 +23,13 @@ export const Pagination: React.FC<PaginationProps> = ({
   isLoading = false,
   clickedButton,
 }) => {
+  const baseButtonStyles = "relative inline-flex items-center border text-sm font-medium rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700";
+  const activePageStyles = "z-10 bg-blue-50 dark:bg-blue-900 border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-300";
+  const mobileButtonStyles = `${baseButtonStyles} px-3 py-2`;
+  const desktopNavButtonStyles = `${baseButtonStyles} px-2 py-2`;
+  const pageNumberStyles = `${baseButtonStyles} px-4 py-2`;
+  const ellipsisStyles = "relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-md";
+
   const startItem = (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
@@ -68,6 +75,7 @@ export const Pagination: React.FC<PaginationProps> = ({
           size="sm"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1 || isLoading}
+          className={mobileButtonStyles}
         >
           {isLoading && clickedButton === 'prev' && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
           Previous
@@ -77,6 +85,7 @@ export const Pagination: React.FC<PaginationProps> = ({
           size="sm"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages || isLoading}
+          className={mobileButtonStyles}
         >
           {isLoading && clickedButton === 'next' && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
           Next
@@ -99,7 +108,7 @@ export const Pagination: React.FC<PaginationProps> = ({
               size="sm"
               onClick={() => onPageChange(currentPage - 1)}
               disabled={currentPage === 1 || isLoading}
-              className="relative inline-flex items-center px-2 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+              className={desktopNavButtonStyles}
             >
               {isLoading && clickedButton === 'prev' ? <Loader2 className="h-5 w-5 animate-spin" /> : <ChevronLeft className="h-5 w-5" />}
             </Button>
@@ -107,7 +116,7 @@ export const Pagination: React.FC<PaginationProps> = ({
             {getVisiblePages().map((page, index) => (
               <React.Fragment key={index}>
                 {page === '...' ? (
-                  <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-md">
+                  <span className={ellipsisStyles}>
                     ...
                   </span>
                 ) : (
@@ -116,10 +125,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                     size="sm"
                     onClick={() => onPageChange(page as number)}
                     disabled={isLoading}
-                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md ${currentPage === page
-                      ? 'z-10 bg-blue-50 dark:bg-blue-900 border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-300'
-                      : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
-                      }`}
+                    className={`${pageNumberStyles} ${currentPage === page ? activePageStyles : ''}`}
                   >
                     {isLoading && clickedButton === page ? <Loader2 className="h-4 w-4 animate-spin" /> : page}
                   </Button>
@@ -132,7 +138,7 @@ export const Pagination: React.FC<PaginationProps> = ({
               size="sm"
               onClick={() => onPageChange(currentPage + 1)}
               disabled={currentPage === totalPages || isLoading}
-              className="relative inline-flex items-center px-2 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+              className={desktopNavButtonStyles}
             >
               {isLoading && clickedButton === 'next' ? <Loader2 className="h-5 w-5 animate-spin" /> : <ChevronRight className="h-5 w-5" />}
             </Button>
