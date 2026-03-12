@@ -4,7 +4,8 @@ import type React from "react";
 import type { JSX } from "react";
 import { useState } from "react";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import Image, { StaticImageData } from "next/image";
 
 import desktop from "@/assets/meta-trader5.png";
@@ -242,136 +243,31 @@ export default function TradingPlatformsPage() {
           </TextAnimate>
 
           {/* Tabs and Content */}
-          <div className="pt-7 space-y-4 px-4 md:px-6">
-            <div>
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList
-                  className="relative bg-[rgba(20,20,26,0.25)] border-0 rounded-[15px] p-1.5 inline-flex h-auto gap-2"
-                  style={{
-                    backgroundColor: "rgba(20, 20, 26, 0.25)",
-                    borderRadius: "15px",
+          <div className="pt-3 space-y-4 px-4 md:px-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <div className="flex items-center mt-3">
+                <ToggleGroup
+                  type="single"
+                  value={activeTab}
+                  onValueChange={(value) => {
+                    if (value && ["all", "metatraders", "zuperior"].includes(value)) {
+                      setActiveTab(value);
+                    }
                   }}
+                  className="p-2 relative rounded-[10px]"
                 >
-                  <TabsTrigger
-                    value="all"
-                    className="relative rounded-[10px] px-4 py-2 text-sm font-semibold data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#311B47] data-[state=active]:to-[#1C061C] data-[state=inactive]:bg-transparent data-[state=active]:text-white data-[state=inactive]:text-white/75 transition-colors overflow-hidden"
-                    style={{
-                      borderRadius: "10px",
-                      position: "relative",
-                    }}
-                  >
-                    {activeTab === "all" && (
-                      <div
-                        data-border="true"
-                        style={{
-                          "--border-bottom-width": "1px",
-                          "--border-color": "rgba(255, 255, 255, 0.75)",
-                          "--border-left-width": "1px",
-                          "--border-right-width": "1px",
-                          "--border-style": "solid",
-                          "--border-top-width": "1px",
-                          mask: "linear-gradient(100deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.25) 100%)",
-                          WebkitMask: "linear-gradient(100deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.25) 100%)",
-                          borderBottomWidth: "var(--border-bottom-width)",
-                          borderColor: "var(--border-color)",
-                          borderLeftWidth: "var(--border-left-width)",
-                          borderRightWidth: "var(--border-right-width)",
-                          borderStyle: "var(--border-style)",
-                          borderTopWidth: "var(--border-top-width)",
-                          borderRadius: "15px",
-                          opacity: 0.25,
-                          zIndex: 1,
-                          position: "absolute",
-                          inset: 0,
-                          overflow: "visible",
-                          flex: "none",
-                          pointerEvents: "none",
-                        } as React.CSSProperties}
-                      />
-                    )}
-                    <span className="relative z-10">All</span>
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="metatraders"
-                    className="relative rounded-[10px] px-4 py-2 text-sm font-semibold data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#311B47] data-[state=active]:to-[#1C061C] data-[state=inactive]:bg-transparent data-[state=active]:text-white data-[state=inactive]:text-white/75 transition-colors overflow-hidden"
-                    style={{
-                      borderRadius: "10px",
-                      position: "relative",
-                    }}
-                  >
-                    {activeTab === "metatraders" && (
-                      <div
-                        data-border="true"
-                        style={{
-                          "--border-bottom-width": "1px",
-                          "--border-color": "rgba(255, 255, 255, 0.75)",
-                          "--border-left-width": "1px",
-                          "--border-right-width": "1px",
-                          "--border-style": "solid",
-                          "--border-top-width": "1px",
-                          mask: "linear-gradient(100deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.25) 100%)",
-                          WebkitMask: "linear-gradient(100deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.25) 100%)",
-                          borderBottomWidth: "var(--border-bottom-width)",
-                          borderColor: "var(--border-color)",
-                          borderLeftWidth: "var(--border-left-width)",
-                          borderRightWidth: "var(--border-right-width)",
-                          borderStyle: "var(--border-style)",
-                          borderTopWidth: "var(--border-top-width)",
-                          borderRadius: "15px",
-                          opacity: 0.25,
-                          zIndex: 1,
-                          position: "absolute",
-                          inset: 0,
-                          overflow: "visible",
-                          flex: "none",
-                          pointerEvents: "none",
-                        } as React.CSSProperties}
-                      />
-                    )}
-                    <span className="relative z-10">MT5</span>
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="zuperior"
-                    className="relative rounded-[10px] px-4 py-2 text-sm font-semibold data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#311B47] data-[state=active]:to-[#1C061C] data-[state=inactive]:bg-transparent data-[state=active]:text-white data-[state=inactive]:text-white/75 transition-colors overflow-hidden"
-                    style={{
-                      borderRadius: "10px",
-                      position: "relative",
-                    }}
-                  >
-                    {activeTab === "zuperior" && (
-                      <div
-                        data-border="true"
-                        style={{
-                          "--border-bottom-width": "1px",
-                          "--border-color": "rgba(255, 255, 255, 0.75)",
-                          "--border-left-width": "1px",
-                          "--border-right-width": "1px",
-                          "--border-style": "solid",
-                          "--border-top-width": "1px",
-                          mask: "linear-gradient(100deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.25) 100%)",
-                          WebkitMask: "linear-gradient(100deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.25) 100%)",
-                          borderBottomWidth: "var(--border-bottom-width)",
-                          borderColor: "var(--border-color)",
-                          borderLeftWidth: "var(--border-left-width)",
-                          borderRightWidth: "var(--border-right-width)",
-                          borderStyle: "var(--border-style)",
-                          borderTopWidth: "var(--border-top-width)",
-                          borderRadius: "15px",
-                          opacity: 0.25,
-                          zIndex: 1,
-                          position: "absolute",
-                          inset: 0,
-                          overflow: "visible",
-                          flex: "none",
-                          pointerEvents: "none",
-                        } as React.CSSProperties}
-                      />
-                    )}
-                    <span className="relative z-10">Zuperior</span>
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
+                  <ToggleGroupItem value="all" className="z-10 cursor-pointer">
+                    All
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="metatraders" className="z-10 cursor-pointer">
+                    MT5
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="zuperior" className="z-10 cursor-pointer">
+                    Zuperior
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </div>
+            </Tabs>
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsContent value="all" className="mt-0">

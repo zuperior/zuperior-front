@@ -148,98 +148,98 @@ const Page = () => {
         </DialogContent>
       </Dialog>
 
-      <div className="flex flex-col items-center md:justify-center px-4">
+      <div className="flex flex-col items-center px-4 py-0 md:py-24">
         <div className="max-w-3xl w-full h-auto text-center">
-        <TextAnimate
-          as={"h1"}
-          className="lg:text-[34px] md:text-3xl text-2xl font-bold dark:text-white/75 text-black/75"
-        >
-          KYC Verification
-        </TextAnimate>
-        <TextAnimate as={"p"} className="text-black/50 dark:text-white/75 md:text-base text-sm lg:mt-2 mt-1">
-          Please complete your KYC verification by providing both Address Proof
-          and Identity Proof.
-        </TextAnimate>
+          <TextAnimate
+            as={"h1"}
+            className="lg:text-[34px] md:text-3xl text-2xl font-bold dark:text-white/75 text-black/75"
+          >
+            KYC Verification
+          </TextAnimate>
+          <TextAnimate as={"p"} className="text-black/50 dark:text-white/75 md:text-base text-sm lg:mt-2 mt-1">
+            Please complete your KYC verification by providing both Address Proof
+            and Identity Proof.
+          </TextAnimate>
 
           <div className="mt-10 grid gap-6 sm:grid-cols-2">
-          {/* Identity Proof */}
-          {identityVerified ? (
-            <div className="relative h-auto min-h-46.5 rounded-[15px] bg-white dark:bg-green-400/5 p-6 border border-green-500/40 dark:hover:bg-green-400/10 overflow-hidden transition-transform">
-              <div className="flex flex-col items-center gap-4">
-                <div className="w-16 h-16 flex items-center justify-center rounded-full bg-green-500/20 border border-green-500/40">
-                  <CheckIcon />
+            {/* Identity Proof */}
+            {identityVerified ? (
+              <div className="relative h-auto min-h-46.5 rounded-[15px] bg-white dark:bg-green-400/5 p-6 border border-green-500/40 dark:hover:bg-green-400/10 overflow-hidden transition-transform">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-16 h-16 flex items-center justify-center rounded-full bg-green-500/20 border border-green-500/40">
+                    <CheckIcon />
+                  </div>
+                  <h2 className="text-xl font-semibold text-black dark:text-white">
+                    Identity Verified
+                  </h2>
+                  <p className="mt-2 text-black/80 dark:text-white/80 text-sm text-center">
+                    Your identity verification has been successfully completed.
+                    {/*  You can now access all platform features. */}
+                  </p>
                 </div>
-                <h2 className="text-xl font-semibold text-black dark:text-white">
-                  Identity Verified
-                </h2>
-                <p className="mt-2 text-black/80 dark:text-white/80 text-sm text-center">
-                  Your identity verification has been successfully completed.
-                  {/*  You can now access all platform features. */}
-                </p>
               </div>
-            </div>
-          ) : (
-            <Link
-              className="cursor-pointer relative h-auto rounded-[15px] bg-white dark:bg-[#13061d] p-6 border hover:bg-linear-to-r from-white to-[#f4e7f6] dark:from-[#330F33] dark:to-[#1C061C] overflow-hidden transition-transform"
-              href="/kyc/identity-proof"
-            >
-              <div className="flex flex-col items-center gap-4">
-                <span className="text-5xl">🪪</span>
-                <h2 className="text-xl font-semibold text-black dark:text-white">
-                  Identity Proof
-                </h2>
-                <p className="mt-2 text-black/80 dark:text-white/80 text-sm">
-                  Upload your passport, national ID card, or driver&apos;s
-                  license.
-                </p>
-              </div>
-            </Link>
-          )}
+            ) : (
+              <Link
+                className="cursor-pointer relative h-auto rounded-[15px] bg-white dark:bg-[#13061d] p-6 border hover:bg-linear-to-r from-white to-[#f4e7f6] dark:from-[#330F33] dark:to-[#1C061C] overflow-hidden transition-transform"
+                href="/kyc/identity-proof"
+              >
+                <div className="flex flex-col items-center gap-4">
+                  <span className="text-5xl">🪪</span>
+                  <h2 className="text-xl font-semibold text-black dark:text-white">
+                    Identity Proof
+                  </h2>
+                  <p className="mt-2 text-black/80 dark:text-white/80 text-sm">
+                    Upload your passport, national ID card, or driver&apos;s
+                    license.
+                  </p>
+                </div>
+              </Link>
+            )}
 
-          {/* Address Proof */}
-          {addressVerified ? (
-            <div className="relative h-auto min-h-46.5  rounded-[15px] bg-white dark:bg-green-400/5 p-6 border border-green-500/40 dark:hover:bg-green-400/10 overflow-hidden transition-transform">
-              <div className="flex flex-col items-center gap-4">
-                <div className="w-16 h-16 flex items-center justify-center rounded-full bg-green-500/20 border border-green-500/40">
-                  <CheckIcon />
-                </div>
-                <h2 className="text-xl font-semibold text-black dark:text-white">
-                  Address Verified
-                </h2>
-                <p className="mt-2 text-black/80 dark:text-white/80 text-sm text-center">
-                  Your Address verification has been successfully completed.
-                </p>
-              </div>
-            </div>
-          ) : !identityVerified ? (
-            // 🔒 Documents not verified → Locked card
-            <div className="relative h-auto min-h-46.5  rounded-[15px] bg-gray-100 dark:bg-[#0d0414] p-6 border border-gray-300 dark:border-[#1D1825] overflow-hidden opacity-60 cursor-not-allowed">
-              <div className="absolute inset-0 flex items-center justify-center z-10">
-                <div className="flex flex-col items-center text-gray-700 dark:text-gray-300">
-                  <Lock className="w-8 h-8 mb-2" />
-                  <p className="text-sm">Document Verification Required</p>
+            {/* Address Proof */}
+            {addressVerified ? (
+              <div className="relative h-auto min-h-46.5  rounded-[15px] bg-white dark:bg-green-400/5 p-6 border border-green-500/40 dark:hover:bg-green-400/10 overflow-hidden transition-transform">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-16 h-16 flex items-center justify-center rounded-full bg-green-500/20 border border-green-500/40">
+                    <CheckIcon />
+                  </div>
+                  <h2 className="text-xl font-semibold text-black dark:text-white">
+                    Address Verified
+                  </h2>
+                  <p className="mt-2 text-black/80 dark:text-white/80 text-sm text-center">
+                    Your Address verification has been successfully completed.
+                  </p>
                 </div>
               </div>
-            </div>
-          ) : (
-            // 📍 Documents verified but address not → Upload card
-            <Link
-              className="cursor-pointer relative h-auto rounded-[15px] bg-white dark:bg-[#13061d] p-6 border hover:bg-linear-to-r from-white to-[#f4e7f6] dark:from-[#330F33] dark:to-[#1C061C] overflow-hidden transition-transform"
-              href="/kyc/address-proof"
-            >
-              <div style={cardMaskStyle} className="border border-white/50" />
-              <div className="flex flex-col items-center gap-4">
-                <span className="text-5xl">📍</span>
-                <h2 className="text-xl font-semibold text-black dark:text-white">
-                  Address Proof
-                </h2>
-                <p className="mt-2 text-black/80 dark:text-white/80 text-sm">
-                  Upload a utility bill, bank statement, or other
-                  government-issued proof of address.
-                </p>
+            ) : !identityVerified ? (
+              // 🔒 Documents not verified → Locked card
+              <div className="relative h-auto min-h-46.5  rounded-[15px] bg-gray-100 dark:bg-[#0d0414] p-6 border border-gray-300 dark:border-[#1D1825] overflow-hidden opacity-60 cursor-not-allowed">
+                <div className="absolute inset-0 flex items-center justify-center z-10">
+                  <div className="flex flex-col items-center text-gray-700 dark:text-gray-300">
+                    <Lock className="w-8 h-8 mb-2" />
+                    <p className="text-sm">Document Verification Required</p>
+                  </div>
+                </div>
               </div>
-            </Link>
-          )}
+            ) : (
+              // 📍 Documents verified but address not → Upload card
+              <Link
+                className="cursor-pointer relative h-auto rounded-[15px] bg-white dark:bg-[#13061d] p-6 border hover:bg-linear-to-r from-white to-[#f4e7f6] dark:from-[#330F33] dark:to-[#1C061C] overflow-hidden transition-transform"
+                href="/kyc/address-proof"
+              >
+                <div style={cardMaskStyle} className="border border-white/50" />
+                <div className="flex flex-col items-center gap-4">
+                  <span className="text-5xl">📍</span>
+                  <h2 className="text-xl font-semibold text-black dark:text-white">
+                    Address Proof
+                  </h2>
+                  <p className="mt-2 text-black/80 dark:text-white/80 text-sm">
+                    Upload a utility bill, bank statement, or other
+                    government-issued proof of address.
+                  </p>
+                </div>
+              </Link>
+            )}
           </div>
         </div>
       </div>

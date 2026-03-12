@@ -182,7 +182,7 @@ function TechnicalAnalysis(): React.ReactElement {
 
       {isLoading && (
         <div className="absolute inset-0 z-[30] flex items-center justify-center bg-background">
-          <CardLoader message="Loading chart..." />
+          <CardLoader message="" />
         </div>
       )}
     </>
