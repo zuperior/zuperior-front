@@ -187,10 +187,10 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
           <KillSwitchToggle />
           <Button
             onClick={onOpenNewAccount}
-            className="relative z-10 flex items-center gap-2.5 bg-linear-to-r from-[#331032] to-black text-white py-2.5 px-4 rounded-[15px] md-text-sm text-xs h-auto"
+            className="relative z-10 flex items-center gap-1 md:gap-2.5 bg-linear-to-r from-[#331032] to-black text-white py-2 px-2.5 md:py-2.5 md:px-4 rounded-[15px] text-[10px] md-text-sm md:text-xs h-auto whitespace-nowrap"
           >
             <FloatingDots dotCount={25} />
-            Open New Account{" "}
+            <span className="text-[10px] md:text-xs">Open New Account</span>
             <div className="bg-[#a35ca2] rounded-full md:size-8 size-6 flex items-center justify-center shrink-0 z-10">
               <Plus className="md:w-3 md:h-3 w-2 h-2" />
             </div>
