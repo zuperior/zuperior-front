@@ -237,7 +237,7 @@ const AccountDetails = ({
             // Persist locally so terminal launcher and UI can read immediately
             localStorage.setItem("defaultMt5Account", String(mtLogin));
             sessionStorage.setItem("defaultMt5Account", String(mtLogin));
-          } catch (_e) {}
+          } catch (_e) { }
         } else {
           console.warn("⚠️ Failed to set default account:", data.message);
         }
@@ -261,7 +261,7 @@ const AccountDetails = ({
   return (
     <div
       ref={rootRef}
-      className="rounded-[15px] p-[15px] pl-2 bg-[#fbfafd] dark:bg-gradient-to-r dark:from-[#110F17] dark:to-[#1E1429] mb-1.5 relative flex flex-col gap-5"
+      className="rounded-[15px] p-[15px] md:pl-2 bg-[#fbfafd] dark:bg-gradient-to-r dark:from-[#110F17] dark:to-[#1E1429] mb-1.5 relative flex flex-col gap-5"
     >
       <div
         style={maskStyle}
@@ -284,7 +284,7 @@ const AccountDetails = ({
           {[
             accountType,
             accountDetails?.account_type_requested &&
-            String(accountDetails?.account_type_requested).toLowerCase() ===
+              String(accountDetails?.account_type_requested).toLowerCase() ===
               "standard"
               ? "Startup"
               : accountDetails?.account_type_requested, // Package display mapping
@@ -462,9 +462,8 @@ const AccountDetails = ({
           {/* Toggle chevron (only desktop) */}
           <button
             onClick={() => setExpanded(!expanded)}
-            className={`ml-1 flex dark:text-white text-black cursor-pointer transition-all duration-200 ease-in-out ${
-              expanded ? "rotate-180" : ""
-            }`}
+            className={`ml-1 flex dark:text-white text-black cursor-pointer transition-all duration-200 ease-in-out ${expanded ? "rotate-180" : ""
+              }`}
           >
             <ChevronDown size={20} />
           </button>
@@ -487,9 +486,9 @@ const AccountDetails = ({
                 {[
                   accountType,
                   accountDetails?.account_type_requested &&
-                  String(
-                    accountDetails?.account_type_requested,
-                  ).toLowerCase() === "standard"
+                    String(
+                      accountDetails?.account_type_requested,
+                    ).toLowerCase() === "standard"
                     ? "Startup"
                     : accountDetails?.account_type_requested, // Package display mapping
                   platformName,
@@ -759,11 +758,10 @@ const Button = ({
 }) => {
   return (
     <button
-      className={`flex ${loading ? "justify-center" : ""} rounded-[10px] items-center gap-1 py-2 px-2 ${
-        ghost
-          ? "border-[1.5px] border-[#9F8BCF]/25 text-black dark:text-white/75"
-          : "bg-linear-to-tr to-[#9F8BCF] from-[#6242A5] text-white/75"
-      } font-semibold text-sm leading-[14px]  ${disabled ? "opacity-60 cursor-not-allowed min-w-[109px]" : "cursor-pointer"}`}
+      className={`flex ${loading ? "justify-center" : ""} rounded-[10px] items-center gap-1 py-2 px-2 ${ghost
+        ? "border-[1.5px] border-[#9F8BCF]/25 text-black dark:text-white/75"
+        : "bg-linear-to-tr to-[#9F8BCF] from-[#6242A5] text-white/75"
+        } font-semibold text-sm leading-[14px]  ${disabled ? "opacity-60 cursor-not-allowed min-w-[109px]" : "cursor-pointer"}`}
       onClick={onClick}
       disabled={disabled}
     >
