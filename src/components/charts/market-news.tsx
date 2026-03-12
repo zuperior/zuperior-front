@@ -249,7 +249,7 @@ function MarketNews({ language = 'en' }: MarketNewsProps): React.ReactElement {
 
       {isLoading && (
         <div className="absolute inset-0 z-[30] flex items-center justify-center bg-background">
-          <CardLoader message="Loading market news..." />
+          <CardLoader message="" />
         </div>
       )}
     </>

@@ -660,7 +660,7 @@ export default function DepositPage() {
 
   // Show loading state while fetching crypto data and payment methods
   if (isLoadingCrypto || isLoadingPaymentMethods) {
-    return <CardLoader message="Loading deposit options..." />;
+    return <CardLoader message="" />;
   }
 
   // Helper function to format limits from min/max values

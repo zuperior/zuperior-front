@@ -64,7 +64,7 @@ export default function TicketList({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <CardLoader message="Loading your tickets..." />
+        <CardLoader message="" />
       </div>
     );
   }
@@ -132,8 +132,8 @@ export default function TicketList({
                   <span>{format(parseISO(ticket.created_at), "MMM dd, yyyy")}</span>
                 </div>
                 {ticket.account_number && (
-                  <Badge 
-                    variant="secondary" 
+                  <Badge
+                    variant="secondary"
                     className="text-xs bg-gradient-to-r from-[#6242a5]/20 to-[#9f8bcf]/20 border border-[#6242a5]/30 text-[#6242a5] dark:text-[#9f8bcf] font-medium"
                   >
                     {ticket.account_number}
