@@ -63,11 +63,10 @@ export const TransactionsToolbar: React.FC<Props> = ({
               const account = accounts.find(a => a.id === selectedAccountId);
               return account ? (
                 <span className="flex items-center gap-2">
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
-                    account.isWallet 
-                      ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' 
-                      : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-                  }`}>
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${account.isWallet
+                    ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300'
+                    : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                    }`}>
                     {account.type}
                   </span>
                   <span>{selectedAccountId}</span>
@@ -90,27 +89,26 @@ export const TransactionsToolbar: React.FC<Props> = ({
             </div>
           ) : (
             accounts.map((account, index) => (
-                <DropdownMenuItem
-                  key={`${account.id}-${index}`}
-                  className="cursor-pointer px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 transition-colors"
-                  onClick={() => {
-                    setDateRange({ from: undefined, to: undefined });
-                    setSelectedAccountId(account.id);
-                    getAccountTransactions(account.id);
-                  }}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2 py-[2px] rounded-[5px] font-semibold text-[10px] ${
-                      account.isWallet 
-                        ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' 
-                        : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+              <DropdownMenuItem
+                key={`${account.id}-${index}`}
+                className="cursor-pointer px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 transition-colors"
+                onClick={() => {
+                  setDateRange({ from: undefined, to: undefined });
+                  setSelectedAccountId(account.id);
+                  getAccountTransactions(account.id);
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className={`px-2 py-[2px] rounded-[5px] font-semibold text-[10px] ${account.isWallet
+                    ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300'
+                    : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
                     }`}>
-                      {account.type}
-                    </span>
-                    <span>{account.id}</span>
-                  </div>
-                </DropdownMenuItem>
-              ))
+                    {account.type}
+                  </span>
+                  <span>{account.id}</span>
+                </div>
+              </DropdownMenuItem>
+            ))
           )}
         </div>
       </DropdownMenuContent>
@@ -170,11 +168,12 @@ export const TransactionsToolbar: React.FC<Props> = ({
 
           {/* Popover Content */}
           <PopoverContent
-            align="end"
+            align="center"
             side="bottom"
-            className="w-auto p-0 z-[9999]"
+            className="w-auto p-0 z-9999"
             sideOffset={8}
-            alignOffset={-20}
+            alignOffset={0}
+            style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 'auto' } as React.CSSProperties}
           >
             <div className="p-4">
               <CalendarPicker
