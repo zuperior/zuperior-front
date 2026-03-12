@@ -32,11 +32,15 @@ import TransferFundsDialog from "../withdraw/TransferFundsDialog";
 import { TpAccountSnapshot } from "@/types/user-details";
 import { AccountInfoDialog } from "../AccountInfoDialog";
 import { useDispatch } from "react-redux";
-import { refreshMt5AccountProfile, fetchAccountDetailsFromMT5, fetchUserAccountsFromDb } from "@/store/slices/mt5AccountSlice";
+// import {
+//   refreshMt5AccountProfile,
+//   fetchAccountDetailsFromMT5,
+//   fetchUserAccountsFromDb,
+// } from "@/store/slices/mt5AccountSlice";
 import { TopUpDialog } from "./topUp-dialogBox";
 import { ArchiveAccountDialog } from "./archiveaccount-dialogBox";
 import { UnarchiveAccountDialog } from "./unarchiveaccount-dialogBox";
-import { mt5Service } from "@/services/api.service";
+// import { mt5Service } from "@/services/api.service";
 import { toast } from "sonner";
 
 const AccountDetails = ({
@@ -96,14 +100,20 @@ const AccountDetails = ({
   // Calculate P/L: Use closed_pnl (profit from API) if available, otherwise calculate from Equity - Balance
   // CRITICAL: closed_pnl comes from the MT5 API Profit field and should be used directly for accuracy
   let pnl = 0;
-  if (accountDetails.closed_pnl !== undefined && accountDetails.closed_pnl !== null && accountDetails.closed_pnl !== '') {
+  if (
+    accountDetails.closed_pnl !== undefined &&
+    accountDetails.closed_pnl !== null &&
+    accountDetails.closed_pnl !== ""
+  ) {
     const parsedPnl = parseFloat(accountDetails.closed_pnl);
     if (!isNaN(parsedPnl)) {
       pnl = parsedPnl;
     } else {
       // If parsing failed, fall back to calculation
       pnl = eq - bal;
-      console.warn(`[AccountDetails] ⚠️ Account ${accountId} - Failed to parse closed_pnl "${accountDetails.closed_pnl}", using calculated: ${pnl}`);
+      console.warn(
+        `[AccountDetails] ⚠️ Account ${accountId} - Failed to parse closed_pnl "${accountDetails.closed_pnl}", using calculated: ${pnl}`,
+      );
     }
   } else {
     // Fallback: Calculate P/L as Equity - Balance
@@ -111,7 +121,7 @@ const AccountDetails = ({
   }
 
   // Ensure relationships: Equity = Balance + P/L
-  const equity = eq || (bal + pnl);
+  const equity = eq || bal + pnl;
 
   // Available for Withdrawal = Equity (per user requirement)
   const availableForWithdrawal = equity;
@@ -161,89 +171,98 @@ const AccountDetails = ({
   const router = useRouter();
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
   // Ensure numbers align vertically across rows (tabular figures)
-  const numericStyle: React.CSSProperties = { fontVariantNumeric: 'tabular-nums' };
+  const numericStyle: React.CSSProperties = {
+    fontVariantNumeric: "tabular-nums",
+  };
 
   // Determine if account is Demo
-  const isDemoAccount = accountType?.toLowerCase() === 'demo' || accountDetails?.account_type_requested?.toLowerCase() === 'demo';
+  const isDemoAccount =
+    accountType?.toLowerCase() === "demo" ||
+    accountDetails?.account_type_requested?.toLowerCase() === "demo";
 
   // Observe visibility of this account row
   useEffect(() => {
     if (!rootRef.current) return;
     const el = rootRef.current;
-    const observer = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        inViewRef.current = entry.isIntersecting;
-      }
-    }, { threshold: 0 });
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          inViewRef.current = entry.isIntersecting;
+        }
+      },
+      { threshold: 0 },
+    );
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
-
-
 
   // Handle Trade Now click - open terminal directly without dialog
   const handleTradeNowClick = useCallback(async () => {
     setTradeNowLoading(true);
 
     try {
-      const token = localStorage.getItem('userToken');
-      const clientId = localStorage.getItem('clientId');
+      const token = localStorage.getItem("userToken");
+      const clientId = localStorage.getItem("clientId");
       const mtLogin = String(accountDetails?.acc || "");
 
       if (!token || !clientId) {
-        console.error('No authentication credentials found');
-        toast.error('Please log in again');
+        console.error("No authentication credentials found");
+        toast.error("Please log in again");
         setTradeNowLoading(false);
         return;
       }
 
       if (!mtLogin) {
-        console.error('No MT5 login found');
-        toast.error('Account information not available');
+        console.error("No MT5 login found");
+        toast.error("Account information not available");
         setTradeNowLoading(false);
         return;
       }
 
       // Set this account as default before opening terminal
       try {
-        const response = await fetch('/api/mt5/set-default-account', {
-          method: 'POST',
+        const response = await fetch("/api/mt5/set-default-account", {
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({ accountId: mtLogin }),
         });
 
         const data = await response.json();
         if (data.success) {
-          console.log('✅ Default MT5 account set successfully');
+          console.log("✅ Default MT5 account set successfully");
           try {
             // Persist locally so terminal launcher and UI can read immediately
-            localStorage.setItem('defaultMt5Account', String(mtLogin));
-            sessionStorage.setItem('defaultMt5Account', String(mtLogin));
-          } catch (_e) { }
+            localStorage.setItem("defaultMt5Account", String(mtLogin));
+            sessionStorage.setItem("defaultMt5Account", String(mtLogin));
+          } catch (_e) {}
         } else {
-          console.warn('⚠️ Failed to set default account:', data.message);
+          console.warn("⚠️ Failed to set default account:", data.message);
         }
       } catch (error) {
-        console.error('❌ Error setting default account:', error);
+        console.error("❌ Error setting default account:", error);
         // Don't block opening terminal if this fails
       }
 
       // Get terminal URL from environment variable
-      const terminalBaseUrl = process.env.NEXT_PUBLIC_TERMINAL_URL || 'https://trade.zuperior.com';
+      const terminalBaseUrl =
+        process.env.NEXT_PUBLIC_TERMINAL_URL || "https://trade.zuperior.com";
       const terminalUrl = `${terminalBaseUrl}/terminal?token=${encodeURIComponent(token)}&clientId=${encodeURIComponent(clientId)}&autoLogin=true&accountId=${encodeURIComponent(mtLogin)}`;
 
       // Open in new tab
-      window.open(terminalUrl, '_blank', 'noopener,noreferrer');
+      window.open(terminalUrl, "_blank", "noopener,noreferrer");
     } finally {
       setTradeNowLoading(false);
     }
   }, [accountDetails?.acc]);
 
   return (
-    <div ref={rootRef} className="rounded-[15px] p-[15px] pl-2 bg-[#fbfafd] dark:bg-gradient-to-r dark:from-[#110F17] dark:to-[#1E1429] mb-1.5 relative flex flex-col gap-5">
+    <div
+      ref={rootRef}
+      className="rounded-[15px] p-[15px] pl-2 bg-[#fbfafd] dark:bg-gradient-to-r dark:from-[#110F17] dark:to-[#1E1429] mb-1.5 relative flex flex-col gap-5"
+    >
       <div
         style={maskStyle}
         className="border-2 border-black/50 dark:border-white/50 pointer-events-none"
@@ -252,7 +271,10 @@ const AccountDetails = ({
       <div className="grid grid-cols-[auto_1fr_auto] items-center w-full gap-4 md:gap-5">
         {/* Column 1: Balance (fixed character width for alignment) */}
         <div className="flex items-center gap-2.5 md:w-[18ch] xl:w-[20ch] shrink-0">
-          <h3 className={`whitespace-nowrap text-[28px] font-bold tracking-tighter leading-8`} style={{ fontVariantNumeric: 'tabular-nums' }}>
+          <h3
+            className={`whitespace-nowrap text-[28px] font-bold tracking-tighter leading-8`}
+            style={{ fontVariantNumeric: "tabular-nums" }}
+          >
             {headerBalance}
           </h3>
         </div>
@@ -261,8 +283,10 @@ const AccountDetails = ({
         <div className="hidden md:flex flex-wrap items-center gap-1.5 pl-1">
           {[
             accountType,
-            (accountDetails?.account_type_requested && String(accountDetails?.account_type_requested).toLowerCase() === 'standard')
-              ? 'Startup'
+            accountDetails?.account_type_requested &&
+            String(accountDetails?.account_type_requested).toLowerCase() ===
+              "standard"
+              ? "Startup"
               : accountDetails?.account_type_requested, // Package display mapping
             platformName,
             accountDetails?.tp_account_scf.cf_1479, // Name on Account from database
@@ -296,7 +320,7 @@ const AccountDetails = ({
         {/* Column 3: Actions (right aligned, fixed width) */}
         <div className="flex items-center justify-end gap-1.5 shrink-0">
           {/* Always visible (both mobile + desktop) */}
-          {!archived &&
+          {!archived && (
             <Button
               imageSrc={Candle}
               text="Trade Now"
@@ -304,14 +328,14 @@ const AccountDetails = ({
               loading={tradeNowLoading}
               disabled={tradeNowLoading}
             />
-          }
-          {archived &&
+          )}
+          {archived && (
             <Button
               imageSrc={arrowTopLeft}
               text="Restore Account"
               onClick={handleUnarchive}
             />
-          }
+          )}
 
           {/* Show these on xl */}
           <div className="hidden xl:flex items-center gap-2.5">
@@ -366,7 +390,7 @@ const AccountDetails = ({
               )}
             </AnimatePresence>
 
-            {!archived &&
+            {!archived && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Image
@@ -398,14 +422,16 @@ const AccountDetails = ({
                   >
                     Account Information
                   </DropdownMenuItem>
-                  {!isDemoAccount &&
+                  {!isDemoAccount && (
                     <>
                       <div className="w-full h-px bg-black/5 dark:bg-white/5" />
-                      <DropdownMenuItem onClick={() => setTransferDialogOpen(true)} >
+                      <DropdownMenuItem
+                        onClick={() => setTransferDialogOpen(true)}
+                      >
                         Transfer funds
                       </DropdownMenuItem>
                     </>
-                  }
+                  )}
 
                   {!archived && (
                     <>
@@ -430,14 +456,15 @@ const AccountDetails = ({
                 )} */}
                 </DropdownMenuContent>
               </DropdownMenu>
-            }
+            )}
           </div>
 
           {/* Toggle chevron (only desktop) */}
           <button
             onClick={() => setExpanded(!expanded)}
-            className={`ml-1 flex dark:text-white text-black cursor-pointer transition-all duration-200 ease-in-out ${expanded ? "rotate-180" : ""
-              }`}
+            className={`ml-1 flex dark:text-white text-black cursor-pointer transition-all duration-200 ease-in-out ${
+              expanded ? "rotate-180" : ""
+            }`}
           >
             <ChevronDown size={20} />
           </button>
@@ -456,11 +483,14 @@ const AccountDetails = ({
           >
             <div className="flex flex-col md:flex-col xl:flex-row justify-between items-start">
               {/* Show these only on mobile Account Details*/}
-              <div className="flex md:hidden items-center gap-1 justify-between w-full mb-3">
+              <div className="flex md:hidden items-center gap-x-1 gap-y-2 flex-wrap w-full mb-3">
                 {[
                   accountType,
-                  (accountDetails?.account_type_requested && String(accountDetails?.account_type_requested).toLowerCase() === 'standard')
-                    ? 'Startup'
+                  accountDetails?.account_type_requested &&
+                  String(
+                    accountDetails?.account_type_requested,
+                  ).toLowerCase() === "standard"
+                    ? "Startup"
                     : accountDetails?.account_type_requested, // Package display mapping
                   platformName,
                   accountDetails?.tp_account_scf.cf_1479, // Name on Account from database
@@ -474,7 +504,7 @@ const AccountDetails = ({
                   })
                   .map((text, index, arr) => (
                     <div
-                      className="flex bg-[#9F8ACF]/15 p-[4px] rounded-[5px] font-semibold text-black/75 dark:text-white/75 tracking-tighter text-[12.5px] md:text-[13px] leading-[1.1em]"
+                      className="flex bg-[#9F8ACF]/15 p-1 rounded-[5px] font-semibold text-black/75 dark:text-white/75 tracking-tighter text-[12.5px] md:text-[13px] leading-[1.1em]"
                       key={index}
                     >
                       {index === arr.length - 1 ? (
@@ -496,30 +526,55 @@ const AccountDetails = ({
                 <div className="flex flex-col gap-1.25 w-full md:w-[211px]">
                   <div className="flex justify-between w-full items-center">
                     <p className="text-xs opacity-75">Actual Leverage</p>
-                    <div className="text-sm w-24 text-right" style={numericStyle}>{leverage}</div>
+                    <div
+                      className="text-sm w-24 text-right"
+                      style={numericStyle}
+                    >
+                      {leverage}
+                    </div>
                   </div>
                   <div className="flex justify-between w-full items-center">
                     <p className="text-xs opacity-75">Free Margin</p>
-                    <div className="text-sm w-24 text-right" style={numericStyle}>{freeMargin}</div>
+                    <div
+                      className="text-sm w-24 text-right"
+                      style={numericStyle}
+                    >
+                      {freeMargin}
+                    </div>
                   </div>
                   <div className="flex justify-between w-full items-center">
                     <p className="text-xs opacity-75">Equity</p>
-                    <div className="text-sm w-24 text-right" style={numericStyle}>{equityFormatted}</div>
+                    <div
+                      className="text-sm w-24 text-right"
+                      style={numericStyle}
+                    >
+                      {equityFormatted}
+                    </div>
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-1.25 w-full md:w-[211px]">
-                  {!isDemoAccount && !archived && 
-                  <div className="flex justify-between w-full items-center">
-                    <p className="text-xs opacity-75">
-                      Available for Withdrawal
-                    </p>
-                    <div className="text-sm w-24 text-right" style={numericStyle}>{availableForWithdrawalFormatted}</div>
-                  </div>
-                  }
+                  {!isDemoAccount && !archived && (
+                    <div className="flex justify-between w-full items-center">
+                      <p className="text-xs opacity-75">
+                        Available for Withdrawal
+                      </p>
+                      <div
+                        className="text-sm w-24 text-right"
+                        style={numericStyle}
+                      >
+                        {availableForWithdrawalFormatted}
+                      </div>
+                    </div>
+                  )}
                   <div className="flex justify-between w-full items-center">
                     <p className="text-xs opacity-75">Credit</p>
-                    <div className="text-sm w-24 text-right" style={numericStyle}>{credit}</div>
+                    <div
+                      className="text-sm w-24 text-right"
+                      style={numericStyle}
+                    >
+                      {credit}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -544,7 +599,6 @@ const AccountDetails = ({
                 </div>
               </div>
 
-
               {/* DropDown for mobile */}
               <div className="xl:hidden flex items-center gap-2.5 justify-between w-full pt-2">
                 <AnimatePresence>
@@ -558,7 +612,9 @@ const AccountDetails = ({
                     >
                       <Button
                         ghost
-                        imageSrc={theme === "dark" ? arrowDown : arrowDepositBlack}
+                        imageSrc={
+                          theme === "dark" ? arrowDown : arrowDepositBlack
+                        }
                         text="Deposit"
                         onClick={() => router.push("/deposit")}
                       />
@@ -590,7 +646,9 @@ const AccountDetails = ({
                     >
                       <Button
                         ghost
-                        imageSrc={theme === "dark" ? arrowDown : arrowDepositBlack}
+                        imageSrc={
+                          theme === "dark" ? arrowDown : arrowDepositBlack
+                        }
                         text="Top Up"
                         onClick={() => setTopUpDialogOpen(true)}
                       />
@@ -680,7 +738,6 @@ const AccountDetails = ({
         internalId={accountInternalId}
         accountType={accountType}
       />
-
     </div>
   );
 };
@@ -702,10 +759,11 @@ const Button = ({
 }) => {
   return (
     <button
-      className={`flex ${loading ? 'justify-center' : ''} rounded-[10px] items-center gap-1 py-2 px-2 ${ghost
-        ? "border-[1.5px] border-[#9F8BCF]/25 text-black dark:text-white/75"
-        : "bg-linear-to-tr to-[#9F8BCF] from-[#6242A5] text-white/75"
-        } font-semibold text-sm leading-[14px]  ${disabled ? 'opacity-60 cursor-not-allowed min-w-[109px]' : 'cursor-pointer'}`}
+      className={`flex ${loading ? "justify-center" : ""} rounded-[10px] items-center gap-1 py-2 px-2 ${
+        ghost
+          ? "border-[1.5px] border-[#9F8BCF]/25 text-black dark:text-white/75"
+          : "bg-linear-to-tr to-[#9F8BCF] from-[#6242A5] text-white/75"
+      } font-semibold text-sm leading-[14px]  ${disabled ? "opacity-60 cursor-not-allowed min-w-[109px]" : "cursor-pointer"}`}
       onClick={onClick}
       disabled={disabled}
     >
