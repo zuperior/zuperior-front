@@ -74,13 +74,12 @@ function ToggleGroupItem({
         "relative overflow-hidden transition-all duration-200",
         "bg-transparent", // always transparent base
         // State-specific styling - no white backgrounds
-        "data-[state=off]:bg-transparent data-[state=off]:text-black/50 data-[state=off]:dark:text-white/75",
-        "data-[state=on]:text-white", // active text only
+        "data-[state=off]:bg-transparent data-[state=off]:text-black/45 data-[state=off]:dark:bg-transparent data-[state=off]:dark:text-white/75",
+        "data-[state=on]:bg-[#9f8bcf]/15 data-[state=on]:text-black dark:data-[state=on]:bg-transparent dark:data-[state=on]:text-white", // active text only
         // Use pseudo-element for gradient background to avoid flash
         "before:absolute before:inset-0 before:rounded-[10px]",
         "before:bg-transparent before:transition-all before:duration-200 before:-z-10",
         "data-[state=on]:dark:before:bg-[linear-gradient(200deg,_#311B47_-20%,_#141118_110%)]",
-        "data-[state=on]:before:bg-[linear-gradient(to_right,#141118,#61388A)]",
         className
       )}
       {...props}
