@@ -27,6 +27,7 @@ export default function SupportHub() {
 
   // Use full user name from Redux state (check both name and accountname for compatibility)
   const userName = (userData as any)?.name || userData?.accountname || "User";
+const [ticketCount, setTicketCount] = useState(0);
 
   const [loading, setLoading] = useState(false);
   const [openTicketMode, setOpenTicketMode] = useState(false);
@@ -159,10 +160,10 @@ export default function SupportHub() {
 
         {/* Header */}
         <div className="relative z-10">
-          <h3 className="mb-4 text-xl sm:text-2xl font-semibold dark:text-white/75">
+          <h3 className="mb-3 text-xl sm:text-2xl font-semibold dark:text-white/75">
             Hello {userName}, how can we help you?
           </h3>
-          <p className="text-sm sm:text-base dark:text-white/75">
+          <p className="text-xs sm:text-sm dark:text-white/75">
             Your one-stop solution for all your needs. Find answers, troubleshoot
             issues, and explore guides.
           </p>
@@ -211,7 +212,7 @@ export default function SupportHub() {
             <h4 className="text-lg sm:text-xl dark:text-white/75 font-semibold mb-3">
               Need assistance?
             </h4>
-            <p className="text-sm sm:text-base dark:text-white/75 mb-4">
+            <p className="text-xs sm:text-sm dark:text-white/75 mb-4">
               Complete the form and we will get back to you shortly.
             </p>
             <Button
@@ -237,7 +238,7 @@ export default function SupportHub() {
             <h4 className="text-lg sm:text-xl dark:text-white/75 font-semibold mb-3">
               Live chat
             </h4>
-            <p className="text-sm sm:text-base dark:text-white/75 mb-4">
+            <p className="text-xs sm:text-sm dark:text-white/75 mb-4">
               Can&apos;t find the answers? Chat with our Intelligent Assistant.
             </p>
             <Button
@@ -265,7 +266,7 @@ export default function SupportHub() {
             <h4 className="text-lg sm:text-xl dark:text-white/75 font-semibold mb-3">
               Still need help?
             </h4>
-            <p className="text-sm sm:text-base dark:text-white/75 mb-4">
+            <p className="text-xs sm:text-sm dark:text-white/75 mb-10">
               To speak with our support team, Email us at
             </p>
             <div className="space-y-2 text-sm sm:text-base">
@@ -278,18 +279,26 @@ export default function SupportHub() {
         </Card>
       </div>
 
-      {/* Previous Tickets Section */}
-      <TextAnimate
-        as="h3"
-        duration={0.2}
-        className="mb-4 mt-8 text-xl sm:text-2xl font-semibold dark:text-white/75"
-      >
-        Your Tickets
-      </TextAnimate>
+ <div className="flex items-center gap-2 mb-4 mt-8">
+        <TextAnimate
+          as="h3"
+          duration={0.2}
+          className="text-xl sm:text-2xl font-semibold dark:text-white/75"
+        >
+          Your Tickets
+        </TextAnimate>
+        {ticketCount > 0 && (
+          <span className="px-2.5 py-1 text-sm font-medium bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white rounded-full">
+            {ticketCount}
+          </span>
+        )}
+      </div>
 
       <TicketList
         selectedStatus={selectedStatus}
         searchQuery={searchQuery}
+          setTicketCount={setTicketCount}
+
         onTicketClick={(ticket) => setSelectedTicket(ticket.id)}
       />
     </div>

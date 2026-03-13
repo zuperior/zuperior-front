@@ -11,6 +11,7 @@ import { CardLoader } from "@/components/ui/loading";
 interface TicketListProps {
   selectedStatus: string;
   searchQuery: string;
+  setTicketCount?: (count: number) => void;
   onTicketClick?: (ticket: Ticket) => void;
 }
 
@@ -35,6 +36,7 @@ const priorityColors: Record<string, string> = {
 export default function TicketList({
   selectedStatus,
   searchQuery,
+  setTicketCount,
   onTicketClick,
 }: TicketListProps) {
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -53,9 +55,17 @@ export default function TicketList({
 
       const data = await getTickets(params);
       setTickets(data);
+      
+      // Pass the ticket count to parent component
+      if (setTicketCount) {
+        setTicketCount(data.length);
+      }
     } catch (error: any) {
       console.error("Error fetching tickets:", error);
       setTickets([]);
+      if (setTicketCount) {
+        setTicketCount(0);
+      }
     } finally {
       setLoading(false);
     }
@@ -95,8 +105,8 @@ export default function TicketList({
           className="cursor-pointer border dark:border-[#1D1825] dark:bg-gradient-to-r from-[#1A1420] to-[#1E1429] transition-all hover:border-[#6242a5]/50 hover:shadow-lg"
           onClick={() => onTicketClick?.(ticket)}
         >
-          <CardContent className="p-6">
-            <div className="space-y-3">
+          <CardContent className="px-5">
+            <div className="space-y-2">
               {/* Top Row: Status, Ticket ID, Priority Dot */}
               <div className="flex items-center gap-3">
                 <Badge
@@ -147,4 +157,3 @@ export default function TicketList({
     </div>
   );
 }
-
