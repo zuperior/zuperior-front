@@ -341,6 +341,7 @@ export function DigiPay247Dialog({
   };
 
   const handleContinue = async () => {
+    if (isProcessing) return; // Guard against double submissions
     if (!amount && !inrAmount) {
       setError("Please enter an amount in USD or INR");
       return;

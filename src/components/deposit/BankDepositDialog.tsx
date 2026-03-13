@@ -33,6 +33,7 @@ export function BankDepositDialog({
   const [transactionId, setTransactionId] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [depositRequestId, setDepositRequestId] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
   const [bank, setBank] = useState<any>(null);
   const [upi, setUpi] = useState<any>(null);
   const [paymentMethodLimits, setPaymentMethodLimits] = useState<{
@@ -191,21 +192,27 @@ export function BankDepositDialog({
   useEffect(() => { if (!open) reset(); }, [open, reset]);
 
   const handleCreate = async () => {
-    // Uses existing manual deposit endpoint and proxy
-    const formData = new FormData();
-    formData.append('mt5AccountId', selectedAccount);
-    formData.append('amount', amount);
-    // Pass payment method type (UPI or bank_transfer)
-    formData.append('paymentMethod', gatewayType === 'upi' ? 'UPI' : 'Bank Transfer');
-    // Pass methodKey to identify which gateway was used
-    if (methodKey) formData.append('methodKey', methodKey);
-    if (transactionId) formData.append('transactionHash', transactionId);
-    if (proofFile) formData.append('proofFile', proofFile);
+    if (isProcessing) return; // Guard against double submissions
+    setIsProcessing(true);
+    try {
+      // Uses existing manual deposit endpoint and proxy
+      const formData = new FormData();
+      formData.append('mt5AccountId', selectedAccount);
+      formData.append('amount', amount);
+      // Pass payment method type (UPI or bank_transfer)
+      formData.append('paymentMethod', gatewayType === 'upi' ? 'UPI' : 'Bank Transfer');
+      // Pass methodKey to identify which gateway was used
+      if (methodKey) formData.append('methodKey', methodKey);
+      if (transactionId) formData.append('transactionHash', transactionId);
+      if (proofFile) formData.append('proofFile', proofFile);
 
-    const token = localStorage.getItem('userToken') || '';
-    const response = await fetch('/api/manual-deposit/create', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData });
-    const result = await response.json();
-    if (result?.success) { setDepositRequestId(result.data.id); setStep(4); }
+      const token = localStorage.getItem('userToken') || '';
+      const response = await fetch('/api/manual-deposit/create', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData });
+      const result = await response.json();
+      if (result?.success) { setDepositRequestId(result.data.id); setStep(4); }
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const renderStep = () => {
@@ -255,7 +262,7 @@ export function BankDepositDialog({
             proofFile={proofFile}
             setProofFile={setProofFile}
             nextStep={handleCreate}
-            isProcessing={false}
+            isProcessing={isProcessing}
             variant="bank"
           />
         );
