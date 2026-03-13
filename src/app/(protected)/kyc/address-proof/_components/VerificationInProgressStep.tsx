@@ -36,7 +36,7 @@ export default function VerificationInProgressStep({
             muted
             playsInline
             controls={false}
-            className="rounded-md object-contain z-[9999] relative h-24 w-24"
+            className="rounded-md object-contain z-0 relative h-24 w-24"
             preload="auto"
           >
             <source src="/logo.mp4" type="video/mp4" />
@@ -122,7 +122,7 @@ export default function VerificationInProgressStep({
           muted
           playsInline
           controls={false}
-          className="rounded-md object-contain z-[9999] relative h-24 w-24"
+          className="rounded-md object-contain z-0 relative h-24 w-24"
           preload="auto"
         >
           <source src="/logo.mp4" type="video/mp4" />
