@@ -206,7 +206,7 @@ export function AccountsSection({ onOpenNewAccount }: AccountsSectionProps) {
             setActiveTab(value);
           }
         }}
-        className="mb-[16px] rounded-[15px] border border-dashed border-white/10 md:p-[15px] pt-2.5 dark:bg-transparent bg-white"
+        className="mb-[16px] rounded-[15px] border border-dashed border-gray-400 dark:border-white/10 md:p-[15px] pt-2.5 dark:bg-transparent bg-white"
       >
         {/* {showOverlay && (
           <div className="absolute inset-0 z-20 flex items-center justify-center rounded-[15px] bg-black/40 backdrop-blur-sm">

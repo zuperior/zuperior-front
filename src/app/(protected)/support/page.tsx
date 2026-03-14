@@ -27,7 +27,7 @@ export default function SupportHub() {
 
   // Use full user name from Redux state (check both name and accountname for compatibility)
   const userName = (userData as any)?.name || userData?.accountname || "User";
-const [ticketCount, setTicketCount] = useState(0);
+  const [ticketCount, setTicketCount] = useState(0);
 
   const [loading, setLoading] = useState(false);
   const [openTicketMode, setOpenTicketMode] = useState(false);
@@ -147,13 +147,13 @@ const [ticketCount, setTicketCount] = useState(0);
 
       {/* Help Section */}
       <section className="relative rounded-lg border-2 border-gray-300 dark:border-[#1D1825] dark:bg-gradient-to-r from-[#FFFFFF] to-[#f4e7f6] p-5 sm:p-7 dark:from-[#110F17] dark:to-[#1E1429] ">
-        <div className="hidden md:block absolute top-0 right-0 md:-mt-8 md:-mr-[15px] pointer-events-none opacity-20 dark:opacity-30">
+        <div className="hidden md:block absolute top-0 right-0 md:-mt-8 md:-mr-[15px] pointer-events-none opacity-80 dark:opacity-30">
           <Image
             src="24_support.png"
             alt="Support"
             width={50}
             height={50}
-            className="w-48 h-48 md:w-[190px] md:h-[190px] "
+            className="w-48 h-48 md:w-[180px] md:h-[180px] "
             unoptimized
           />
         </div>
@@ -279,7 +279,7 @@ const [ticketCount, setTicketCount] = useState(0);
         </Card>
       </div>
 
- <div className="flex items-center gap-2 mb-4 mt-8">
+      <div className="flex items-center gap-2 mb-4 mt-8">
         <TextAnimate
           as="h3"
           duration={0.2}
@@ -297,7 +297,7 @@ const [ticketCount, setTicketCount] = useState(0);
       <TicketList
         selectedStatus={selectedStatus}
         searchQuery={searchQuery}
-          setTicketCount={setTicketCount}
+        setTicketCount={setTicketCount}
 
         onTicketClick={(ticket) => setSelectedTicket(ticket.id)}
       />

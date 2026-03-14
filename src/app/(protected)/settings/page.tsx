@@ -154,7 +154,7 @@ export default function SettingsPage() {
       </div>
 
       <div className="px-2.5 md:px-0">
-        <div className="mb-4 max-w-[750px] rounded-xl border-2 border-dashed border-[#13161E] md:px-3 px-1 lg:px-4 ">
+        <div className="mb-4 max-w-[750px] rounded-xl border border-dashed border-gray-400 dark:border-white/10 md:px-3 px-1 lg:px-4 ">
           <div className="my-3">
             <ToggleGroup
               type="single"
