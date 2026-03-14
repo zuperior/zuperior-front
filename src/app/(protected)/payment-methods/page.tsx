@@ -234,8 +234,9 @@ export default function PaymentMethodsPage() {
                     <Button
                       type="submit"
                       disabled={loading}
-                      className="bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white px-6 py-2 rounded-md"
+                      className="bg-linear-to-r from-[#9f8bcf] to-[#6242a5] dark:bg-linear-to-r dark:from-[#6242a5] dark:to-[#9f8bcf]  text-white px-6 py-2 rounded-md"
                     >
+
                       {loading ? "Submitting..." : "Submit for Review"}
                     </Button>
                   </div>
@@ -405,7 +406,7 @@ export default function PaymentMethodsPage() {
                     />
                   </div>
                   <div className="flex justify-center md:justify-end">
-                    <Button type="submit" disabled={loading} className="bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white px-6 py-2 rounded-md">
+                    <Button type="submit" disabled={loading} className="bg-linear-to-r from-[#9f8bcf] to-[#6242a5] dark:bg-linear-to-r dark:from-[#6242a5] dark:to-[#9f8bcf]  hover:to-purple-800 text-white px-6 py-2 rounded-md">
                       {loading ? "Submitting..." : "Submit for Review"}
                     </Button>
                   </div>

@@ -215,7 +215,7 @@ export default function WithdrawalDepositPage() {
             defaultValue="all"
             value={activeTab}
             onValueChange={(value) => {
-              if (value && ["all", "crypto", "bank"].includes(value)) {
+              if (value && ["all", "cryptooo", "bank"].includes(value)) {
                 setActiveTab(value as never);
               }
             }}
@@ -229,7 +229,7 @@ export default function WithdrawalDepositPage() {
                     setActiveTab(value as never);
                   }
                 }}
-                className="p-2 relative rounded-[10px]">
+                className="p-2 relative rounded-[15px] border border-[#222222]/15">
                 <div
                   style={cardMaskStyle}
                   className="border border-[#6545a7] dark:border-white/45"
