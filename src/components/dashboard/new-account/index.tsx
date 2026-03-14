@@ -433,10 +433,22 @@ export function NewAccountDialog({
         errorMessage = err;
       } else if (err?.message) {
         errorMessage = err.message;
+      } else if (err?.payload) {
+        errorMessage = String(err.payload);
       } else if (err?.data?.message) {
         errorMessage = err.data.message;
       }
-      toast.error(errorMessage);
+
+      // Show "Maximum Account Limit Reached" toast when user hits the 10-account limit
+      const isAccountLimitError =
+        errorMessage?.toLowerCase().includes('maximum limit') ||
+        errorMessage?.toLowerCase().includes('account limit') ||
+        err?.response?.status === 403;
+      if (isAccountLimitError) {
+        toast.error("Maximum Account Limit Reached");
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setLoadingStep2(false);
     }
@@ -508,6 +520,13 @@ export function NewAccountDialog({
       if (!accountPlan || (typeof accountPlan === 'object' && !accountPlan.group)) {
         toast.error("Please select an account type");
         return;
+      }
+      // Sync accountType from selected plan so Step 2 never shows Real/Live when Demo was chosen
+      const plan = accountPlan as Group;
+      if (plan.account_type === "Demo" || isStaticDemoGroup(plan.group)) {
+        setAccountType("Demo");
+      } else if (plan.account_type === "Live" || plan.account_type === "Real") {
+        setAccountType("Live");
       }
     }
     setStep(step + 1);

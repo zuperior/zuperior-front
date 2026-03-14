@@ -164,7 +164,12 @@ export const StepPrepareAccount: React.FC<StepPrepareAccountProps> = ({
         <div className="flex flex-col items-end">
           <span className="text-[12px] opacity-70">Type</span>
           <span className="text-sm font-semibold">
-            {accountType === 'Live' ? 'Real' : 'Demo'}
+            {(accountPlan?.account_type?.toLowerCase() === "demo" ||
+              (accountPlan?.group && String(accountPlan.group).toLowerCase().includes("demo")))
+              ? "Demo"
+              : accountType === "Live"
+                ? "Real"
+                : "Demo"}
           </span>
         </div>
       </div>
