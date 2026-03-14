@@ -28,15 +28,15 @@ export default function VerificationAlert({
 }) {
   // Check cached KYC status synchronously BEFORE any state or hooks
   const cachedStatus = getCachedKycStatus();
-  
+
   // If cached status is verified, don't render at all (prevents flash)
   if (cachedStatus === "verified") {
     return null;
   }
-  
+
   const [isVisible] = useState(true);
   const [learnMoreOpen, setLearnMoreOpen] = useState(false);
-  
+
   // Use cached status if available, otherwise use prop
   const actualStatus = useMemo(() => {
     // If cached status exists, use it
@@ -49,7 +49,7 @@ export default function VerificationAlert({
     }
     // Otherwise use prop if it's valid
     if (verificationStatus && (verificationStatus === "unverified" || verificationStatus === "partial" || verificationStatus === "verified")) {
-    return verificationStatus;
+      return verificationStatus;
     }
     // Default to unverified if nothing is valid
     return "unverified";
@@ -71,7 +71,7 @@ export default function VerificationAlert({
   // Don't show if verified (check both cached and prop status)
   // Also check if status is undefined/null and we have cached verified status
   if (
-    !isVisible || 
+    !isVisible ||
     actualStatus === "verified" ||
     (!verificationStatus && cachedStatus === "verified")
   ) {
@@ -93,17 +93,17 @@ export default function VerificationAlert({
   };
 
   // Ensure we have a valid status that exists in messages object
-  const statusKey = (actualStatus === "unverified" || actualStatus === "partial") 
-    ? actualStatus 
+  const statusKey = (actualStatus === "unverified" || actualStatus === "partial")
+    ? actualStatus
     : "unverified";
-  
+
   // Safely get message data with fallback
   const messageData = messages[statusKey] || messages["unverified"];
   const { title, message, cta } = messageData;
 
   return (
     <div>
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-0 bg-white dark:bg-gradient-to-l dark:to-[#110F17] dark:from-[#1E1429] text-black dark:text-white p-[15px] rounded-[15px] w-full relative">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-0 bg-white dark:bg-gradient-to-l dark:to-[#110F17] dark:from-[#1E1429] text-black dark:text-white p-[15px] rounded-[15px] w-full relative border border-gray-300 dark:border-white/10">
 
         {/* Left content */}
         <div className="flex items-start md:items-center gap-[15px] z-10">
