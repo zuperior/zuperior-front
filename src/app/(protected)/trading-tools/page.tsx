@@ -130,9 +130,10 @@ function ToolCard({
 
   return (
     <div
-      className="relative rounded-[15px] overflow-hidden
-      bg-[linear-gradient(120deg,#6242a5_0%,rgb(98,66,165)_32.94%,rgba(120,74,164,0.82)_42.94%,rgba(163,91,162,0.4)_67.86%,rgba(163,91,162,0.4)_100%,rgb(0,0,0)_100%)]
-      dark:bg-[radial-gradient(ellipse_27%_80%_at_0%_0%,rgba(163,92,162,0.5),rgba(0,0,0,1))]"
+    className="relative rounded-[15px] overflow-hidden 
+bg-white 
+dark:bg-black 
+dark:bg-[radial-gradient(ellipse_27%_80%_at_0%_0%,rgba(163,92,162,0.5),rgba(0,0,0,1))]"
     >
       <div
         style={cardMaskStyle}

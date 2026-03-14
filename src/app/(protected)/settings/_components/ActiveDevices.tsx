@@ -107,7 +107,7 @@ export default function ActiveDevices() {
                     {index === 0 && (
                       <Badge
                         variant="secondary"
-                        className="text-xs bg-green-600/20 text-green-400 border-green-600/30 whitespace-nowrap"
+                        className="text-xs  bg-linear-to-tr to-[#9F8BCF] from-[#6242A5] text-white whitespace-nowrap"
                       >
                         Current Device
                       </Badge>

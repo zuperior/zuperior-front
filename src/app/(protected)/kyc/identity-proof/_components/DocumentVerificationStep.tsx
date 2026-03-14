@@ -110,9 +110,30 @@ export default function DocumentVerificationStep({
                   <SelectValue placeholder="Select Document Type" />
                 </SelectTrigger>
                 <SelectContent className="border-gray-300 dark:border-[#2a3247] bg-[#FFFFFF] dark:bg-[#01040D] dark:text-[#FFFFFF] text-[#000000]">
-                  <SelectItem value="passport">Passport</SelectItem>
+                  {/* <SelectItem value="passport">Passport</SelectItem>
                   <SelectItem value="id_card">{country === "India" ? "PAN Card" : "ID Card"}</SelectItem>
-                  <SelectItem value="driving_license">Driving License</SelectItem>
+                  <SelectItem value="driving_license">Driving License</SelectItem> */}
+
+                  <SelectItem
+                    value="passport"
+                    className="focus:bg-[#9F8BCF]/30 data-[state=checked]:bg-[#9F8BCF]/70 text-black dark:text-white"
+                  >
+                    Passport
+                  </SelectItem>
+
+                  <SelectItem
+                    value="id_card"
+                    className="focus:bg-[#9F8BCF]/30 data-[state=checked]:bg-[#9F8BCF]/70 text-black dark:text-white"
+                  >
+                    {country === "India" ? "PAN Card" : "ID Card"}
+                  </SelectItem>
+
+                  <SelectItem
+                    value="driving_license"
+                    className="focus:bg-[#9F8BCF]/30 data-[state=checked]:bg-[#9F8BCF]/70 text-black dark:text-white"
+                  >
+                    Driving License
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -120,10 +141,10 @@ export default function DocumentVerificationStep({
             <div className="space-y-2">
               <div
                 className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition-colors ${isDragging
-                    ? "border-[#8046c9] bg-[#FFFFFF] dark:bg-[#8046c9]/10"
-                    : file
-                      ? "border-green-500/50 bg-green-500/10"
-                      : "border-gray-300 dark:border-[#2a3247] bg-[#FFFFFF] dark:bg-[#01040D]"
+                  ? "border-[#8046c9] bg-[#FFFFFF] dark:bg-[#8046c9]/10"
+                  : file
+                    ? "border-[#6242A5] bg-[#9F8BCF]/50"
+                    : "border-gray-300 dark:border-[#2a3247] bg-[#FFFFFF] dark:bg-[#01040D]"
                   }`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -131,8 +152,8 @@ export default function DocumentVerificationStep({
               >
                 {file ? (
                   <div className="text-center">
-                    <Check className="text-green-400 h-10 w-full mb-4 flex items-center justify-center" />
-                    <p className="text-sm dark:text-[#FFFFFF] text-[#000000]">{file.name}</p>
+                    <Check className="text-white h-10 w-full mb-4 flex items-center justify-center" />
+                    <p className="text-sm dark:text-[#FFFFFF] text-[#6242A5]">{file.name}</p>
                     <p className="mt-1 text-xs text-zinc-400">
                       {(file.size / 1024 / 1024).toFixed(2)} MB
                     </p>
@@ -176,7 +197,7 @@ export default function DocumentVerificationStep({
 
       <div className="flex flex-col items-center mt-6 gap-4">
         <Button
-          className="w-full max-w-md cursor-pointer bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] dark:text-[#FFFFFF] text-[#000000]"
+          className="w-full max-w-md cursor-pointer bg-linear-to-tr to-[#9F8BCF] from-[#6242A5]  dark:text-[#FFFFFF] "
           onClick={onSubmit}
           disabled={isLoading || !file || !documentType}
         >

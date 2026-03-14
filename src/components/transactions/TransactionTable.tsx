@@ -314,8 +314,8 @@ export const TransactionsTable: React.FC<Props> = ({
       </div>
 
       <div
-        className="w-full bg-gradient-to-r from-[#181422] to-[#181422] dark:from-[#15101d] dark:to-[#181422] rounded-xl px-5 shadow-lg 
-        text-white dark:text-white/75 block lg:block xl:hidden"
+        className="w-full dark:bg-gradient-to-r dark:from-[#15101d] dark:to-[#181422] rounded-xl px-5 shadow-lg
+        text-black dark:text-white/75 block lg:block xl:hidden"
       >
         {loadingTx ? (
           <div className="py-16 text-center text-gray-400">
@@ -335,7 +335,7 @@ export const TransactionsTable: React.FC<Props> = ({
             return (
               <div
                 key={tx.id ?? tx.depositID ?? `${i}-${tx.login}-${tx.open_time}`}
-                className="flex justify-between items-start border-b border-white/10 py-5 last:border-none gap-4"
+              className="flex justify-between items-start border-b border-black/10 dark:border-white/10 py-5 last:border-none gap-4"
               >
                 <div className="space-y-2">
                   <div className="font-medium">

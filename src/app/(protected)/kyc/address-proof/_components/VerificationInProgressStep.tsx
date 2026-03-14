@@ -64,7 +64,7 @@ export default function VerificationInProgressStep({
               className="w-full bg-[#FFFFFF] dark:bg-[#01040D] dark:text-[#FFFFFF] text-[#000000] hover:bg-[#FFFFFF] dark:hover:bg-[#01040D] cursor-pointer underline"
               onClick={onBack}
             >
-              <MoveLeft className="h-4 w-4 mr-2" />
+              <MoveLeft className="h-4 w-4 " />
               Go to Dashboard
             </Button>
           </div>
@@ -77,10 +77,10 @@ export default function VerificationInProgressStep({
   if (status === "verified" || status === "accepted")
     return (
       <div className="flex flex-col items-center justify-center min-h-[40vh] p-8 text-center space-y-6">
-        <div className="w-16 h-16 flex items-center justify-center rounded-full bg-green-500/20 border border-green-500/40">
+        <div className="w-16 h-16 flex items-center justify-center rounded-full bg-linear-to-trto-[#6242A5] from-[#9F8BCF] cursor-pointer border border-[#6242A5]">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-8 w-8 text-green-400"
+            className="h-8 w-8 text-white"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -94,7 +94,7 @@ export default function VerificationInProgressStep({
           </svg>
         </div>
 
-        <h2 className="text-2xl font-bold text-green-400">
+        <h2 className="text-2xl font-bold text-[#6242A5]">
           Verification Successful!
         </h2>
 
@@ -103,7 +103,7 @@ export default function VerificationInProgressStep({
         </p>
 
         <Link
-          className="px-6 py-2 font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
+          className="px-6 py-2 font-medium rounded-lg text-[#FFFFFF] bg-linear-to-tr to-[#9F8BCF] from-[#6242A5] transition"
           href={'/'}
         >
           Go to Dashboard
@@ -129,7 +129,7 @@ export default function VerificationInProgressStep({
           Your browser does not support the video tag.
         </video>
 
-        <h2 className="text-2xl font-bold text-blue-400">
+        <h2 className="text-2xl font-bold">
           Verification In Progress...
         </h2>
 
@@ -143,11 +143,11 @@ export default function VerificationInProgressStep({
         </div>
 
         <Button
-          variant="outline"
-          className="mt-4"
+          variant="default"
+          className="mt-4 text-[#FFFFFF] bg-linear-to-tr to-[#9F8BCF] from-[#6242A5] cursor-pointer"
           onClick={onBack}
         >
-          <MoveLeft className="h-4 w-4 mr-2" />
+          <MoveLeft className="h-4 w-4  " />
           Back to Dashboard
         </Button>
       </div>
@@ -157,7 +157,7 @@ export default function VerificationInProgressStep({
   if (status === "declined" || status === "rejected")
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center space-y-6 max-w-lg mx-auto">
-        <div className="w-16 h-16 flex items-center justify-center rounded-full bg-purple-900/40 border border-purple-700/40">
+        <div className="w-16 h-16 flex items-center justify-center rounded-full ">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-8 w-8 text-red-400"
@@ -174,7 +174,7 @@ export default function VerificationInProgressStep({
           </svg>
         </div>
 
-        <h2 className="text-2xl font-bold text-red-400">
+        <h2 className="text-2xl font-bold ">
           Verification Declined
         </h2>
 
@@ -184,8 +184,8 @@ export default function VerificationInProgressStep({
         </p>
 
         {declinedReason && (
-          <div className="bg-purple-900/30 border border-purple-700/40 rounded-lg p-4 w-full text-left">
-            <p className="text-sm text-red-300 font-medium">
+          <div className="bg-linear-to-tr to-[#9F8BCF] from-[#6242A5] border border-purple-700/40 rounded-lg p-4 w-full text-left">
+            <p className="text-sm text-white font-medium">
               <span className="font-semibold">Reason:</span> {declinedReason}
             </p>
           </div>
@@ -194,14 +194,14 @@ export default function VerificationInProgressStep({
         <div className="flex flex-col sm:flex-row gap-3 w-full justify-center mt-4">
           <Button
             variant="default"
-            className="px-6 py-2 font-medium rounded-lg bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] dark:text-[#FFFFFF] text-[#000000] cursor-pointer"
+            className="px-6 py-2 font-medium rounded-lg bg-linear-to-tr to-[#9F8BCF] from-[#6242A5] text-[#FFFFFF] cursor-pointer"
             onClick={onBack}
           >
             Try Again
           </Button>
           <Button
             variant="outline"
-            className="px-6 py-2 font-medium rounded-lg border border-purple-500/50 text-purple-400 hover:bg-purple-900/30 transition"
+            className="px-6 py-2 font-medium rounded-lg dark:text-[#FFFFFF] text-[#FFFFFF] bg-linear-to-tr to-[#9F8BCF] from-[#6242A5] cursor-pointer"
           >
             Contact Support
           </Button>
@@ -212,7 +212,7 @@ export default function VerificationInProgressStep({
           Need help? Check our{" "}
           <a
             href="/support"
-            className="underline text-purple-400 hover:text-purple-300 transition"
+            className="underline text-[#6242A5]  transition"
           >
             KYC guidelines
           </a>{" "}

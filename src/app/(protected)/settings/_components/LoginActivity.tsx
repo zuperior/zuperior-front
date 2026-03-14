@@ -140,7 +140,7 @@ export default function LoginActivity() {
                       {index === 0 && currentPage === 1 && (
                         <Badge
                           variant="secondary"
-                          className="text-xs bg-green-600/20 text-green-400 border-green-600/30 whitespace-nowrap"
+                          className="text-xs bg-linear-to-tr to-[#9F8BCF] from-[#6242A5] text-white whitespace-nowrap"
                         >
                           Current Session
                         </Badge>

@@ -17,7 +17,7 @@ import React, { memo, useMemo, useEffect, useRef, useState } from "react";
 const CheckIcon = memo(() => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    className="h-8 w-8 text-green-400"
+    className="h-8 w-8 text-white"
     fill="none"
     viewBox="0 0 24 24"
     stroke="currentColor"
@@ -141,6 +141,7 @@ const Page = () => {
             <Button
               variant="primary"
               onClick={() => setShowInstructionsDialog(false)}
+              className="bg-linear-to-tr to-[#9F8BCF] from-[#6242A5] text-white   "
             >
               I Understand
             </Button>
@@ -164,10 +165,10 @@ const Page = () => {
           <div className="mt-10 grid gap-6 sm:grid-cols-2">
             {/* Identity Proof */}
             {identityVerified ? (
-              <div className="relative h-auto min-h-46.5 rounded-[15px] bg-white dark:bg-green-400/5 p-6 border border-green-500/40 dark:hover:bg-green-400/10 overflow-hidden transition-transform">
+              <div className="relative h-auto min-h-46.5 rounded-[15px] bg-white dark:bg-[#13061d] p-6 border  overflow-hidden transition-transform">
                 <div className="flex flex-col items-center gap-4">
-                  <div className="w-16 h-16 flex items-center justify-center rounded-full bg-green-500/20 border border-green-500/40">
-                    <CheckIcon />
+                  <div className="w-16 h-16 flex items-center justify-center rounded-full bg-[#6242A5] border  text-white">
+                    <CheckIcon  />
                   </div>
                   <h2 className="text-xl font-semibold text-black dark:text-white">
                     Identity Verified
@@ -198,9 +199,9 @@ const Page = () => {
 
             {/* Address Proof */}
             {addressVerified ? (
-              <div className="relative h-auto min-h-46.5  rounded-[15px] bg-white dark:bg-green-400/5 p-6 border border-green-500/40 dark:hover:bg-green-400/10 overflow-hidden transition-transform">
+              <div className="relative h-auto min-h-46.5  rounded-[15px] bg-white dark:bg-[#13061d] p-6  overflow-hidden transition-transform">
                 <div className="flex flex-col items-center gap-4">
-                  <div className="w-16 h-16 flex items-center justify-center rounded-full bg-green-500/20 border border-green-500/40">
+                  <div className="w-16 h-16 flex items-center justify-center rounded-full  bg-[#6242A5] border  text-white">
                     <CheckIcon />
                   </div>
                   <h2 className="text-xl font-semibold text-black dark:text-white">
@@ -224,7 +225,7 @@ const Page = () => {
             ) : (
               // 📍 Documents verified but address not → Upload card
               <Link
-                className="cursor-pointer relative h-auto rounded-[15px] bg-white dark:bg-[#13061d] p-6 border hover:bg-linear-to-r from-white to-[#f4e7f6] dark:from-[#330F33] dark:to-[#1C061C] overflow-hidden transition-transform"
+                className="cursor-pointer relative h-auto rounded-[15px] bg-white dark:bg-[#13061d] p-6 border  dark:from-[#330F33] dark:to-[#1C061C] overflow-hidden transition-transform"
                 href="/kyc/address-proof"
               >
                 <div style={cardMaskStyle} className="border border-white/50" />

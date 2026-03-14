@@ -237,7 +237,7 @@ export default function PersonalInfoStep({
   return (
     <div className="dark:text-[#FFFFFF] text-[#000000]">
       <div className="flex flex-col items-center mb-6">
-        <h1 className="text-2xl">Enter your Personal Information</h1>
+        <h1 className="text-2xl font-semibold">Enter your Personal Information</h1>
         <span className="text-sm mt-2">
           Make sure your information matches your address proof document
         </span>
@@ -302,7 +302,8 @@ export default function PersonalInfoStep({
                         key={country.code}
                         value={country.country_code || ""}
                         disabled={!country.country_code}
-                      >
+                        className="focus:bg-[#9F8BCF]/30 data-[state=checked]:bg-[#9F8BCF]/70 text-black dark:text-white">
+                      
                         <span className="flex items-center gap-2">
                           <span className="font-medium">+{country.country_code}</span>
                           <span className="text-xs opacity-75">{country.country}</span>
@@ -350,7 +351,7 @@ export default function PersonalInfoStep({
           </div>
 
           <Button
-            className="w-full cursor-pointer bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] dark:text-[#FFFFFF] text-[#000000]"
+            className="w-full cursor-pointer bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] dark:text-[#FFFFFF] text-white"
             onClick={handleNext}>
             Save & Next
           </Button>
