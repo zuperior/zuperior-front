@@ -178,7 +178,7 @@ export default function VerificationProfile({
                     )}
                     {resolvedStatus === "unverified" && (
                       <Link href="/kyc" passHref>
-                        <Button className="ml-auto  bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:opacity-90 font-semibold md:px-5 px-3 lg:px-6 py-2 rounded-[8px] shadow-md transition-all duration-200 ease-in-out mt-3 flex items-center gap-2">
+                        <Button className="ml-auto  bg-linear-to-tr to-[#9F8BCF] from-[#6242A5] text-white hover:opacity-90 font-semibold md:px-5 px-3 lg:px-6 py-2 rounded-[8px] shadow-md transition-all duration-200 ease-in-out mt-3 flex items-center gap-2">
                           Go to KYC
                           <ArrowRight size={16} className="text-white" />
                         </Button>

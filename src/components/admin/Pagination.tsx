@@ -24,7 +24,7 @@ export const Pagination: React.FC<PaginationProps> = ({
   clickedButton,
 }) => {
   const baseButtonStyles = "relative inline-flex items-center border text-sm font-medium rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700";
-  const activePageStyles = "z-10 bg-blue-50 dark:bg-blue-900 border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-300";
+  const activePageStyles = "z-10 bg-[#9F8BCF]/15 dark:bg-gradient-to-r from-[#6242a5]/10 to-[#9f8bcf]/10 border-[#9F8BCF] dark:border-[#9f8bcf]] text-[#6242A5] dark:text-[#FFFFFF]/50";
   const mobileButtonStyles = `${baseButtonStyles} px-3 py-2`;
   const desktopNavButtonStyles = `${baseButtonStyles} px-2 py-2`;
   const pageNumberStyles = `${baseButtonStyles} px-4 py-2`;

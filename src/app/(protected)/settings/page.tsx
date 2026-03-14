@@ -166,10 +166,12 @@ export default function SettingsPage() {
                   key={tab.value}
                   value={tab.value}
                   className="z-10 cursor-pointer rounded-[12px] px-[24px] py-[9px] text-[12px] font-semibold leading-[14px] text-white/50 transition-all duration-200 
-                  data-[state=on]:bg-gradient-to-r 
-                  data-[state=on]:from-[#1E1429] 
-                  data-[state=on]:to-[#311B47]/95 
-                  data-[state=on]:text-white">
+             data-[state=on]:bg-[#9F8BCF]/15
+data-[state=on]:text-black
+dark:data-[state=on]:bg-gradient-to-r 
+dark:data-[state=on]:from-[#1E1429] 
+dark:data-[state=on]:to-[#311B47]/95
+dark:data-[state=on]:text-white">
                   {tab.label}
                 </ToggleGroupItem>
               ))}

@@ -236,7 +236,7 @@ export function ResetMainPasswordDialog({
             <Button
               onClick={handleSubmit}
               disabled={isApiProcessing}
-              className="bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:bg-[#9d6ad9]"
+              className="bg-linear-to-tr to-[#9F8BCF] from-[#6242A5] text-white  "
             >
               {isApiProcessing ? (
                 <div className="flex items-center justify-center">

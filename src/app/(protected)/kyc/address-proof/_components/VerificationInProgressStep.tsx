@@ -129,7 +129,7 @@ export default function VerificationInProgressStep({
           Your browser does not support the video tag.
         </video>
 
-        <h2 className="text-2xl font-bold text-blue-400">
+        <h2 className="text-2xl font-bold">
           Verification In Progress...
         </h2>
 
@@ -194,7 +194,7 @@ export default function VerificationInProgressStep({
         <div className="flex flex-col sm:flex-row gap-3 w-full justify-center mt-4">
           <Button
             variant="default"
-            className="px-6 py-2 font-medium rounded-lg bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] dark:text-[#FFFFFF] text-[#000000] cursor-pointer"
+            className="px-6 py-2 font-medium rounded-lg bg-linear-to-tr to-[#9F8BCF] from-[#6242A5] text-[#FFFFFF] cursor-pointer"
             onClick={onBack}
           >
             Try Again

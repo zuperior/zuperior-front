@@ -99,11 +99,10 @@ export default function SecurityTab({ email }: SecurityTabProps) {
             </div>
             <Button
               variant="secondary"
-              className="min-w-[110px] bg-gradient-to-tr to-[#9F8BCF] from-[#6242A5] 
-                         dark:bg-gradient-to-tr dark:from-[#232438] dark:to-[#141414] 
-                        dark:text-white text-white border-none w-full sm:w-auto
-                        hover:from-[#7452b5] hover:to-[#b5a0d8] dark:hover:from-[#2d3345] dark:hover:to-[#1a1a1f]
-                        hover:brightness-110 hover:scale-105
+              className="min-w-[110px] bg-linear-to-tr to-[#9F8BCF] from-[#6242A5] text-white
+                        dark:text-white  border-none w-full sm:w-auto
+                        hover:opacity-90
+                        hover:scale-105
                         transition-all duration-300 ease-out active:scale-95"
               onClick={() => setChangePasswordOpen(true)}
             >

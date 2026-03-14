@@ -141,6 +141,7 @@ const Page = () => {
             <Button
               variant="primary"
               onClick={() => setShowInstructionsDialog(false)}
+              className="bg-linear-to-tr to-[#9F8BCF] from-[#6242A5] text-white"
             >
               I Understand
             </Button>

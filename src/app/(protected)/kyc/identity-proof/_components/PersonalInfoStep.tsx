@@ -196,9 +196,9 @@ export default function PersonalInfoStep({
                 <SelectTrigger className="w-full border-[#2a3247] bg-white dark:bg-[#01040D] dark:text-white text-black">
                   <SelectValue placeholder="Select Country" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent >
                   {kycAllowedCountries.map(({ name, code }) => (
-                    <SelectItem key={code} value={code}>
+                    <SelectItem key={code} value={code}  className="focus:bg-[#9F8BCF]/30 data-[state=checked]:bg-[#9F8BCF]/70 text-black dark:text-white">
                       <div className="flex items-center">
                         <Image
                           src={`https://flagcdn.com/24x18/${code.toLowerCase()}.png`}
@@ -242,7 +242,7 @@ export default function PersonalInfoStep({
           </div>
 
           <Button
-            className="w-full cursor-pointer bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] dark:text-white text-black"
+            className="w-full cursor-pointer bg-linear-to-tr to-[#9F8BCF] from-[#6242A5]  text-white "
             onClick={handleNext}>
             Confirm & Next
           </Button>
