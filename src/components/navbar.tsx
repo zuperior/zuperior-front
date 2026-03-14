@@ -206,7 +206,7 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
         {/* Wallet balance dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button className="flex rounded-[10px] items-center gap-[6px] py-2 px-2 md:px-4 text-white dark:bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-xs leading-[14px] cursor-pointer [background:radial-gradient(ellipse_27%_80%_at_0%_0%,rgba(163,92,162,0.5),rgba(0,0,0,1))] hover:bg-transparent">
+            <Button className="flex rounded-[10px] items-center gap-[6px] py-2 px-2 md:px-4 text-white bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-xs leading-[14px] cursor-pointer hover:bg-transparent">
               {/* Mobile: Show only icon, Desktop: Show balance + icon */}
               <span className="inline">{formattedTotalBalance}</span>
               {wallet && (

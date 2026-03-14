@@ -191,11 +191,13 @@ const WalletBalance = ({ balance }: { balance: string | number }) => {
       {/* Last Month Info */}
       <div className="mt-[15px] flex justify-between items-center w-full">
         <div className="flex flex-col items-start">
-          <p className="text-sm text-white/75 font-semibold leading-[1.1em] -tracking-[0.03em]">Last Month</p>
-          <p className="text-[13px] tracking-tighter leading-[1.1em] flex mt-1.5 items-center gap-1.5 text-[#BBFCA2]/75 font-bold ">
+          <p className="text-sm text-white/75 font-semibold leading-[1.1em] -tracking-[0.03em]"></p>
+          {/* <p className="text-sm text-white/75 font-semibold leading-[1.1em] -tracking-[0.03em]">Last Month</p> */}
+
+          {/* <p className="text-[13px] tracking-tighter leading-[1.1em] flex mt-1.5 items-center gap-1.5 text-[#BBFCA2]/75 font-bold ">
             <TrendingUp size={16} className="text-[#8CBD79]" />
             <span className="text-[#8CBD79]">+0.00 (+0%)</span>
-          </p>
+          </p> */}
         </div>
         <Link
           href="/deposit"
