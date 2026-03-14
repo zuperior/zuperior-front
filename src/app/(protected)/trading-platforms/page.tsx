@@ -107,7 +107,7 @@ export default function TradingPlatformsPage() {
 
   // 🔹 Spinning animation (reused, memoized)
   const SpinningBorder = memo(() => (
-    <div className="absolute inset-0 z-[1] flex items-center justify-center">
+    <div className="absolute inset-0 z-1 flex items-center justify-center">
       <motion.div
         animate={{ rotate: 360 }}
         transition={{
@@ -121,7 +121,7 @@ export default function TradingPlatformsPage() {
             "conic-gradient(from 957deg at 45.6% 46.7%, rgba(0, 0, 0, 0.07) 306deg, #a35ca2 340deg, rgba(0, 0, 0, 0.36) 9deg)",
           willChange: "transform",
         }}
-        className="w-[600px] h-[600px] p-10 rounded-full"
+        className="w-150 h-150 p-10 rounded-full"
       />
     </div>
   ));
@@ -167,15 +167,15 @@ export default function TradingPlatformsPage() {
   // Platform Card (reused)
   const PlatformCard = memo(({ item, index }: PlatformCardProps) => (
     <div className="flex flex-col gap-5">
-      <div className="relative w-full aspect-[348/325] rounded-[15px] shadow-md overflow-hidden flex items-center justify-center">
-        <div className="relative z-[2] w-full h-full p-px">
+      <div className="relative w-full aspect-348/325 rounded-[15px] shadow-md overflow-hidden flex items-center justify-center">
+        <div className="relative z-2 w-full h-full p-px">
           {(index === 1 || index === 3) && <SpinningBorder />}
           <Image
             src={item.image}
             alt={item.name}
             width={348}
             height={325}
-            className="w-full h-full object-cover rounded-xl relative z-[2]"
+            className="w-full h-full object-cover rounded-xl relative z-2"
             loading={index === 0 ? "eager" : "lazy"}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             quality={85}
@@ -194,7 +194,7 @@ export default function TradingPlatformsPage() {
           <div className="flex flex-col gap-2">
             <button
               onClick={handleWebTerminalClick}
-              className="rounded-[10px] text-center py-2 px-4 text-white dark:bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-xs leading-[14px] cursor-pointer [background:radial-gradient(ellipse_27%_80%_at_0%_0%,rgba(163,92,162,0.5),rgba(0,0,0,1))] hover:bg-transparent flex items-center justify-center gap-1"
+              className="rounded-[10px] text-center py-2 px-4 text-white bg-linear-to-r from-[#9f8bcf] to-[#6242a5] dark:bg-linear-to-r dark:from-[#6242a5] dark:to-[#9f8bcf] text-xs leading-3.5 cursor-pointer hover:bg-transparent flex items-center justify-center gap-1"
             >
               <span>Open Web Terminal</span>
             </button>
@@ -214,7 +214,7 @@ export default function TradingPlatformsPage() {
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 min-w-[80px] rounded-[10px] text-center py-2 px-4 text-white dark:bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-xs leading-[14px] cursor-pointer [background:radial-gradient(ellipse_27%_80%_at_0%_0%,rgba(163,92,162,0.5),rgba(0,0,0,1))] hover:bg-transparent flex items-center justify-center gap-1"
+                  className="flex-1 min-w-20 rounded-[10px] text-center py-2 px-4 text-white bg-linear-to-r from-[#9f8bcf] to-[#6242a5] dark:bg-linear-to-r dark:from-[#6242a5] dark:to-[#9f8bcf] text-xs leading-3.5 cursor-pointer hover:bg-transparent flex items-center justify-center gap-1"
                 >
                   {link.icon && Icons[link.icon as IconName]}
                   <span>{link.label}</span>
@@ -254,7 +254,7 @@ export default function TradingPlatformsPage() {
                       setActiveTab(value);
                     }
                   }}
-                  className="p-2 relative rounded-[10px]"
+                  className="p-2 relative rounded-[15px] border border-[#222222]/15"
                 >
                   <ToggleGroupItem value="all" className="z-10 cursor-pointer">
                     All

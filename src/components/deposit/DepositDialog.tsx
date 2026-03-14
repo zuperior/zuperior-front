@@ -280,6 +280,7 @@ export function DepositDialog({
   };
 
   const handleContinueToPayment = async () => {
+    if (isProcessing) return; // Guard against double submissions
     if (!amount) {
       setError("Please enter an amount");
       return;
