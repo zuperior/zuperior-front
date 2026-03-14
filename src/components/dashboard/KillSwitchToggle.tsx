@@ -200,8 +200,10 @@ export function KillSwitchToggle() {
             />
 
             <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
-                <DialogContent className="sm:max-w-[425px] p-0 overflow-hidden border-none bg-[#0a0a0c]">
-                    <div className="p-8 pb-6 flex flex-col gap-6">
+                <DialogContent        className="border-2 border-transparent p-1 dark:text-white/75 text-black rounded-[18px] flex flex-col items-center w-full bg-white [background:linear-gradient(#fff,#fff)_padding-box,conic-gradient(from_var(--border-angle),#ddd,#f6e6fc,theme(colors.purple.400/48%))_border-box] dark:[background:linear-gradient(#070206,#030103)_padding-box,conic-gradient(from_var(--border-angle),#030103,#030103,theme(colors.purple.400/48%))_border-box] animate-border"
+                    disableOutsideClick={true}
+                >
+                    <div className="p-7 pb-1 flex flex-col gap-6">
                         <DialogHeader className="gap-3">
                             <DialogTitle className="flex items-center gap-3 text-red-500 text-xl font-bold tracking-tight">
                                 <div className="p-2.5 rounded-full bg-red-500/10">
@@ -212,7 +214,7 @@ export function KillSwitchToggle() {
                             <DialogDescription className="text-base text-muted-foreground/90 leading-relaxed pt-2">
                                 This will disable trading on all your accounts for the current trading session.
                                 <br /><br />
-                                <span className="text-red-400/90 font-medium">It will automatically be enabled in the next trading session UTC+2 00:00 hrs.</span>
+                                <span className="text-red-500 font-medium text-sm">It will automatically be enabled in the next trading session UTC+2 00:00 hrs.</span>
                             </DialogDescription>
                         </DialogHeader>
                         <DialogFooter className="flex gap-3 sm:justify-end border-t border-white/5 pt-6 mt-2">
@@ -228,7 +230,7 @@ export function KillSwitchToggle() {
                                 variant="destructive"
                                 onClick={() => performToggle(true)}
                                 disabled={loading}
-                                className="rounded-xl px-6 bg-red-600 hover:bg-red-700 font-bold"
+                className="bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:bg-[#9d6ad9] font-semibold px-6 py-2 rounded-[8px] shadow-md transition-all duration-200 ease-in-out"
                             >
                                 {loading ? "Activating..." : "Yes, Disable Trading"}
                             </Button>
@@ -292,7 +294,7 @@ export function KillSwitchToggle() {
                         <DialogFooter className="flex gap-3 sm:justify-end border-t border-white/5 pt-6 mt-4">
                             <Button
                                 onClick={() => setShowOpenPositionsError(false)}
-                                className="rounded-xl px-8 py-2 bg-blue-600 hover:bg-blue-700 font-medium"
+                className="bg-gradient-to-r from-[#6242a5] to-[#9f8bcf] text-white hover:bg-[#9d6ad9] font-semibold px-6 py-2 rounded-[8px] shadow-md transition-all duration-200 ease-in-out"
                             >
                                 Got it
                             </Button>
