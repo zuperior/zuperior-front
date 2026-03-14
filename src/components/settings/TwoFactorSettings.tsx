@@ -133,7 +133,7 @@ export function TwoFactorSettings({ email }: TwoFactorSettingsProps) {
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between p-4 sm:p-5">
             <div className="flex items-center gap-3">
               {enabled ? (
-                <ShieldCheck className="h-6 w-6 text-green-500 flex-shrink-0" />
+                <ShieldCheck className="h-6 w-6 text-[#6242A5] flex-shrink-0" />
               ) : (
                 <ShieldOff className="h-6 w-6 text-gray-400 flex-shrink-0" />
               )}

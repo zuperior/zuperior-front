@@ -73,7 +73,7 @@ export default function VerificationProfile({
               <CheckCircle
                 className={`w-5 h-5 ${
                   verificationStatus === "verified"
-                    ? "text-green-500"
+                    ? "text-[#6242A5] "
                     : "text-gray-400"
                 } mr-2`}
               />
@@ -119,7 +119,7 @@ export default function VerificationProfile({
                 <div
                   className={`md:w-8 md:h-8  w-6 h-6 ${resolvedStatus === "partial" ||
                     resolvedStatus === "verified"
-                    ? "bg-green-500"
+                    ? "bg-linear-to-tr to-[#9F8BCF] from-[#6242A5] text-white"
                     : "bg-gray-400"
                     } rounded-full flex items-center justify-center mr-2 md:mr-4`}>
                   <span className="text-white font-semibold text-xs md:text-sm">1</span>
@@ -198,7 +198,7 @@ export default function VerificationProfile({
               <div className="flex items-center">
                 <div
                   className={`md:w-8 md:h-8  w-6 h-6 ${resolvedStatus === "verified"
-                    ? "bg-green-500"
+                    ? "bg-linear-to-tr to-[#9F8BCF] from-[#6242A5] text-white"
                     : "bg-gray-400"
                     } rounded-full flex items-center justify-center mr-2 md:mr-4`}>
                   <span className="dark:text-white/75 font-semibold text-xs md:text-sm">

@@ -4,7 +4,7 @@ import React from "react";
 //import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-//import { MoveLeft } from "lucide-react";
+import { MoveLeft } from "lucide-react";
 import Link from "next/link";
 
 interface VerificationInProgressStepProps {
@@ -150,6 +150,7 @@ export default function VerificationInProgressStep({
           className="mt-4 text-[#FFFFFF] bg-linear-to-tr to-[#9F8BCF] from-[#6242A5] cursor-pointer"
           onClick={onBack}
         >
+           <MoveLeft className="h-4 w-4  " />
           Back to Dashboard
         </Button>
       </div>

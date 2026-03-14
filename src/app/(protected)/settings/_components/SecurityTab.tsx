@@ -166,7 +166,7 @@ export default function SecurityTab({ email }: SecurityTabProps) {
             </div>
             <Button
               variant="destructive"
-              className="bg-red-600/20 text-red-400 border-red-600/30 sm:min-w-[180px] hover:bg-red-600/30 w-full sm:w-auto"
+              className="bg-linear-to-tr to-[#9F8BCF] from-[#6242A5]  sm:min-w-[180px]  w-full sm:w-auto"
               onClick={() => setLogoutAllDialogOpen(true)}
             >
               <LogOut className="h-4 w-4 mr-2" />
